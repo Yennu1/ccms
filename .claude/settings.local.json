@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(npx shadcn@latest init)",
+      "Bash(printf \"y\\\\n\")",
+      "Bash(printf \"y\\\\nn\\\\n\")",
+      "Bash(npx shadcn@latest add button --yes)",
+      "Bash(npx shadcn@latest add button input label card badge --yes)",
+      "Bash(npx shadcn@latest add avatar table dialog sheet dropdown-menu --yes)",
+      "Bash(npx shadcn@latest add form select textarea --yes)",
+      "Bash(npx shadcn@latest add toast sonner separator skeleton --yes)",
+      "Bash(curl -s http://localhost:5174/login)",
+      "Bash(npx tsc:*)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(ls /c/Users/yenul/Desktop/CCMS/ccms/node_modules/.bin/tsc*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}
