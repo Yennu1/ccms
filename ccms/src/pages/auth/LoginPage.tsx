@@ -60,6 +60,10 @@ export function LoginPage() {
     setError(null)
     setLoginError(null)
     try {
+      // Clear any stale session before attempting login
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-')) localStorage.removeItem(key)
+      })
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
@@ -79,7 +83,7 @@ export function LoginPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Inter:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
         /* ── Keyframes ───────────────────────────────────── */
         @keyframes ccms-spin {
@@ -107,7 +111,7 @@ export function LoginPage() {
           position: fixed;
           inset: 0;
           display: flex;
-          font-family: 'Inter', sans-serif;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
         }
 
         /* ── Entrance animation helper ───────────────────── */
@@ -194,7 +198,7 @@ export function LoginPage() {
           padding: 0 12px;
           border: 0.5px solid #D1D5DB;
           border-radius: 8px;
-          font-family: 'Inter', sans-serif;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
           font-size: 13px;
           color: #111827;
           background: #FFFFFF;
@@ -246,7 +250,7 @@ export function LoginPage() {
           color: #fff;
           border: none;
           border-radius: 8px;
-          font-family: 'Inter', sans-serif;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
           font-size: 13px;
           font-weight: 500;
           cursor: pointer;
@@ -275,7 +279,7 @@ export function LoginPage() {
         .ccms-link {
           color: #4F6BED;
           text-decoration: none;
-          font-family: 'Inter', sans-serif;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
           transition: color 0.12s;
         }
         .ccms-link:hover { color: #3D59D8; text-decoration: underline; }
@@ -415,7 +419,7 @@ export function LoginPage() {
               <circle cx="15" cy="15" r="2.8" fill="white" fillOpacity="0.92" />
             </svg>
             <span style={{
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
               fontWeight: 600,
               fontSize: '15px',
               color: '#fff',
@@ -438,7 +442,7 @@ export function LoginPage() {
             <h1
               className="ccms-reveal"
               style={{
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
                 fontWeight: 600,
                 fontSize: '28px',
                 color: '#fff',
@@ -457,7 +461,7 @@ export function LoginPage() {
             <p
               className="ccms-reveal"
               style={{
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontSize: '13px',
                 color: 'rgba(255,255,255,0.48)',
                 lineHeight: 1.65,
@@ -476,7 +480,7 @@ export function LoginPage() {
             style={{
               position: 'relative', zIndex: 1,
               alignSelf: 'flex-start',
-              fontFamily: "'Inter', sans-serif",
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
               fontSize: '12px',
               color: 'rgba(255,255,255,0.28)',
               margin: 0,
@@ -496,7 +500,7 @@ export function LoginPage() {
             <h2
               className="ccms-form-heading ccms-reveal"
               style={{
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
                 fontWeight: 600,
                 fontSize: '22px',
                 color: '#111827',
@@ -510,7 +514,7 @@ export function LoginPage() {
             <p
               className="ccms-form-sub ccms-reveal"
               style={{
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontSize: '13px',
                 color: '#6B7280',
                 margin: '0 0 28px 0',
@@ -530,7 +534,7 @@ export function LoginPage() {
                 <label
                   htmlFor="email"
                   className="ccms-field-label"
-                  style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 500, color: '#374151' }}
+                  style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: '12px', fontWeight: 500, color: '#374151' }}
                 >
                   Email
                 </label>
@@ -542,7 +546,7 @@ export function LoginPage() {
                   {...register('email')}
                 />
                 {errors.email && (
-                  <p style={{ fontSize: '12px', color: '#EF4444', margin: 0, fontFamily: "'Inter', sans-serif" }}>
+                  <p style={{ fontSize: '12px', color: '#EF4444', margin: 0, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
                     {errors.email.message}
                   </p>
                 )}
@@ -557,7 +561,7 @@ export function LoginPage() {
                   <label
                     htmlFor="password"
                     className="ccms-field-label"
-                    style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 500, color: '#374151' }}
+                    style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: '12px', fontWeight: 500, color: '#374151' }}
                   >
                     Password
                   </label>
@@ -583,7 +587,7 @@ export function LoginPage() {
                   </button>
                 </div>
                 {errors.password && (
-                  <p style={{ fontSize: '12px', color: '#EF4444', margin: 0, fontFamily: "'Inter', sans-serif" }}>
+                  <p style={{ fontSize: '12px', color: '#EF4444', margin: 0, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
                     {errors.password.message}
                   </p>
                 )}
@@ -600,7 +604,7 @@ export function LoginPage() {
                     padding: '10px 12px',
                     fontSize: '13px',
                     color: '#DC2626',
-                    fontFamily: "'Inter', sans-serif",
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   }}
                 >
                   {loginError}
@@ -618,7 +622,7 @@ export function LoginPage() {
                     padding: '10px 12px',
                     fontSize: '13px',
                     color: '#DC2626',
-                    fontFamily: "'Inter', sans-serif",
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                     animationDelay: '0ms',
                   }}
                 >
@@ -644,7 +648,7 @@ export function LoginPage() {
               }}
             >
               <div className="ccms-divider-line" style={{ flex: 1, height: '0.5px', background: '#E5E7EB' }} />
-              <span className="ccms-footer-muted" style={{ fontSize: '12px', color: '#9CA3AF', fontFamily: "'Inter', sans-serif" }}>
+              <span className="ccms-footer-muted" style={{ fontSize: '12px', color: '#9CA3AF', fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
                 or
               </span>
               <div className="ccms-divider-line" style={{ flex: 1, height: '0.5px', background: '#E5E7EB' }} />
@@ -658,7 +662,7 @@ export function LoginPage() {
                 fontSize: '12px',
                 color: '#9CA3AF',
                 margin: 0,
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 animationDelay: '600ms',
               }}
             >

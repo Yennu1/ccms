@@ -21,12 +21,18 @@ Colours:
 - Ink: #111827 (dark text)
 - Success: #22C55E | Error: #EF4444 | Warning: #F59E0B
 
-Typography:
-- Display font: DM Sans (headings, hero text)
-- Body font: Inter (body, labels, tables)
-- Mono: for IDs, amounts, dates only
-- Heading weight: 600, letter-spacing: -0.02em
-- Body: 400, 13-14px, line-height 1.6
+## Typography
+- Headings / Hero / Display: Plus Jakarta Sans (600 weight, -0.02em letter spacing)
+- Body / Labels / UI / Tables: IBM Plex Sans (400/500 weight, 13-14px, 1.6 line height)
+- Monospace (IDs, amounts, dates, codes): IBM Plex Mono (12px, indigo colour)
+
+Google Fonts import (must be at top of index.css):
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+Tailwind fontFamily config:
+sans: ['IBM Plex Sans', 'system-ui', 'sans-serif']
+display: ['Plus Jakarta Sans', 'system-ui', 'sans-serif']
+mono: ['IBM Plex Mono', 'monospace']
 
 Spacing scale: 4 / 8 / 12 / 16 / 24 / 32 / 40 / 48px
 Border radius: 6 / 8 / 12 / 16px
