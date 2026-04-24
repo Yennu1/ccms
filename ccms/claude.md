@@ -62,4 +62,4 @@ Dark mode:
 - Text: #F0F1F5
 - Muted: rgba(240,241,245,0.45)
 
-Tone: Premium, breathing, whitespace-first. Never cram. Show less, show it well.
+Tone: Premium, breathing, whitespace-first. Never cram. Show less, show it well.y
