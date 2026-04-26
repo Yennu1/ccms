@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -46,14 +46,43 @@ function EyeIcon({ open }: { open: boolean }) {
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const { user, isLoading: authLoading, loginError, setLoginError } = useAuthStore()
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [user, authLoading, navigate])
+
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const { loginError, setLoginError } = useAuthStore()
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   })
+
+  if (authLoading) {
+    return (
+      <div style={{
+        display: 'flex',
+        height: '100vh',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#0A0D14',
+      }}>
+        <div style={{
+          width: 32,
+          height: 32,
+          borderRadius: '50%',
+          border: '3px solid #1B2352',
+          borderTopColor: '#4F6BED',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    )
+  }
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true)

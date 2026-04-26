@@ -3,6 +3,9 @@ import { ProtectedRoute } from './ProtectedRoute'
 import { LoginPage } from '../pages/auth/LoginPage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { MembersPage } from '../pages/members/MembersPage'
+import { MemberNewPage } from '../pages/members/MemberNewPage'
+import { MemberProfilePage } from '../pages/members/MemberProfilePage'
+import { MemberEditPage } from '../pages/members/MemberEditPage'
 import { SettingsPage } from '../pages/settings/SettingsPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { AppLayout } from '../layouts/AppLayout'
@@ -24,6 +27,9 @@ export const router = createBrowserRouter([
           { path: '/', element: <DashboardPage /> },
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/members', element: <MembersPage /> },
+          { path: '/members/new', element: <MemberNewPage /> },
+          { path: '/members/:id', element: <MemberProfilePage /> },
+          { path: '/members/:id/edit', element: <MemberEditPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],
       },

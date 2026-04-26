@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import type { UserRole } from '../types'
@@ -8,33 +7,31 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  const { user, isLoading, setLoading } = useAuthStore()
-  const [timedOut, setTimedOut] = useState(false)
-
-  useEffect(() => {
-    if (!isLoading) return
-    const timer = setTimeout(() => {
-      setLoading(false)
-      setTimedOut(true)
-    }, 3000)
-    return () => clearTimeout(timer)
-  }, [isLoading, setLoading])
+  const { user, isLoading } = useAuthStore()
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-300 border-t-zinc-900" />
+      <div style={{
+        display: 'flex',
+        height: '100vh',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#0A0D14',
+      }}>
+        <div style={{
+          width: 32,
+          height: 32,
+          borderRadius: '50%',
+          border: '3px solid #1B2352',
+          borderTopColor: '#4F6BED',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     )
   }
 
-  if (timedOut && !user) {
-    return <Navigate to="/login" replace />
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />
-  }
+  if (!user) return <Navigate to="/login" replace />
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/dashboard" replace />

@@ -66,24 +66,22 @@ export function Sidebar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleSignOut = async () => {
-    const { setUser, setLoading } = useAuthStore.getState()
-    try {
-      setLoading(true)
-      await supabase.auth.signOut()
-      // Clear any leftover Supabase keys from localStorage
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('sb-')) localStorage.removeItem(key)
-      })
-      setUser(null)
-      setLoading(false)
-      window.location.href = '/login'
-    } catch {
-      setUser(null)
-      setLoading(false)
-      window.location.href = '/login'
-    }
+const handleSignOut = async () => {
+  try {
+    // Clear ALL auth keys including the new ccms-auth-token
+    localStorage.removeItem('ccms-auth-token')
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('sb-')) {
+        localStorage.removeItem(key)
+      }
+    })
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  } catch {
+    localStorage.removeItem('ccms-auth-token')
+    window.location.href = '/login'
   }
+}
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/')
 

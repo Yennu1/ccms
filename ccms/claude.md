@@ -3,7 +3,7 @@ Open or create CLAUDE.md in the project root and add this section:
 ## Skills
 
 Before building any UI component, page, or layout, read and apply:
-- .claude/skills/frontend-design.md
+- ~/.claude/skills/frontend-design.md
 
 ## CCMS Design System
 
@@ -62,4 +62,4 @@ Dark mode:
 - Text: #F0F1F5
 - Muted: rgba(240,241,245,0.45)
 
-Tone: Premium, breathing, whitespace-first. Never cram. Show less, show it well.y
+Tone: Premium, breathing, whitespace-first. Never cram. Show less, show it well.
