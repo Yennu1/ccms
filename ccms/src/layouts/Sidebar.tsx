@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLocation, Link } from 'react-router-dom'
-import { useAuthStore } from '../store/authStore'
-import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 
 const NAV_ITEMS = [
   {
@@ -52,7 +51,7 @@ function getInitials(name: string) {
 
 export function Sidebar() {
   const { pathname } = useLocation()
-  const { user } = useAuthStore()
+  const { user, signOut } = useAuth()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -66,22 +65,10 @@ export function Sidebar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-const handleSignOut = async () => {
-  try {
-    // Clear ALL auth keys including the new ccms-auth-token
-    localStorage.removeItem('ccms-auth-token')
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('sb-')) {
-        localStorage.removeItem(key)
-      }
-    })
-    await supabase.auth.signOut()
-    window.location.href = '/login'
-  } catch {
-    localStorage.removeItem('ccms-auth-token')
+  const handleSignOut = async () => {
+    await signOut()
     window.location.href = '/login'
   }
-}
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/')
 

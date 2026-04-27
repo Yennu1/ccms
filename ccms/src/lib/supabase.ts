@@ -14,8 +14,5 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     storage: window.localStorage,
     storageKey: 'ccms-auth-token',
-    lock: async (_name, _acquireTimeout, fn) => {
-      return await fn()
-    },
   },
 })

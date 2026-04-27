@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { supabase } from '../../lib/supabase'
-import { useAuthStore } from '../../store/authStore'
+import { useAuth } from '../../contexts/AuthContext'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -46,7 +46,7 @@ function EyeIcon({ open }: { open: boolean }) {
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const { user, isLoading: authLoading, loginError, setLoginError } = useAuthStore()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -87,7 +87,6 @@ export function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true)
     setError(null)
-    setLoginError(null)
     try {
       // Clear any stale session before attempting login
       Object.keys(localStorage).forEach(key => {
@@ -621,24 +620,6 @@ export function LoginPage() {
                   </p>
                 )}
               </div>
-
-              {/* Profile-missing error (set by onAuthStateChange) */}
-              {loginError && (
-                <div
-                  className="ccms-error-banner"
-                  style={{
-                    borderRadius: 8,
-                    background: '#FEF2F2',
-                    border: '0.5px solid #FECACA',
-                    padding: '10px 12px',
-                    fontSize: '13px',
-                    color: '#DC2626',
-                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                  }}
-                >
-                  {loginError}
-                </div>
-              )}
 
               {/* Auth error */}
               {error && (

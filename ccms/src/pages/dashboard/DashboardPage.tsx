@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useAuthStore } from '../../store/authStore'
+import { useAuth } from '../../contexts/AuthContext'
 
 const STAT_CARDS = [
   { label: 'TOTAL MEMBERS',    value: '—', accent: '#4F6BED' },
@@ -9,7 +9,7 @@ const STAT_CARDS = [
 ]
 
 export function DashboardPage() {
-  const { user } = useAuthStore()
+  const { user } = useAuth()
 
   return (
     <div style={{ maxWidth: 1200 }}>

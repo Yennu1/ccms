@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { useAuthStore } from '../../store/authStore'
+import { useAuth } from '../../contexts/AuthContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -243,7 +243,7 @@ function ActionMenu({
 
 export function MembersPage() {
   const navigate = useNavigate()
-  const user = useAuthStore(s => s.user)
+  const { user } = useAuth()
 
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)

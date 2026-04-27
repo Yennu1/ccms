@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom'
-import { useAuthStore } from '../store/authStore'
+import { useAuth } from '../contexts/AuthContext'
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -18,7 +18,7 @@ function getInitials(name: string) {
 
 export function TopBar() {
   const { pathname } = useLocation()
-  const { user } = useAuthStore()
+  const { user } = useAuth()
 
   const title = Object.entries(PAGE_TITLES).find(([path]) =>
     pathname === path || pathname.startsWith(path + '/')

@@ -1,15 +1,14 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { useAuthStore } from '../store/authStore'
-import type { UserRole } from '../types'
+import { useAuth, type UserRole } from '../contexts/AuthContext'
 
 interface ProtectedRouteProps {
   allowedRoles?: UserRole[]
 }
 
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuthStore()
+  const { user, loading } = useAuth()
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div style={{
         display: 'flex',

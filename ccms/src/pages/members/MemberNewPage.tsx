@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
-import { useAuthStore } from '../../store/authStore'
+import { useAuth } from '../../contexts/AuthContext'
 
 // ─── Schema ────────────────────────────────────────────────────────────────────
 
@@ -116,7 +116,7 @@ function FieldWrapper({
 
 export function MemberNewPage() {
   const navigate    = useNavigate()
-  const user        = useAuthStore(s => s.user)
+  const { user }    = useAuth()
 
   const [branches,    setBranches]    = useState<Branch[]>([])
   const [ministries,  setMinistries]  = useState<Ministry[]>([])
