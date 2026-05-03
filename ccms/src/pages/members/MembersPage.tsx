@@ -445,10 +445,12 @@ export function MembersPage() {
                 <tr
                   key={member.id}
                   className="member-row"
+                  onClick={() => navigate(`/members/${member.id}`)}
                   style={{
                     borderBottom: '0.5px solid #F3F4F6',
                     height: 56, background: '#fff',
                     transition: 'background 0.1s',
+                    cursor: 'pointer',
                   }}
                 >
                   {/* Member */}
@@ -519,7 +521,7 @@ export function MembersPage() {
                     <div style={{ position: 'relative' }}>
                       <button
                         className="dots-btn row-actions"
-                        onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
+                        onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === member.id ? null : member.id) }}
                         style={{
                           background: 'none', border: 'none', cursor: 'pointer',
                           color: '#9CA3AF', borderRadius: 6,
