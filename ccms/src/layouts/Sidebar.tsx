@@ -26,6 +26,17 @@ const NAV_ITEMS = [
     ),
   },
   {
+    label: 'Households',
+    path: '/households',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M1.5 7.5L8 2l6.5 5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M3 6.5V13a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5V6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="6" y="9.5" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+      </svg>
+    ),
+  },
+  {
     label: 'Settings',
     path: '/settings',
     icon: (
