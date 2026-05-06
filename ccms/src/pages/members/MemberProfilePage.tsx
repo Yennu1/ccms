@@ -73,14 +73,25 @@ interface Member {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STATUS_STYLES: Record<MemberStatus, { bg: string; color: string; label: string }> = {
-  active:      { bg: '#DCFCE7', color: '#166534', label: 'Active' },
-  inactive:    { bg: '#F3F4F6', color: '#6B7280', label: 'Inactive' },
-  visitor:     { bg: '#DBEAFE', color: '#1E40AF', label: 'Visitor' },
-  pending:     { bg: '#FEF3C7', color: '#92400E', label: 'Pending' },
-  transferred: { bg: '#EEF2FF', color: '#4338CA', label: 'Transferred' },
-  deceased:    { bg: '#FEE2E2', color: '#991B1B', label: 'Deceased' },
+const STATUS_STYLES: Record<MemberStatus, { bg: string; color: string; dot: string; label: string }> = {
+  active:      { bg: '#DCFCE7', color: '#166534', dot: '#22C55E', label: 'Active' },
+  inactive:    { bg: '#F3F4F6', color: '#6B7280', dot: '#9CA3AF', label: 'Inactive' },
+  visitor:     { bg: '#DBEAFE', color: '#1E40AF', dot: '#60A5FA', label: 'Visitor' },
+  pending:     { bg: '#FEF3C7', color: '#92400E', dot: '#F59E0B', label: 'Pending' },
+  transferred: { bg: '#EEF2FF', color: '#4338CA', dot: '#818CF8', label: 'Transferred' },
+  deceased:    { bg: '#FEE2E2', color: '#991B1B', dot: '#F87171', label: 'Deceased' },
 }
+
+const AVATAR_PALETTE = [
+  { bg: '#E8ECF9', color: '#4F6BED' },
+  { bg: '#DCFCE7', color: '#15803D' },
+  { bg: '#FEF3C7', color: '#B45309' },
+  { bg: '#FCE7F3', color: '#BE185D' },
+  { bg: '#EEF2FF', color: '#4338CA' },
+  { bg: '#FFF7ED', color: '#C2410C' },
+  { bg: '#F0FDFA', color: '#0F766E' },
+  { bg: '#F5F3FF', color: '#7C3AED' },
+]
 
 const RELATIONSHIP_STYLES: Record<RelationshipType, { bg: string; color: string; label: string }> = {
   spouse:  { bg: '#FEE2E2', color: '#991B1B',  label: 'Spouse'  },
@@ -114,6 +125,15 @@ const cardHeaderStyle: React.CSSProperties = {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getAvatarColor(firstName: string, lastName: string): { bg: string; color: string } {
+  const str = (firstName + lastName).toLowerCase()
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length]
+}
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—'
@@ -168,15 +188,19 @@ function ChevronDownIcon() {
 
 function StatusBadge({ status }: { status: string | undefined }) {
   const s = STATUS_STYLES[status?.toLowerCase() as MemberStatus]
-    ?? { bg: '#F3F4F6', color: '#6B7280', label: status ?? 'Unknown' }
+    ?? { bg: '#F3F4F6', color: '#6B7280', dot: '#9CA3AF', label: status ?? 'Unknown' }
   return (
     <span style={{
       background: s.bg, color: s.color,
       borderRadius: 5, padding: '3px 10px',
       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
       fontWeight: 500, fontSize: 12,
-      display: 'inline-block', whiteSpace: 'nowrap',
+      display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
     }}>
+      <span style={{
+        width: 5, height: 5, borderRadius: '50%',
+        background: s.dot, flexShrink: 0,
+      }} />
       {s.label}
     </span>
   )
@@ -199,10 +223,11 @@ function RelationshipBadge({ type }: { type: RelationshipType }) {
 
 function MiniAvatar({ firstName, lastName }: { firstName: string; lastName: string }) {
   const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase()
+  const { bg, color } = getAvatarColor(firstName, lastName)
   return (
     <div style={{
       width: 32, height: 32, borderRadius: '50%',
-      background: '#E8ECF9', color: '#4F6BED',
+      background: bg, color,
       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
       fontWeight: 600, fontSize: 11,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -760,6 +785,7 @@ export function MemberProfilePage() {
     : null
 
   const initials = `${member.first_name[0] ?? ''}${member.last_name[0] ?? ''}`.toUpperCase()
+  const avatarColors = getAvatarColor(member.first_name, member.last_name)
 
   // Giving summary
   const currentYear = new Date().getFullYear()
@@ -800,13 +826,13 @@ export function MemberProfilePage() {
           {/* Large avatar */}
           <div style={{
             width: 48, height: 48, borderRadius: '50%',
-            background: '#4F6BED',
+            background: avatarColors.bg,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}>
             <span style={{
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 600, fontSize: 18, color: '#fff',
+              fontWeight: 600, fontSize: 18, color: avatarColors.color,
             }}>
               {initials}
             </span>

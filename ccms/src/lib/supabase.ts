@@ -16,3 +16,4 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storageKey: 'ccms-auth-token',
   },
 })
+ 

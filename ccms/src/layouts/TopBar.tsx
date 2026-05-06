@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 // ─── Breadcrumb logic ─────────────────────────────────────────────────────────
 
@@ -85,9 +87,19 @@ function getInitials(name: string) {
 export function TopBar() {
   const { pathname } = useLocation()
   const { user } = useAuth()
+  const [orgName, setOrgName] = useState('Centry CMS')
+
+  useEffect(() => {
+    if (!user?.org_id) return
+    supabase
+      .from('organizations')
+      .select('name')
+      .eq('id', user.org_id)
+      .single()
+      .then(({ data }) => { if (data?.name) setOrgName(data.name) })
+  }, [user?.org_id])
 
   const breadcrumbs = getBreadcrumbs(pathname)
-  const orgName = 'Centry CMS'
 
   return (
     <>

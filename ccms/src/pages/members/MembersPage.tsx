@@ -13,6 +13,7 @@ type AgeGroupFilter = 'all' | 'youth' | 'young_adult' | 'senior'
 type MembershipLengthFilter = 'all' | 'new' | 'established' | 'long_term'
 
 interface Ministry { id: string; name: string }
+interface Branch { id: string; name: string }
 
 interface Member {
   id: string
@@ -37,16 +38,36 @@ interface Member {
 
 const PAGE_SIZE = 10
 
-const STATUS_STYLES: Record<MemberStatus, { bg: string; color: string; label: string }> = {
-  active:      { bg: '#DCFCE7', color: '#166534', label: 'Active' },
-  inactive:    { bg: '#F3F4F6', color: '#6B7280', label: 'Inactive' },
-  visitor:     { bg: '#DBEAFE', color: '#1E40AF', label: 'Visitor' },
-  pending:     { bg: '#FEF3C7', color: '#92400E', label: 'Pending' },
-  transferred: { bg: '#EEF2FF', color: '#4338CA', label: 'Transferred' },
-  deceased:    { bg: '#FEE2E2', color: '#991B1B', label: 'Deceased' },
+const STATUS_STYLES: Record<MemberStatus, { bg: string; color: string; dot: string; label: string }> = {
+  active:      { bg: '#DCFCE7', color: '#166534', dot: '#22C55E', label: 'Active' },
+  inactive:    { bg: '#F3F4F6', color: '#6B7280', dot: '#9CA3AF', label: 'Inactive' },
+  visitor:     { bg: '#DBEAFE', color: '#1E40AF', dot: '#60A5FA', label: 'Visitor' },
+  pending:     { bg: '#FEF3C7', color: '#92400E', dot: '#F59E0B', label: 'Pending' },
+  transferred: { bg: '#EEF2FF', color: '#4338CA', dot: '#818CF8', label: 'Transferred' },
+  deceased:    { bg: '#FEE2E2', color: '#991B1B', dot: '#F87171', label: 'Deceased' },
 }
 
+const AVATAR_PALETTE = [
+  { bg: '#E8ECF9', color: '#4F6BED' },
+  { bg: '#DCFCE7', color: '#15803D' },
+  { bg: '#FEF3C7', color: '#B45309' },
+  { bg: '#FCE7F3', color: '#BE185D' },
+  { bg: '#EEF2FF', color: '#4338CA' },
+  { bg: '#FFF7ED', color: '#C2410C' },
+  { bg: '#F0FDFA', color: '#0F766E' },
+  { bg: '#F5F3FF', color: '#7C3AED' },
+]
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getAvatarColor(firstName: string, lastName: string): { bg: string; color: string } {
+  const str = (firstName + lastName).toLowerCase()
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length]
+}
 
 function calculateAge(dob: string | null): number | null {
   if (!dob) return null
@@ -118,14 +139,25 @@ function ImportIcon() {
   )
 }
 
+function DotsMenuIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="3" cy="7" r="1.25" fill="currentColor" />
+      <circle cx="7" cy="7" r="1.25" fill="currentColor" />
+      <circle cx="11" cy="7" r="1.25" fill="currentColor" />
+    </svg>
+  )
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function Avatar({ firstName, lastName }: { firstName: string; lastName: string }) {
   const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase()
+  const { bg, color } = getAvatarColor(firstName, lastName)
   return (
     <div style={{
       width: 36, height: 36, borderRadius: '50%',
-      background: '#E8ECF9', color: '#4F6BED',
+      background: bg, color,
       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
       fontWeight: 600, fontSize: 12,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -138,15 +170,19 @@ function Avatar({ firstName, lastName }: { firstName: string; lastName: string }
 
 function StatusBadge({ status }: { status: string | undefined }) {
   const s = STATUS_STYLES[status?.toLowerCase() as MemberStatus]
-    ?? { bg: '#F3F4F6', color: '#6B7280', label: status ?? 'Unknown' }
+    ?? { bg: '#F3F4F6', color: '#6B7280', dot: '#9CA3AF', label: status ?? 'Unknown' }
   return (
     <span style={{
       background: s.bg, color: s.color,
       borderRadius: 5, padding: '2px 8px',
       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
       fontWeight: 500, fontSize: 12,
-      display: 'inline-block', whiteSpace: 'nowrap',
+      display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
     }}>
+      <span style={{
+        width: 5, height: 5, borderRadius: '50%',
+        background: s.dot, flexShrink: 0,
+      }} />
       {s.label}
     </span>
   )
@@ -228,6 +264,7 @@ export function MembersPage() {
 
   const [members, setMembers] = useState<Member[]>([])
   const [ministries, setMinistries] = useState<Ministry[]>([])
+  const [branches, setBranches] = useState<Branch[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [newThisMonth, setNewThisMonth] = useState<number>(0)
@@ -238,7 +275,10 @@ export function MembersPage() {
   const [ageGroupFilter, setAgeGroupFilter] = useState<AgeGroupFilter>('all')
   const [membershipLengthFilter, setMembershipLengthFilter] = useState<MembershipLengthFilter>('all')
   const [ministryFilter, setMinistryFilter] = useState<string>('all')
+  const [branchFilter, setBranchFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
+
+  const [menuPos, setMenuPos] = useState<{ memberId: string; top: number; left: number } | null>(null)
 
   useEffect(() => {
     if (!user?.org_id) return
@@ -277,6 +317,16 @@ export function MembersPage() {
   useEffect(() => {
     if (!user?.org_id) return
     supabase
+      .from('branches')
+      .select('id, name')
+      .eq('org_id', user.org_id)
+      .order('name')
+      .then(({ data }) => { if (data) setBranches(data) })
+  }, [user?.org_id])
+
+  useEffect(() => {
+    if (!user?.org_id) return
+    supabase
       .from('members')
       .select('*', { count: 'exact', head: true })
       .eq('org_id', user.org_id)
@@ -284,7 +334,14 @@ export function MembersPage() {
       .then(({ count }) => { if (count !== null) setNewThisMonth(count) })
   }, [user?.org_id])
 
-  useEffect(() => { setPage(1) }, [search, statusFilter, genderFilter, ageGroupFilter, membershipLengthFilter, ministryFilter])
+  useEffect(() => { setPage(1) }, [search, statusFilter, genderFilter, ageGroupFilter, membershipLengthFilter, ministryFilter, branchFilter])
+
+  useEffect(() => {
+    if (!menuPos) return
+    function close() { setMenuPos(null) }
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [menuPos])
 
   const filtered = members.filter(m => {
     const q = search.toLowerCase()
@@ -314,7 +371,9 @@ export function MembersPage() {
     const memberMinistryId = m.group_memberships?.[0]?.groups?.ministries?.id ?? null
     const matchesMinistry = ministryFilter === 'all' || memberMinistryId === ministryFilter
 
-    return matchesSearch && matchesStatus && matchesGender && matchesAge && matchesMembershipLength && matchesMinistry
+    const matchesBranch = branchFilter === 'all' || m.branches?.id === branchFilter
+
+    return matchesSearch && matchesStatus && matchesGender && matchesAge && matchesMembershipLength && matchesMinistry && matchesBranch
   })
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
@@ -348,6 +407,16 @@ export function MembersPage() {
     transition: 'color 0.12s',
   }
 
+  const menuItemStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center',
+    width: '100%', padding: '9px 14px',
+    background: 'none', border: 'none',
+    cursor: 'pointer',
+    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+    fontSize: 13, color: '#374151', textAlign: 'left',
+    transition: 'background 0.1s',
+  }
+
   return (
     <>
       <style>{`
@@ -357,9 +426,46 @@ export function MembersPage() {
         }
         .member-row:hover { background: #F9FAFB !important; }
         .member-row:hover .row-arrow { opacity: 1 !important; }
+        .member-row:hover .row-menu-btn { opacity: 1 !important; }
         .filter-input:focus { border-color: #4F6BED !important; }
         .filter-select:focus { border-color: #4F6BED !important; outline: none; }
       `}</style>
+
+      {/* Row context menu (fixed to avoid table overflow clipping) */}
+      {menuPos && (
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            top: menuPos.top,
+            left: menuPos.left,
+            background: '#fff',
+            border: '0.5px solid #E5E7EB',
+            borderRadius: 8,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+            zIndex: 200,
+            minWidth: 160,
+            padding: '4px 0',
+          }}
+        >
+          <button
+            style={menuItemStyle}
+            onClick={() => { setMenuPos(null); navigate(`/members/${menuPos.memberId}`) }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            View Profile
+          </button>
+          <button
+            style={menuItemStyle}
+            onClick={() => { setMenuPos(null); navigate(`/members/${menuPos.memberId}/edit`) }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            Edit Member
+          </button>
+        </div>
+      )}
 
       {/* Page Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -479,6 +585,18 @@ export function MembersPage() {
 
         <select
           className="filter-select"
+          value={branchFilter}
+          onChange={e => setBranchFilter(e.target.value)}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', flex: '0 0 auto' }}
+        >
+          <option value="all">All Branches</option>
+          {branches.map(b => (
+            <option key={b.id} value={b.id}>{b.name}</option>
+          ))}
+        </select>
+
+        <select
+          className="filter-select"
           value={genderFilter}
           onChange={e => setGenderFilter(e.target.value as GenderFilter)}
           style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', flex: '0 0 auto' }}
@@ -550,7 +668,7 @@ export function MembersPage() {
               <th style={th}>Status</th>
               <th style={th}>Branch</th>
               <th style={th}>Ministry</th>
-              <th style={{ ...th, width: 40 }}></th>
+              <th style={{ ...th, width: 64 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -578,7 +696,7 @@ export function MembersPage() {
                       <div>
                         <div style={{
                           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontWeight: 500, fontSize: 14, color: '#111827',
+                          fontWeight: 600, fontSize: 14, color: '#111827',
                           lineHeight: 1.3,
                         }}>
                           {member.first_name} {member.last_name}
@@ -634,20 +752,43 @@ export function MembersPage() {
                     </span>
                   </td>
 
-                  {/* Arrow */}
-                  <td style={{ padding: '0 12px' }}>
-                    <span
-                      className="row-arrow"
-                      style={{
-                        color: '#9CA3AF',
-                        opacity: 0,
-                        transition: 'opacity 0.1s',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <ArrowRightIcon />
-                    </span>
+                  {/* Actions */}
+                  <td style={{ padding: '0 12px', width: 64 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'flex-end' }}>
+                      <button
+                        className="row-menu-btn"
+                        onClick={e => {
+                          e.stopPropagation()
+                          const rect = e.currentTarget.getBoundingClientRect()
+                          setMenuPos(
+                            menuPos?.memberId === member.id
+                              ? null
+                              : { memberId: member.id, top: rect.bottom + 4, left: rect.right - 160 }
+                          )
+                        }}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: '#6B7280', display: 'flex', alignItems: 'center',
+                          padding: 4, borderRadius: 4, flexShrink: 0,
+                          opacity: 1, transition: 'opacity 0.1s',
+                        }}
+                        title="More actions"
+                      >
+                        <DotsMenuIcon />
+                      </button>
+                      <span
+                        className="row-arrow"
+                        style={{
+                          color: '#9CA3AF',
+                          opacity: 1,
+                          transition: 'opacity 0.1s',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <ArrowRightIcon />
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ))
