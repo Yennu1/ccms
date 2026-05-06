@@ -1,11 +1,18 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+import { startOfMonth } from 'date-fns'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type MemberStatus = 'active' | 'inactive' | 'transferred' | 'deceased'
+type MemberStatus = 'active' | 'inactive' | 'visitor' | 'pending' | 'transferred' | 'deceased'
+type GenderFilter = 'all' | 'male' | 'female'
+type AgeGroupFilter = 'all' | 'youth' | 'young_adult' | 'senior'
+type MembershipLengthFilter = 'all' | 'new' | 'established' | 'long_term'
+
+interface Ministry { id: string; name: string }
 
 interface Member {
   id: string
@@ -14,6 +21,8 @@ interface Member {
   last_name: string
   email: string | null
   phone: string | null
+  gender: string | null
+  date_of_birth: string | null
   membership_status: MemberStatus
   member_number: string | null
   created_at: string
@@ -31,11 +40,30 @@ const PAGE_SIZE = 10
 const STATUS_STYLES: Record<MemberStatus, { bg: string; color: string; label: string }> = {
   active:      { bg: '#DCFCE7', color: '#166534', label: 'Active' },
   inactive:    { bg: '#F3F4F6', color: '#6B7280', label: 'Inactive' },
+  visitor:     { bg: '#DBEAFE', color: '#1E40AF', label: 'Visitor' },
+  pending:     { bg: '#FEF3C7', color: '#92400E', label: 'Pending' },
   transferred: { bg: '#EEF2FF', color: '#4338CA', label: 'Transferred' },
   deceased:    { bg: '#FEE2E2', color: '#991B1B', label: 'Deceased' },
 }
 
-// ─── Inline SVG Icons ─────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function calculateAge(dob: string | null): number | null {
+  if (!dob) return null
+  const birth = new Date(dob)
+  const now = new Date()
+  const age = now.getFullYear() - birth.getFullYear()
+  const notYet = now < new Date(now.getFullYear(), birth.getMonth(), birth.getDate())
+  return notYet ? age - 1 : age
+}
+
+function membershipYears(date: string | null): number | null {
+  if (!date) return null
+  const d = new Date(date)
+  return (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+}
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 function SearchIcon() {
   return (
@@ -53,12 +81,10 @@ function PlusIcon() {
   )
 }
 
-function DotsIcon() {
+function ArrowRightIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="3.5" r="1.25" fill="currentColor" />
-      <circle cx="8" cy="8" r="1.25" fill="currentColor" />
-      <circle cx="8" cy="12.5" r="1.25" fill="currentColor" />
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -79,6 +105,15 @@ function PersonIcon() {
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
       <circle cx="24" cy="18" r="8" stroke="#E5E7EB" strokeWidth="2" />
       <path d="M8 40c0-8.837 7.163-16 16-16s16 7.163 16 16" stroke="#E5E7EB" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function ImportIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M7 2v8M4 7l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M2 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   )
 }
@@ -185,60 +220,6 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
   )
 }
 
-function ActionMenu({
-  member,
-  onClose,
-}: {
-  member: Member
-  onClose: () => void
-}) {
-  const navigate = useNavigate()
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function handle(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
-    }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
-  }, [onClose])
-
-  const item = (label: string, onClick: () => void, color?: string) => (
-    <button
-      key={label}
-      onClick={() => { onClick(); onClose() }}
-      style={{
-        display: 'block', width: '100%', textAlign: 'left',
-        background: 'none', border: 'none', cursor: 'pointer',
-        padding: '8px 14px',
-        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-        fontSize: 13, color: color ?? '#111827',
-      }}
-      onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-    >
-      {label}
-    </button>
-  )
-
-  const toggleLabel = member.membership_status === 'active' ? 'Deactivate' : 'Activate'
-
-  return (
-    <div ref={ref} style={{
-      position: 'absolute', right: 8, top: '100%', zIndex: 50,
-      background: '#fff', border: '0.5px solid #E5E7EB',
-      borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-      minWidth: 160, padding: '4px 0',
-    }}>
-      {item('View profile', () => navigate(`/members/${member.id}`))}
-      {item('Edit member', () => navigate(`/members/${member.id}/edit`))}
-      {item(toggleLabel, () => { /* handled by parent later */ })}
-      <div style={{ height: '0.5px', background: '#E5E7EB', margin: '4px 0' }} />
-      {item('Delete member', () => { /* handled by parent later */ }, '#EF4444')}
-    </div>
-  )
-}
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function MembersPage() {
@@ -246,13 +227,18 @@ export function MembersPage() {
   const { user } = useAuth()
 
   const [members, setMembers] = useState<Member[]>([])
+  const [ministries, setMinistries] = useState<Ministry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [newThisMonth, setNewThisMonth] = useState<number>(0)
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | MemberStatus>('all')
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>('all')
+  const [ageGroupFilter, setAgeGroupFilter] = useState<AgeGroupFilter>('all')
+  const [membershipLengthFilter, setMembershipLengthFilter] = useState<MembershipLengthFilter>('all')
+  const [ministryFilter, setMinistryFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user?.org_id) return
@@ -278,8 +264,27 @@ export function MembersPage() {
       })
   }, [user?.org_id])
 
-  // Reset page on filter change
-  useEffect(() => { setPage(1) }, [search, statusFilter])
+  useEffect(() => {
+    if (!user?.org_id) return
+    supabase
+      .from('ministries')
+      .select('id, name')
+      .eq('org_id', user.org_id)
+      .order('name')
+      .then(({ data }) => { if (data) setMinistries(data) })
+  }, [user?.org_id])
+
+  useEffect(() => {
+    if (!user?.org_id) return
+    supabase
+      .from('members')
+      .select('*', { count: 'exact', head: true })
+      .eq('org_id', user.org_id)
+      .gte('created_at', startOfMonth(new Date()).toISOString())
+      .then(({ count }) => { if (count !== null) setNewThisMonth(count) })
+  }, [user?.org_id])
+
+  useEffect(() => { setPage(1) }, [search, statusFilter, genderFilter, ageGroupFilter, membershipLengthFilter, ministryFilter])
 
   const filtered = members.filter(m => {
     const q = search.toLowerCase()
@@ -289,8 +294,27 @@ export function MembersPage() {
       m.last_name.toLowerCase().includes(q) ||
       (m.email ?? '').toLowerCase().includes(q) ||
       (m.member_number ?? '').toLowerCase().includes(q)
+
     const matchesStatus = statusFilter === 'all' || m.membership_status === statusFilter
-    return matchesSearch && matchesStatus
+
+    const matchesGender = genderFilter === 'all' || (m.gender ?? '').toLowerCase() === genderFilter
+
+    const age = calculateAge(m.date_of_birth)
+    const matchesAge = ageGroupFilter === 'all' ||
+      (ageGroupFilter === 'youth'       && age !== null && age >= 18 && age <= 35) ||
+      (ageGroupFilter === 'young_adult' && age !== null && age >= 36 && age <= 50) ||
+      (ageGroupFilter === 'senior'      && age !== null && age > 50)
+
+    const years = membershipYears(m.membership_date)
+    const matchesMembershipLength = membershipLengthFilter === 'all' ||
+      (membershipLengthFilter === 'new'         && years !== null && years < 1) ||
+      (membershipLengthFilter === 'established' && years !== null && years >= 1 && years <= 5) ||
+      (membershipLengthFilter === 'long_term'   && years !== null && years > 5)
+
+    const memberMinistryId = m.group_memberships?.[0]?.groups?.ministries?.id ?? null
+    const matchesMinistry = ministryFilter === 'all' || memberMinistryId === ministryFilter
+
+    return matchesSearch && matchesStatus && matchesGender && matchesAge && matchesMembershipLength && matchesMinistry
   })
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
@@ -316,6 +340,14 @@ export function MembersPage() {
     transition: 'border-color 0.15s',
   }
 
+  const tabBase: React.CSSProperties = {
+    background: 'none', border: 'none', cursor: 'pointer',
+    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+    fontWeight: 500, fontSize: 14,
+    padding: '8px 0', marginRight: 24,
+    transition: 'color 0.12s',
+  }
+
   return (
     <>
       <style>{`
@@ -324,14 +356,13 @@ export function MembersPage() {
           100% { background-position: -200% 0; }
         }
         .member-row:hover { background: #F9FAFB !important; }
-        .member-row:hover .row-actions { opacity: 1 !important; }
+        .member-row:hover .row-arrow { opacity: 1 !important; }
         .filter-input:focus { border-color: #4F6BED !important; }
         .filter-select:focus { border-color: #4F6BED !important; outline: none; }
-        .dots-btn:hover { background: #F3F4F6 !important; }
       `}</style>
 
       {/* Page Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <h1 style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
@@ -344,21 +375,68 @@ export function MembersPage() {
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
             fontSize: 13, color: '#6B7280', marginTop: 4, marginBottom: 0,
           }}>
-            Manage your church members
+            {loading ? 'Loading…' : `${members.length} members · ${newThisMonth} new this month`}
           </p>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={() => toast.info('Import feature coming soon')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: '#fff', color: '#374151',
+              border: '0.5px solid #E5E7EB', borderRadius: 8, cursor: 'pointer',
+              height: 38, padding: '0 14px',
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+              fontWeight: 500, fontSize: 13, flexShrink: 0,
+              transition: 'border-color 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
+          >
+            <ImportIcon /> Import
+          </button>
+          <button
+            onClick={() => navigate('/members/new')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: '#4F6BED', color: '#fff',
+              border: 'none', borderRadius: 8, cursor: 'pointer',
+              height: 38, padding: '0 16px',
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+              fontWeight: 500, fontSize: 13, flexShrink: 0,
+            }}
+          >
+            <PlusIcon /> Add Member
+          </button>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        borderBottom: '0.5px solid #E5E7EB',
+        marginBottom: 16,
+      }}>
         <button
-          onClick={() => navigate('/members/new')}
           style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: '#4F6BED', color: '#fff',
-            border: 'none', borderRadius: 8, cursor: 'pointer',
-            height: 38, padding: '0 16px',
-            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontWeight: 500, fontSize: 13, flexShrink: 0,
+            ...tabBase,
+            color: '#4F6BED',
+            borderBottom: '2px solid #4F6BED',
           }}
         >
-          <PlusIcon /> Add Member
+          All Members
+        </button>
+        <button
+          onClick={() => navigate('/members/households')}
+          style={{
+            ...tabBase,
+            color: '#6B7280',
+            borderBottom: '2px solid transparent',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#374151')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#6B7280')}
+        >
+          Households
         </button>
       </div>
 
@@ -366,10 +444,10 @@ export function MembersPage() {
       <div style={{
         background: '#fff', border: '0.5px solid #E5E7EB',
         borderRadius: 12, padding: '12px 16px', marginBottom: 16,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
       }}>
         {/* Search */}
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: '1 1 220px', minWidth: 180 }}>
           <span style={{ position: 'absolute', left: 10, pointerEvents: 'none', display: 'flex' }}>
             <SearchIcon />
           </span>
@@ -379,32 +457,72 @@ export function MembersPage() {
             placeholder="Search members..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ ...inputStyle, width: 280, paddingLeft: 34, paddingRight: 12 }}
+            style={{ ...inputStyle, width: '100%', paddingLeft: 34, paddingRight: 12 }}
           />
         </div>
 
         {/* Dropdowns */}
-        <div style={{ display: 'flex', gap: 8 }}>
-          <select
-            className="filter-select"
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
-            style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}
-          >
-            <option value="all">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="transferred">Transferred</option>
-            <option value="deceased">Deceased</option>
-          </select>
+        <select
+          className="filter-select"
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', flex: '0 0 auto' }}
+        >
+          <option value="all">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="visitor">Visitor</option>
+          <option value="pending">Pending</option>
+          <option value="transferred">Transferred</option>
+          <option value="deceased">Deceased</option>
+        </select>
 
-          <select
-            className="filter-select"
-            style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}
-          >
-            <option>All Branches</option>
-          </select>
-        </div>
+        <select
+          className="filter-select"
+          value={genderFilter}
+          onChange={e => setGenderFilter(e.target.value as GenderFilter)}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', flex: '0 0 auto' }}
+        >
+          <option value="all">All Genders</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+
+        <select
+          className="filter-select"
+          value={ageGroupFilter}
+          onChange={e => setAgeGroupFilter(e.target.value as AgeGroupFilter)}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', flex: '0 0 auto' }}
+        >
+          <option value="all">All Ages</option>
+          <option value="youth">Youth (18–35)</option>
+          <option value="young_adult">Young Adult (36–50)</option>
+          <option value="senior">Senior (50+)</option>
+        </select>
+
+        <select
+          className="filter-select"
+          value={membershipLengthFilter}
+          onChange={e => setMembershipLengthFilter(e.target.value as MembershipLengthFilter)}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', flex: '0 0 auto' }}
+        >
+          <option value="all">Membership Length</option>
+          <option value="new">New (&lt;1 year)</option>
+          <option value="established">Established (1–5 yrs)</option>
+          <option value="long_term">Long-term (5+ yrs)</option>
+        </select>
+
+        <select
+          className="filter-select"
+          value={ministryFilter}
+          onChange={e => setMinistryFilter(e.target.value)}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', flex: '0 0 auto' }}
+        >
+          <option value="all">All Ministries</option>
+          {ministries.map(m => (
+            <option key={m.id} value={m.id}>{m.name}</option>
+          ))}
+        </select>
       </div>
 
       {/* Error State */}
@@ -432,7 +550,7 @@ export function MembersPage() {
               <th style={th}>Status</th>
               <th style={th}>Branch</th>
               <th style={th}>Ministry</th>
-              <th style={{ ...th, width: 48 }}></th>
+              <th style={{ ...th, width: 40 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -516,30 +634,20 @@ export function MembersPage() {
                     </span>
                   </td>
 
-                  {/* Actions */}
-                  <td style={{ padding: '0 8px', position: 'relative' }}>
-                    <div style={{ position: 'relative' }}>
-                      <button
-                        className="dots-btn row-actions"
-                        onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === member.id ? null : member.id) }}
-                        style={{
-                          background: 'none', border: 'none', cursor: 'pointer',
-                          color: '#9CA3AF', borderRadius: 6,
-                          width: 28, height: 28,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          opacity: openMenuId === member.id ? 1 : 0,
-                          transition: 'opacity 0.1s, background 0.1s',
-                        }}
-                      >
-                        <DotsIcon />
-                      </button>
-                      {openMenuId === member.id && (
-                        <ActionMenu
-                          member={member}
-                          onClose={() => setOpenMenuId(null)}
-                        />
-                      )}
-                    </div>
+                  {/* Arrow */}
+                  <td style={{ padding: '0 12px' }}>
+                    <span
+                      className="row-arrow"
+                      style={{
+                        color: '#9CA3AF',
+                        opacity: 0,
+                        transition: 'opacity 0.1s',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <ArrowRightIcon />
+                    </span>
                   </td>
                 </tr>
               ))

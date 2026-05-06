@@ -23,6 +23,7 @@ const schema = z.object({
   occupation:        z.string(),
   address:           z.string(),
   city:              z.string(),
+  region:            z.string(),
   membership_date:   z.string(),
   baptism_date:      z.string(),
   membership_status: z.string().min(1, 'Required'),
@@ -50,6 +51,7 @@ interface MemberData {
   occupation: string | null
   address: string | null
   city: string | null
+  region: string | null
   membership_date: string | null
   baptism_date: string | null
   membership_status: string
@@ -57,6 +59,14 @@ interface MemberData {
   notes: string | null
   branches: { id: string; name: string } | null
 }
+
+// ─── Constants ─────────────────────────────────────────────────────────────────
+
+const REGIONS = [
+  'Greater Accra', 'Ashanti', 'Western', 'Eastern', 'Central', 'Volta',
+  'Northern', 'Upper East', 'Upper West', 'Bono', 'Bono East', 'Ahafo',
+  'Savannah', 'North East', 'Oti', 'Western North',
+]
 
 // ─── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -102,11 +112,13 @@ function FieldWrapper({
   label,
   required,
   error,
+  hint,
   children,
 }: {
   label: string
   required?: boolean
   error?: string
+  hint?: string
   children: React.ReactNode
 }) {
   return (
@@ -120,6 +132,14 @@ function FieldWrapper({
         {required && <span style={{ color: '#EF4444', marginLeft: 2 }}>*</span>}
       </label>
       {children}
+      {hint && !error && (
+        <div style={{
+          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+          fontSize: 12, color: '#9CA3AF', marginTop: 4,
+        }}>
+          {hint}
+        </div>
+      )}
       {error && (
         <div style={{
           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
@@ -157,7 +177,6 @@ function FormSkeleton() {
   return (
     <>
       <style>{`@keyframes sk-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
-
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
           <SkeletonBar width={30} height={30} />
@@ -167,9 +186,7 @@ function FormSkeleton() {
           <SkeletonBar width={160} height={13} />
         </div>
       </div>
-
       <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: 24 }}>
-        {/* Section 1 */}
         <div style={{ marginBottom: 20 }}>
           <SkeletonBar width={150} height={14} />
           <div style={{ marginTop: 4 }}><SkeletonBar width={200} height={12} /></div>
@@ -177,21 +194,15 @@ function FormSkeleton() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           {[...Array(6)].map((_, i) => <SkeletonField key={i} />)}
         </div>
-
         <div style={{ height: '0.5px', background: '#F3F4F6', margin: '24px 0' }} />
-
-        {/* Section 2 */}
         <div style={{ marginBottom: 20 }}>
           <SkeletonBar width={120} height={14} />
           <div style={{ marginTop: 4 }}><SkeletonBar width={160} height={12} /></div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
-          {[...Array(4)].map((_, i) => <SkeletonField key={i} />)}
+          {[...Array(5)].map((_, i) => <SkeletonField key={i} />)}
         </div>
-
         <div style={{ height: '0.5px', background: '#F3F4F6', margin: '24px 0' }} />
-
-        {/* Section 3 */}
         <div style={{ marginBottom: 20 }}>
           <SkeletonBar width={130} height={14} />
           <div style={{ marginTop: 4 }}><SkeletonBar width={180} height={12} /></div>
@@ -199,10 +210,7 @@ function FormSkeleton() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           {[...Array(5)].map((_, i) => <SkeletonField key={i} />)}
         </div>
-
         <div style={{ height: '0.5px', background: '#F3F4F6', margin: '24px 0' }} />
-
-        {/* Section 4 */}
         <div style={{ marginBottom: 20 }}>
           <SkeletonBar width={120} height={14} />
           <div style={{ marginTop: 4 }}><SkeletonBar width={150} height={12} /></div>
@@ -266,6 +274,7 @@ export function MemberEditPage() {
   const [ministries,  setMinistries]  = useState<Ministry[]>([])
   const [submitting,  setSubmitting]  = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [autoSaveText] = useState('just now')
 
   const {
     register,
@@ -277,12 +286,11 @@ export function MemberEditPage() {
     defaultValues: {
       first_name: '', last_name: '', email: '', phone: '',
       date_of_birth: '', gender: '', marital_status: '', occupation: '',
-      address: '', city: '', membership_date: '', baptism_date: '',
+      address: '', city: '', region: '', membership_date: '', baptism_date: '',
       membership_status: 'active', branch_id: '', ministry_id: '', notes: '',
     },
   })
 
-  // Fetch member
   useEffect(() => {
     if (!id) return
     let active = true
@@ -303,7 +311,6 @@ export function MemberEditPage() {
     return () => { active = false }
   }, [id])
 
-  // Pre-fill form once member data is loaded
   useEffect(() => {
     if (!member) return
     reset({
@@ -317,6 +324,7 @@ export function MemberEditPage() {
       occupation:        member.occupation        ?? '',
       address:           member.address           ?? '',
       city:              member.city              ?? '',
+      region:            member.region            ?? '',
       membership_date:   member.membership_date   ?? '',
       baptism_date:      member.baptism_date      ?? '',
       membership_status: member.membership_status,
@@ -326,7 +334,6 @@ export function MemberEditPage() {
     })
   }, [member, reset])
 
-  // Fetch branch/ministry dropdowns
   useEffect(() => {
     if (!user?.org_id) return
     let active = true
@@ -356,6 +363,7 @@ export function MemberEditPage() {
           occupation:        data.occupation        || null,
           address:           data.address           || null,
           city:              data.city              || null,
+          region:            data.region            || null,
           membership_date:   data.membership_date   || null,
           baptism_date:      data.baptism_date      || null,
           membership_status: data.membership_status,
@@ -407,7 +415,7 @@ export function MemberEditPage() {
           box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important;
         }
         .back-btn:hover { background: #F3F4F6 !important; }
-        .cancel-btn:hover { background: #F9FAFB !important; }
+        .discard-btn:hover { background: #F9FAFB !important; }
         @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr !important; } }
       `}</style>
 
@@ -472,7 +480,7 @@ export function MemberEditPage() {
               <input
                 {...register('last_name')}
                 className={`form-input${errors.last_name ? ' has-error' : ''}`}
-                placeholder="e.g. Mensah"
+                placeholder="e.g. Asante"
                 style={inputBase(!!errors.last_name)}
               />
             </FieldWrapper>
@@ -548,7 +556,7 @@ export function MemberEditPage() {
                 {...register('phone')}
                 type="tel"
                 className="form-input"
-                placeholder="e.g. +233 24 000 0000"
+                placeholder="024 XXX XXXX"
                 style={inputBase(false)}
               />
             </FieldWrapper>
@@ -569,6 +577,19 @@ export function MemberEditPage() {
                 placeholder="e.g. Accra"
                 style={inputBase(false)}
               />
+            </FieldWrapper>
+
+            <FieldWrapper label="Region">
+              <select
+                {...register('region')}
+                className="form-input"
+                style={{ ...inputBase(false), cursor: 'pointer' }}
+              >
+                <option value="">Select region (optional)</option>
+                {REGIONS.map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
             </FieldWrapper>
           </div>
 
@@ -609,6 +630,8 @@ export function MemberEditPage() {
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
+                <option value="visitor">Visitor</option>
+                <option value="pending">Pending</option>
                 <option value="transferred">Transferred</option>
                 <option value="deceased">Deceased</option>
               </select>
@@ -648,7 +671,10 @@ export function MemberEditPage() {
             title="Additional Notes"
             subtitle="Any other relevant information"
           />
-          <FieldWrapper label="Notes">
+          <FieldWrapper
+            label="Notes"
+            hint="Visible only to staff with member access."
+          >
             <textarea
               {...register('notes')}
               className="form-input"
@@ -689,39 +715,48 @@ export function MemberEditPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           zIndex: 10,
         }}>
-          <button
-            type="button"
-            className="cancel-btn"
-            onClick={() => navigate(`/members/${id}`)}
-            style={{
-              height: 38, padding: '0 16px', borderRadius: 8,
-              border: '0.5px solid #E5E7EB', background: '#fff',
-              cursor: 'pointer',
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 500, fontSize: 13, color: '#374151',
-              transition: 'background 0.1s',
-            }}
-          >
-            Cancel
-          </button>
+          <span style={{
+            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+            fontSize: 12, color: '#9CA3AF',
+          }}>
+            Auto-saved as draft · {autoSaveText}
+          </span>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            style={{
-              height: 38, padding: '0 20px', borderRadius: 8,
-              border: 'none',
-              background: submitting ? '#818CF8' : '#4F6BED',
-              cursor: submitting ? 'not-allowed' : 'pointer',
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 500, fontSize: 13, color: '#fff',
-              display: 'flex', alignItems: 'center', gap: 8,
-              transition: 'background 0.15s',
-            }}
-          >
-            {submitting && <SpinnerIcon />}
-            {submitting ? 'Saving…' : 'Save Changes'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              type="button"
+              className="discard-btn"
+              onClick={() => navigate(`/members/${id}`)}
+              style={{
+                height: 38, padding: '0 16px', borderRadius: 8,
+                border: '0.5px solid #E5E7EB', background: '#fff',
+                cursor: 'pointer',
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontWeight: 500, fontSize: 13, color: '#374151',
+                transition: 'background 0.1s',
+              }}
+            >
+              Discard
+            </button>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              style={{
+                height: 38, padding: '0 20px', borderRadius: 8,
+                border: 'none',
+                background: submitting ? '#818CF8' : '#4F6BED',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontWeight: 500, fontSize: 13, color: '#fff',
+                display: 'flex', alignItems: 'center', gap: 8,
+                transition: 'background 0.15s',
+              }}
+            >
+              {submitting && <SpinnerIcon />}
+              {submitting ? 'Saving…' : 'Save Changes'}
+            </button>
+          </div>
         </div>
       </form>
     </>

@@ -7,12 +7,13 @@ import { format, formatDistance } from 'date-fns'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type MemberStatus = 'active' | 'inactive' | 'transferred' | 'deceased'
+type MemberStatus = 'active' | 'inactive' | 'visitor' | 'pending' | 'transferred' | 'deceased'
 type RelationshipType = 'spouse' | 'parent' | 'child' | 'sibling'
 
 interface GroupMembership {
   id: string
   role: string
+  joined_at: string | null
   groups: {
     id: string
     name: string
@@ -39,6 +40,11 @@ interface MemberOption {
   first_name: string
   last_name: string
   member_number: string | null
+}
+
+interface Transaction {
+  amount: number
+  transaction_date: string
 }
 
 interface Member {
@@ -70,6 +76,8 @@ interface Member {
 const STATUS_STYLES: Record<MemberStatus, { bg: string; color: string; label: string }> = {
   active:      { bg: '#DCFCE7', color: '#166534', label: 'Active' },
   inactive:    { bg: '#F3F4F6', color: '#6B7280', label: 'Inactive' },
+  visitor:     { bg: '#DBEAFE', color: '#1E40AF', label: 'Visitor' },
+  pending:     { bg: '#FEF3C7', color: '#92400E', label: 'Pending' },
   transferred: { bg: '#EEF2FF', color: '#4338CA', label: 'Transferred' },
   deceased:    { bg: '#FEE2E2', color: '#991B1B', label: 'Deceased' },
 }
@@ -117,6 +125,10 @@ function capitalize(s: string | null): string {
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 }
 
+function formatAmount(amount: number): string {
+  return `₵${amount.toLocaleString('en-GH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+}
+
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 function BackArrowIcon() {
@@ -131,6 +143,15 @@ function EditIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
       <path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function EnvelopeIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+      <rect x="1" y="2.5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M1 4.5l6 4 6-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   )
 }
@@ -239,7 +260,6 @@ function LoadingSkeleton() {
         <SkeletonBar width={200} height={24} />
         <SkeletonBar width={120} height={36} />
       </div>
-
       <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
         <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={cardStyle}>
@@ -255,7 +275,6 @@ function LoadingSkeleton() {
             </div>
           </div>
         </div>
-
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={cardStyle}>
             <SkeletonBar width={120} height={14} />
@@ -387,7 +406,6 @@ function AddRelationshipModal({
       return
     }
 
-    // Automatically insert the inverse so both profiles show the link
     await supabase
       .from('member_relationships')
       .insert({
@@ -445,7 +463,6 @@ function AddRelationshipModal({
           Link this member to another member in your church.
         </div>
 
-        {/* Member searchable select */}
         <div style={{ marginBottom: 14 }}>
           <label style={labelStyle}>Member</label>
           {loadingMembers ? (
@@ -534,7 +551,6 @@ function AddRelationshipModal({
           )}
         </div>
 
-        {/* Relationship type */}
         <div style={{ marginBottom: 20 }}>
           <label style={labelStyle}>Relationship Type</label>
           <div style={{ position: 'relative' }}>
@@ -629,6 +645,8 @@ export function MemberProfilePage() {
   const [removingRelId, setRemovingRelId] = useState<string | null>(null)
   const [showAddRel, setShowAddRel] = useState(false)
 
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+
   const fetchMember = async () => {
     if (!id) return
     const { data, error } = await supabase
@@ -637,7 +655,7 @@ export function MemberProfilePage() {
         *,
         branches(id, name),
         group_memberships(
-          id, role,
+          id, role, joined_at,
           groups(
             id, name,
             ministries(id, name)
@@ -671,12 +689,26 @@ export function MemberProfilePage() {
     setRelationships((data ?? []) as unknown as Relationship[])
   }
 
+  const fetchTransactions = async () => {
+    if (!id || !user) return
+    const { data } = await supabase
+      .from('transactions')
+      .select('amount, transaction_date')
+      .eq('member_id', id)
+      .eq('org_id', user.org_id)
+      .order('transaction_date', { ascending: false })
+    setTransactions((data ?? []) as Transaction[])
+  }
+
   useEffect(() => {
     fetchMember()
   }, [id])
 
   useEffect(() => {
-    if (user) fetchRelationships()
+    if (user) {
+      fetchRelationships()
+      fetchTransactions()
+    }
   }, [id, user])
 
   const handleRemoveRelationship = async (relId: string) => {
@@ -684,6 +716,14 @@ export function MemberProfilePage() {
     await supabase.from('member_relationships').delete().eq('id', relId)
     await fetchRelationships()
     setRemovingRelId(null)
+  }
+
+  const handleMessage = () => {
+    if (!member?.email) {
+      toast.info('No email address on file')
+      return
+    }
+    window.location.href = `mailto:${member.email}`
   }
 
   const toggleStatus = async () => {
@@ -715,6 +755,19 @@ export function MemberProfilePage() {
     ? formatDistance(new Date(member.membership_date), new Date(), { addSuffix: true })
     : '—'
 
+  const memberSinceDisplay = member.membership_date
+    ? format(new Date(member.membership_date), 'MMM yyyy')
+    : null
+
+  const initials = `${member.first_name[0] ?? ''}${member.last_name[0] ?? ''}`.toUpperCase()
+
+  // Giving summary
+  const currentYear = new Date().getFullYear()
+  const ytdTotal = transactions
+    .filter(t => new Date(t.transaction_date).getFullYear() === currentYear)
+    .reduce((sum, t) => sum + (t.amount ?? 0), 0)
+  const lastGift = transactions[0] ?? null
+
   return (
     <>
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
@@ -730,30 +783,76 @@ export function MemberProfilePage() {
 
       {/* Page Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <button
             onClick={() => navigate('/members')}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               color: '#6B7280', display: 'flex', alignItems: 'center',
-              padding: 4, borderRadius: 6, transition: 'color 0.15s',
+              padding: 4, borderRadius: 6, transition: 'color 0.15s', flexShrink: 0,
             }}
             onMouseEnter={e => (e.currentTarget.style.color = '#111827')}
             onMouseLeave={e => (e.currentTarget.style.color = '#6B7280')}
           >
             <BackArrowIcon />
           </button>
-          <h1 style={{
-            fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            fontWeight: 600, fontSize: 20, color: '#111827',
-            letterSpacing: '-0.02em', margin: 0,
+
+          {/* Large avatar */}
+          <div style={{
+            width: 48, height: 48, borderRadius: '50%',
+            background: '#4F6BED',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
           }}>
-            {member.first_name} {member.last_name}
-          </h1>
+            <span style={{
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+              fontWeight: 600, fontSize: 18, color: '#fff',
+            }}>
+              {initials}
+            </span>
+          </div>
+
+          <div>
+            <h1 style={{
+              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+              fontWeight: 600, fontSize: 20, color: '#111827',
+              letterSpacing: '-0.02em', margin: 0, lineHeight: 1.2,
+            }}>
+              {member.first_name} {member.last_name}
+            </h1>
+            <div style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 13, color: '#9CA3AF', marginTop: 3,
+            }}>
+              {member.member_number ?? '—'}
+              {memberSinceDisplay && (
+                <span> · Member since {memberSinceDisplay}</span>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <StatusBadge status={member.membership_status} />
+
+          {/* Message button */}
+          <button
+            onClick={handleMessage}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              height: 38, padding: '0 14px', borderRadius: 8,
+              border: '0.5px solid #E5E7EB', background: '#fff',
+              cursor: 'pointer', color: '#374151',
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+              fontWeight: 500, fontSize: 13,
+              transition: 'border-color 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = '#4F6BED')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
+          >
+            <EnvelopeIcon /> Message
+          </button>
+
           <button
             onClick={() => navigate(`/members/${member.id}/edit`)}
             style={{
@@ -839,47 +938,63 @@ export function MemberProfilePage() {
             <div style={cardHeaderStyle}>Ministry & Groups</div>
             {member.group_memberships && member.group_memberships.length > 0 ? (
               <div>
-                {member.group_memberships.map((gm, i) => (
-                  <div
-                    key={gm.id}
-                    style={{
-                      display: 'flex', alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '10px 0',
-                      borderBottom: i < member.group_memberships!.length - 1
-                        ? '0.5px solid #F3F4F6'
-                        : 'none',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{
-                        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                        fontWeight: 500, fontSize: 13, color: '#111827',
-                      }}>
-                        {gm.groups?.name ?? '—'}
-                      </span>
-                      {gm.groups?.ministries && (
+                {member.group_memberships.map((gm, i) => {
+                  const joinedYear = gm.joined_at ? new Date(gm.joined_at).getFullYear() : null
+                  const sinceLabel = joinedYear
+                    ? `${capitalize(gm.role)} since ${joinedYear}`
+                    : capitalize(gm.role)
+                  return (
+                    <div
+                      key={gm.id}
+                      style={{
+                        display: 'flex', alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 0',
+                        borderBottom: i < member.group_memberships!.length - 1
+                          ? '0.5px solid #F3F4F6'
+                          : 'none',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{
-                          background: '#E8ECF9', color: '#4F6BED',
+                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                          fontWeight: 500, fontSize: 13, color: '#111827',
+                        }}>
+                          {gm.groups?.name ?? '—'}
+                        </span>
+                        {gm.groups?.ministries && (
+                          <span style={{
+                            background: '#E8ECF9', color: '#4F6BED',
+                            borderRadius: 5, padding: '2px 8px',
+                            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                            fontWeight: 500, fontSize: 11,
+                          }}>
+                            {gm.groups.ministries.name}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{
+                          background: gm.role === 'leader' ? '#FFF8EC' : '#F3F4F6',
+                          color: gm.role === 'leader' ? '#C8964A' : '#6B7280',
                           borderRadius: 5, padding: '2px 8px',
                           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                           fontWeight: 500, fontSize: 11,
                         }}>
-                          {gm.groups.ministries.name}
+                          {capitalize(gm.role)}
                         </span>
-                      )}
+                        {joinedYear && (
+                          <div style={{
+                            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                            fontSize: 12, color: '#9CA3AF', marginTop: 2,
+                          }}>
+                            {sinceLabel}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <span style={{
-                      background: gm.role === 'leader' ? '#FFF8EC' : '#F3F4F6',
-                      color: gm.role === 'leader' ? '#C8964A' : '#6B7280',
-                      borderRadius: 5, padding: '2px 8px',
-                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                      fontWeight: 500, fontSize: 11,
-                    }}>
-                      {capitalize(gm.role)}
-                    </span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <div style={{
@@ -1035,6 +1150,71 @@ export function MemberProfilePage() {
             <Field label="Baptism Date">{formatDate(member.baptism_date)}</Field>
             <Field label="Member Since">{memberSince}</Field>
             <Field label="Recorded By">System</Field>
+          </div>
+
+          {/* Giving Summary */}
+          <div style={cardStyle}>
+            <div style={cardHeaderStyle}>Giving Summary</div>
+
+            {transactions.length === 0 ? (
+              <div style={{
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontSize: 13, color: '#9CA3AF',
+                marginBottom: 12,
+              }}>
+                No giving records yet.
+              </div>
+            ) : (
+              <>
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                    fontWeight: 500, fontSize: 11, color: '#9CA3AF',
+                    textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
+                  }}>
+                    Total Given (YTD)
+                  </div>
+                  <div style={{
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: 16, color: '#111827', fontWeight: 500,
+                  }}>
+                    {formatAmount(ytdTotal)}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                    fontWeight: 500, fontSize: 11, color: '#9CA3AF',
+                    textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
+                  }}>
+                    Last Gift
+                  </div>
+                  <div style={{
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: 13, color: '#374151',
+                  }}>
+                    {lastGift
+                      ? `${formatAmount(lastGift.amount)} on ${format(new Date(lastGift.transaction_date), 'MMM d, yyyy')}`
+                      : '—'}
+                  </div>
+                </div>
+              </>
+            )}
+
+            <a
+              href={`/donations?member_id=${member.id}`}
+              onClick={e => { e.preventDefault(); navigate(`/donations?member_id=${member.id}`) }}
+              style={{
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontSize: 13, color: '#4F6BED', textDecoration: 'none',
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+              }}
+              onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
+              onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
+            >
+              View giving history →
+            </a>
           </div>
 
           {/* Quick Actions */}

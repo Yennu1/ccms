@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 const NAV_ITEMS = [
   {
@@ -26,13 +27,42 @@ const NAV_ITEMS = [
     ),
   },
   {
-    label: 'Households',
-    path: '/households',
+    label: 'Donations',
+    path: '/donations',
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M1.5 7.5L8 2l6.5 5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M3 6.5V13a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5V6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-        <rect x="6" y="9.5" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M8 2v12M5 4.5h4.5a2 2 0 0 1 0 4H5v-4ZM5 8.5h5a2 2 0 0 1 0 4H5V8.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Events',
+    path: '/events',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <rect x="1.5" y="3" width="13" height="11.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" fill="none" />
+        <path d="M1.5 6.5h13M5 1.5V4M11 1.5V4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Groups',
+    path: '/groups',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="5.5" cy="5.5" r="2.5" fill="currentColor" />
+        <circle cx="10.5" cy="5.5" r="2.5" fill="currentColor" opacity="0.5" />
+        <path d="M1 13c0-2.485 2.015-4 4.5-4s4.5 1.515 4.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+        <path d="M10.5 9.5c1.93.32 3.5 1.67 3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Reports',
+    path: '/reports',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M3 12V7M6.5 12V4M10 12V9M13.5 12V6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     ),
   },
@@ -64,6 +94,7 @@ export function Sidebar() {
   const { pathname } = useLocation()
   const { user, signOut } = useAuth()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [memberCount, setMemberCount] = useState<number | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -75,6 +106,18 @@ export function Sidebar() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    if (!user?.org_id) return
+    supabase
+      .from('members')
+      .select('*', { count: 'exact', head: true })
+      .eq('org_id', user.org_id)
+      .eq('membership_status', 'active')
+      .then(({ count }) => {
+        if (count !== null) setMemberCount(count)
+      })
+  }, [user?.org_id])
 
   const handleSignOut = async () => {
     await signOut()
@@ -125,9 +168,24 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: '12px 0', overflowY: 'auto' }}>
+      <nav style={{ flex: 1, padding: '16px 0 12px', overflowY: 'auto' }}>
+        {/* WORKSPACE label */}
+        <div style={{
+          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+          fontWeight: 500,
+          fontSize: 10,
+          color: 'rgba(255,255,255,0.35)',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          padding: '0 16px',
+          marginBottom: 4,
+        }}>
+          Workspace
+        </div>
+
         {NAV_ITEMS.map(item => {
           const active = isActive(item.path)
+          const isMembers = item.path === '/members'
           return (
             <Link
               key={item.path}
@@ -138,11 +196,10 @@ export function Sidebar() {
                 gap: 10,
                 height: 40,
                 paddingLeft: active ? 14 : 16,
-                paddingRight: 16,
+                paddingRight: 12,
                 marginBottom: 2,
                 borderRadius: active ? '0 8px 8px 0' : 8,
-                marginRight: active ? 8 : 8,
-                marginLeft: active ? 0 : 0,
+                marginRight: 8,
                 borderLeft: active ? '2px solid #4F6BED' : '2px solid transparent',
                 background: active ? 'rgba(79,107,237,0.25)' : 'transparent',
                 color: active ? '#fff' : 'rgba(255,255,255,0.6)',
@@ -177,7 +234,22 @@ export function Sidebar() {
               }}>
                 {item.icon}
               </span>
-              {item.label}
+              <span style={{ flex: 1, minWidth: 0 }}>{item.label}</span>
+              {isMembers && memberCount !== null && (
+                <span style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  color: '#fff',
+                  borderRadius: 10,
+                  padding: '1px 6px',
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                  fontWeight: 500,
+                  fontSize: 10,
+                  flexShrink: 0,
+                  lineHeight: '16px',
+                }}>
+                  {memberCount}
+                </span>
+              )}
             </Link>
           )
         })}
@@ -203,7 +275,6 @@ export function Sidebar() {
             borderRadius: 8,
           }}
         >
-          {/* Avatar */}
           <div style={{
             width: 32,
             height: 32,
@@ -223,7 +294,6 @@ export function Sidebar() {
               {user?.full_name ? getInitials(user.full_name) : '?'}
             </span>
           </div>
-          {/* Name + role */}
           <div style={{ textAlign: 'left', flex: 1, minWidth: 0 }}>
             <div style={{
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
@@ -245,13 +315,11 @@ export function Sidebar() {
               {user?.role?.replace('_', ' ') ?? 'Member'}
             </div>
           </div>
-          {/* Chevron */}
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
             <path d="M3 4.5L6 7.5L9 4.5" stroke="rgba(255,255,255,0.35)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
 
-        {/* Dropdown */}
         {dropdownOpen && (
           <div style={{
             position: 'absolute',

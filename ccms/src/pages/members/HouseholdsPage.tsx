@@ -16,6 +16,7 @@ interface Household {
   org_id: string
   name: string
   address: string | null
+  city: string | null
   created_at: string
   branches: { id: string; name: string } | null
   head_member: HouseholdMember | null
@@ -25,6 +26,8 @@ interface Branch {
   id: string
   name: string
 }
+
+type SortBy = 'az' | 'za' | 'most_members' | 'recent'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -58,12 +61,10 @@ function PlusIcon() {
   )
 }
 
-function DotsIcon() {
+function ArrowRightIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="3.5" r="1.25" fill="currentColor" />
-      <circle cx="8" cy="8" r="1.25" fill="currentColor" />
-      <circle cx="8" cy="12.5" r="1.25" fill="currentColor" />
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -108,8 +109,11 @@ function SkeletonRow() {
     <tr>
       <td style={{ padding: '10px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ ...pulse, width: 30, height: 30, borderRadius: '50%', flexShrink: 0 }} />
-          <div style={{ ...pulse, width: 130, height: 13 }} />
+          <div style={{ ...pulse, width: 32, height: 32, borderRadius: 8, flexShrink: 0 }} />
+          <div>
+            <div style={{ ...pulse, width: 130, height: 13, marginBottom: 4 }} />
+            <div style={{ ...pulse, width: 100, height: 11 }} />
+          </div>
         </div>
       </td>
       <td style={{ padding: '10px 16px' }}>
@@ -120,7 +124,7 @@ function SkeletonRow() {
       </td>
       <td style={{ padding: '10px 16px' }}><div style={{ ...pulse, width: 72, height: 20 }} /></td>
       <td style={{ padding: '10px 16px' }}><div style={{ ...pulse, width: 80, height: 13 }} /></td>
-      <td style={{ padding: '10px 16px' }}><div style={{ ...pulse, width: 20, height: 20, borderRadius: '50%' }} /></td>
+      <td style={{ padding: '10px 16px' }}><div style={{ ...pulse, width: 20, height: 20 }} /></td>
     </tr>
   )
 }
@@ -210,8 +214,8 @@ function ActionMenu({
       borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
       minWidth: 160, padding: '4px 0',
     }}>
-      {item('View household', () => navigate(`/households/${household.id}`))}
-      {item('Edit', () => navigate(`/households/${household.id}`))}
+      {item('View household', () => navigate(`/members/households/${household.id}`))}
+      {item('Edit', () => navigate(`/members/households/${household.id}`))}
       <div style={{ height: '0.5px', background: '#E5E7EB', margin: '4px 0' }} />
       {item('Delete', () => onDelete(household.id), '#EF4444')}
     </div>
@@ -232,6 +236,7 @@ export function HouseholdsPage() {
 
   const [search, setSearch] = useState('')
   const [branchFilter, setBranchFilter] = useState('all')
+  const [sortBy, setSortBy] = useState<SortBy>('recent')
   const [page, setPage] = useState(1)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
@@ -282,7 +287,7 @@ export function HouseholdsPage() {
       .then(({ data }) => { if (data) setBranches(data) })
   }, [user?.org_id])
 
-  useEffect(() => { setPage(1) }, [search, branchFilter])
+  useEffect(() => { setPage(1) }, [search, branchFilter, sortBy])
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this household? Members will be unassigned.')) return
@@ -299,8 +304,20 @@ export function HouseholdsPage() {
     return matchesSearch && matchesBranch
   })
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const sorted = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case 'az': return a.name.localeCompare(b.name)
+      case 'za': return b.name.localeCompare(a.name)
+      case 'most_members': return (countMap[b.id] ?? 0) - (countMap[a.id] ?? 0)
+      case 'recent': return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      default: return 0
+    }
+  })
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  const totalMemberCount = Object.values(countMap).reduce((sum, c) => sum + c, 0)
 
   const th: React.CSSProperties = {
     padding: '12px 16px',
@@ -320,6 +337,14 @@ export function HouseholdsPage() {
     transition: 'border-color 0.15s',
   }
 
+  const tabBase: React.CSSProperties = {
+    background: 'none', border: 'none', cursor: 'pointer',
+    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+    fontWeight: 500, fontSize: 14,
+    padding: '8px 0', marginRight: 24,
+    transition: 'color 0.12s',
+  }
+
   return (
     <>
       <style>{`
@@ -328,14 +353,13 @@ export function HouseholdsPage() {
           100% { background-position: -200% 0; }
         }
         .hh-row:hover { background: #F9FAFB !important; }
-        .hh-row:hover .row-actions { opacity: 1 !important; }
+        .hh-row:hover .row-arrow { opacity: 1 !important; }
         .filter-input:focus { border-color: #4F6BED !important; }
         .filter-select:focus { border-color: #4F6BED !important; outline: none; }
-        .dots-btn:hover { background: #F3F4F6 !important; }
       `}</style>
 
       {/* Page Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <h1 style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
@@ -348,11 +372,13 @@ export function HouseholdsPage() {
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
             fontSize: 13, color: '#6B7280', marginTop: 4, marginBottom: 0,
           }}>
-            Manage family units within your church
+            {loading
+              ? 'Loading…'
+              : `${households.length} households · grouped from ${totalMemberCount} members`}
           </p>
         </div>
         <button
-          onClick={() => navigate('/households/new')}
+          onClick={() => navigate('/members/households/new')}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             background: '#4F6BED', color: '#fff',
@@ -366,13 +392,42 @@ export function HouseholdsPage() {
         </button>
       </div>
 
+      {/* Tab Navigation */}
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        borderBottom: '0.5px solid #E5E7EB',
+        marginBottom: 16,
+      }}>
+        <button
+          onClick={() => navigate('/members')}
+          style={{
+            ...tabBase,
+            color: '#6B7280',
+            borderBottom: '2px solid transparent',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#374151')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#6B7280')}
+        >
+          All Members
+        </button>
+        <button
+          style={{
+            ...tabBase,
+            color: '#4F6BED',
+            borderBottom: '2px solid #4F6BED',
+          }}
+        >
+          Households
+        </button>
+      </div>
+
       {/* Filter Bar */}
       <div style={{
         background: '#fff', border: '0.5px solid #E5E7EB',
         borderRadius: 12, padding: '12px 16px', marginBottom: 16,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
       }}>
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: '1 1 220px', minWidth: 180 }}>
           <span style={{ position: 'absolute', left: 10, pointerEvents: 'none', display: 'flex' }}>
             <SearchIcon />
           </span>
@@ -382,7 +437,7 @@ export function HouseholdsPage() {
             placeholder="Search households..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ ...inputStyle, width: 280, paddingLeft: 34, paddingRight: 12 }}
+            style={{ ...inputStyle, width: '100%', paddingLeft: 34, paddingRight: 12 }}
           />
         </div>
 
@@ -390,12 +445,24 @@ export function HouseholdsPage() {
           className="filter-select"
           value={branchFilter}
           onChange={e => setBranchFilter(e.target.value)}
-          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', flex: '0 0 auto' }}
         >
           <option value="all">All Branches</option>
           {branches.map(b => (
             <option key={b.id} value={b.id}>{b.name}</option>
           ))}
+        </select>
+
+        <select
+          className="filter-select"
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value as SortBy)}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', flex: '0 0 auto' }}
+        >
+          <option value="recent">Recently Added</option>
+          <option value="az">A → Z</option>
+          <option value="za">Z → A</option>
+          <option value="most_members">Most Members</option>
         </select>
       </div>
 
@@ -423,28 +490,28 @@ export function HouseholdsPage() {
               <th style={th}>Head of Household</th>
               <th style={th}>Members</th>
               <th style={th}>Branch</th>
-              <th style={{ ...th, width: 48 }}></th>
+              <th style={{ ...th, width: 40 }}></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <><SkeletonRow /><SkeletonRow /><SkeletonRow /></>
             ) : paginated.length === 0 ? (
-              <EmptyState onAdd={() => navigate('/households/new')} />
+              <EmptyState onAdd={() => navigate('/members/households/new')} />
             ) : (
               paginated.map(household => (
                 <tr
                   key={household.id}
                   className="hh-row"
-                  onClick={() => navigate(`/households/${household.id}`)}
+                  onClick={() => navigate(`/members/households/${household.id}`)}
                   style={{
                     borderBottom: '0.5px solid #F3F4F6',
-                    height: 56, background: '#fff',
+                    height: 60, background: '#fff',
                     transition: 'background 0.1s',
                     cursor: 'pointer',
                   }}
                 >
-                  {/* Household */}
+                  {/* Household name + address */}
                   <td style={{ padding: '0 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{
@@ -455,12 +522,23 @@ export function HouseholdsPage() {
                       }}>
                         <HouseIcon size={15} />
                       </div>
-                      <span style={{
-                        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                        fontWeight: 500, fontSize: 14, color: '#111827',
-                      }}>
-                        {household.name}
-                      </span>
+                      <div>
+                        <div style={{
+                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                          fontWeight: 500, fontSize: 14, color: '#111827',
+                          lineHeight: 1.3,
+                        }}>
+                          {household.name}
+                        </div>
+                        {(household.address || household.city) && (
+                          <div style={{
+                            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                            fontSize: 12, color: '#9CA3AF', marginTop: 2,
+                          }}>
+                            {[household.address, household.city].filter(Boolean).join(' · ')}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
 
@@ -512,34 +590,20 @@ export function HouseholdsPage() {
                     </span>
                   </td>
 
-                  {/* Actions */}
-                  <td style={{ padding: '0 8px', position: 'relative' }}>
-                    <div style={{ position: 'relative' }}>
-                      <button
-                        className="dots-btn row-actions"
-                        onClick={e => {
-                          e.stopPropagation()
-                          setOpenMenuId(openMenuId === household.id ? null : household.id)
-                        }}
-                        style={{
-                          background: 'none', border: 'none', cursor: 'pointer',
-                          color: '#9CA3AF', borderRadius: 6,
-                          width: 28, height: 28,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          opacity: openMenuId === household.id ? 1 : 0,
-                          transition: 'opacity 0.1s, background 0.1s',
-                        }}
-                      >
-                        <DotsIcon />
-                      </button>
-                      {openMenuId === household.id && (
-                        <ActionMenu
-                          household={household}
-                          onClose={() => setOpenMenuId(null)}
-                          onDelete={handleDelete}
-                        />
-                      )}
-                    </div>
+                  {/* Arrow */}
+                  <td style={{ padding: '0 12px' }}>
+                    <span
+                      className="row-arrow"
+                      style={{
+                        color: '#9CA3AF',
+                        opacity: 0,
+                        transition: 'opacity 0.1s',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <ArrowRightIcon />
+                    </span>
                   </td>
                 </tr>
               ))
@@ -548,7 +612,7 @@ export function HouseholdsPage() {
         </table>
 
         {/* Pagination */}
-        {!loading && filtered.length > 0 && (
+        {!loading && sorted.length > 0 && (
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '12px 16px', borderTop: '0.5px solid #E5E7EB',
@@ -557,7 +621,7 @@ export function HouseholdsPage() {
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
               fontSize: 13, color: '#6B7280',
             }}>
-              Showing {Math.min((page - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} households
+              Showing {Math.min((page - 1) * PAGE_SIZE + 1, sorted.length)}–{Math.min(page * PAGE_SIZE, sorted.length)} of {sorted.length} households
             </span>
             <div style={{ display: 'flex', gap: 8 }}>
               <button

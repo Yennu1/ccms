@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate, useParams } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute'
 import { LoginPage } from '../pages/auth/LoginPage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
@@ -13,6 +13,11 @@ import { SettingsPage } from '../pages/settings/SettingsPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { AppLayout } from '../layouts/AppLayout'
 import { AuthLayout } from '../layouts/AuthLayout'
+
+function HouseholdProfileRedirect() {
+  const { id } = useParams<{ id: string }>()
+  return <Navigate to={`/members/households/${id}`} replace />
+}
 
 export const router = createBrowserRouter([
   {
@@ -31,11 +36,15 @@ export const router = createBrowserRouter([
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/members', element: <MembersPage /> },
           { path: '/members/new', element: <MemberNewPage /> },
+          { path: '/members/households', element: <HouseholdsPage /> },
+          { path: '/members/households/new', element: <HouseholdNewPage /> },
+          { path: '/members/households/:id', element: <HouseholdProfilePage /> },
           { path: '/members/:id', element: <MemberProfilePage /> },
           { path: '/members/:id/edit', element: <MemberEditPage /> },
-          { path: '/households', element: <HouseholdsPage /> },
-          { path: '/households/new', element: <HouseholdNewPage /> },
-          { path: '/households/:id', element: <HouseholdProfilePage /> },
+          // Backwards-compatible redirects
+          { path: '/households', element: <Navigate to="/members/households" replace /> },
+          { path: '/households/new', element: <Navigate to="/members/households/new" replace /> },
+          { path: '/households/:id', element: <HouseholdProfileRedirect /> },
           { path: '/settings', element: <SettingsPage /> },
         ],
       },

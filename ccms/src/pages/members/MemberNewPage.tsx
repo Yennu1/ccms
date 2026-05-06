@@ -23,6 +23,7 @@ const schema = z.object({
   occupation: z.string(),
   address: z.string(),
   city: z.string(),
+  region: z.string(),
   membership_date: z.string(),
   baptism_date: z.string(),
   membership_status: z.string().min(1, 'Required'),
@@ -37,6 +38,14 @@ type FormValues = z.infer<typeof schema>
 
 interface Branch   { id: string; name: string }
 interface Ministry { id: string; name: string }
+
+// ─── Constants ─────────────────────────────────────────────────────────────────
+
+const REGIONS = [
+  'Greater Accra', 'Ashanti', 'Western', 'Eastern', 'Central', 'Volta',
+  'Northern', 'Upper East', 'Upper West', 'Bono', 'Bono East', 'Ahafo',
+  'Savannah', 'North East', 'Oti', 'Western North',
+]
 
 // ─── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -82,11 +91,13 @@ function FieldWrapper({
   label,
   required,
   error,
+  hint,
   children,
 }: {
   label: string
   required?: boolean
   error?: string
+  hint?: string
   children: React.ReactNode
 }) {
   return (
@@ -100,6 +111,14 @@ function FieldWrapper({
         {required && <span style={{ color: '#EF4444', marginLeft: 2 }}>*</span>}
       </label>
       {children}
+      {hint && !error && (
+        <div style={{
+          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+          fontSize: 12, color: '#9CA3AF', marginTop: 4,
+        }}>
+          {hint}
+        </div>
+      )}
       {error && (
         <div style={{
           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
@@ -122,6 +141,7 @@ export function MemberNewPage() {
   const [ministries,  setMinistries]  = useState<Ministry[]>([])
   const [submitting,  setSubmitting]  = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [autoSaveText] = useState('just now')
 
   const {
     register,
@@ -132,7 +152,7 @@ export function MemberNewPage() {
     defaultValues: {
       first_name: '', last_name: '', email: '', phone: '',
       date_of_birth: '', gender: '', marital_status: '', occupation: '',
-      address: '', city: '', membership_date: '', baptism_date: '',
+      address: '', city: '', region: '', membership_date: '', baptism_date: '',
       membership_status: 'active', branch_id: '', ministry_id: '', notes: '',
     },
   })
@@ -175,6 +195,7 @@ export function MemberNewPage() {
         occupation:        data.occupation        || null,
         address:           data.address           || null,
         city:              data.city              || null,
+        region:            data.region            || null,
         membership_date:   data.membership_date   || null,
         baptism_date:      data.baptism_date      || null,
         membership_status: data.membership_status,
@@ -224,7 +245,7 @@ export function MemberNewPage() {
           box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important;
         }
         .back-btn:hover { background: #F3F4F6 !important; }
-        .cancel-btn:hover { background: #F9FAFB !important; }
+        .discard-btn:hover { background: #F9FAFB !important; }
         @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr !important; } }
       `}</style>
 
@@ -289,7 +310,7 @@ export function MemberNewPage() {
               <input
                 {...register('last_name')}
                 className={`form-input${errors.last_name ? ' has-error' : ''}`}
-                placeholder="e.g. Mensah"
+                placeholder="e.g. Asante"
                 style={inputBase(!!errors.last_name)}
               />
             </FieldWrapper>
@@ -365,7 +386,7 @@ export function MemberNewPage() {
                 {...register('phone')}
                 type="tel"
                 className="form-input"
-                placeholder="e.g. +233 24 000 0000"
+                placeholder="024 XXX XXXX"
                 style={inputBase(false)}
               />
             </FieldWrapper>
@@ -386,6 +407,19 @@ export function MemberNewPage() {
                 placeholder="e.g. Accra"
                 style={inputBase(false)}
               />
+            </FieldWrapper>
+
+            <FieldWrapper label="Region">
+              <select
+                {...register('region')}
+                className="form-input"
+                style={{ ...inputBase(false), cursor: 'pointer' }}
+              >
+                <option value="">Select region (optional)</option>
+                {REGIONS.map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
             </FieldWrapper>
           </div>
 
@@ -426,6 +460,8 @@ export function MemberNewPage() {
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
+                <option value="visitor">Visitor</option>
+                <option value="pending">Pending</option>
                 <option value="transferred">Transferred</option>
                 <option value="deceased">Deceased</option>
               </select>
@@ -465,7 +501,10 @@ export function MemberNewPage() {
             title="Additional Notes"
             subtitle="Any other relevant information"
           />
-          <FieldWrapper label="Notes">
+          <FieldWrapper
+            label="Notes"
+            hint="Visible only to staff with member access."
+          >
             <textarea
               {...register('notes')}
               className="form-input"
@@ -506,39 +545,48 @@ export function MemberNewPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           zIndex: 10,
         }}>
-          <button
-            type="button"
-            className="cancel-btn"
-            onClick={() => navigate('/members')}
-            style={{
-              height: 38, padding: '0 16px', borderRadius: 8,
-              border: '0.5px solid #E5E7EB', background: '#fff',
-              cursor: 'pointer',
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 500, fontSize: 13, color: '#374151',
-              transition: 'background 0.1s',
-            }}
-          >
-            Cancel
-          </button>
+          <span style={{
+            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+            fontSize: 12, color: '#9CA3AF',
+          }}>
+            Auto-saved as draft · {autoSaveText}
+          </span>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            style={{
-              height: 38, padding: '0 20px', borderRadius: 8,
-              border: 'none',
-              background: submitting ? '#818CF8' : '#4F6BED',
-              cursor: submitting ? 'not-allowed' : 'pointer',
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 500, fontSize: 13, color: '#fff',
-              display: 'flex', alignItems: 'center', gap: 8,
-              transition: 'background 0.15s',
-            }}
-          >
-            {submitting && <SpinnerIcon />}
-            {submitting ? 'Saving…' : 'Save Member'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              type="button"
+              className="discard-btn"
+              onClick={() => navigate('/members')}
+              style={{
+                height: 38, padding: '0 16px', borderRadius: 8,
+                border: '0.5px solid #E5E7EB', background: '#fff',
+                cursor: 'pointer',
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontWeight: 500, fontSize: 13, color: '#374151',
+                transition: 'background 0.1s',
+              }}
+            >
+              Discard
+            </button>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              style={{
+                height: 38, padding: '0 20px', borderRadius: 8,
+                border: 'none',
+                background: submitting ? '#818CF8' : '#4F6BED',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontWeight: 500, fontSize: 13, color: '#fff',
+                display: 'flex', alignItems: 'center', gap: 8,
+                transition: 'background 0.15s',
+              }}
+            >
+              {submitting && <SpinnerIcon />}
+              {submitting ? 'Saving…' : 'Save Member'}
+            </button>
+          </div>
         </div>
       </form>
     </>
