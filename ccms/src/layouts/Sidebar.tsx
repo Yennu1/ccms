@@ -3,6 +3,8 @@ import { useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const NAV_ITEMS = [
   {
     label: 'Dashboard',
@@ -81,22 +83,44 @@ const NAV_ITEMS = [
   },
 ]
 
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .map(p => p[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+const ROLE_LABELS: Record<string, string> = {
+  super_admin:     'Admin',
+  pastor:          'Pastor',
+  finance_officer: 'Finance',
+  group_leader:    'Group Leader',
+  member:          'Member',
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getInitials(name: string) {
+  return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
+}
+
+function DotsIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="3" cy="7" r="1.25" fill="currentColor" />
+      <circle cx="7" cy="7" r="1.25" fill="currentColor" />
+      <circle cx="11" cy="7" r="1.25" fill="currentColor" />
+    </svg>
+  )
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function Sidebar() {
   const { pathname } = useLocation()
   const { user, signOut } = useAuth()
+
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [userCardHovered, setUserCardHovered] = useState(false)
   const [memberCount, setMemberCount] = useState<number | null>(null)
+  const [branchName, setBranchName] = useState<string | null>(null)
+
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -107,6 +131,7 @@ export function Sidebar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Active member count badge
   useEffect(() => {
     if (!user?.org_id) return
     supabase
@@ -114,10 +139,24 @@ export function Sidebar() {
       .select('*', { count: 'exact', head: true })
       .eq('org_id', user.org_id)
       .eq('membership_status', 'active')
-      .then(({ count }) => {
-        if (count !== null) setMemberCount(count)
-      })
+      .then(({ count }) => { if (count !== null) setMemberCount(count) })
   }, [user?.org_id])
+
+  // Branch name for user card subtitle
+  useEffect(() => {
+    if (!user) return
+    if (user.branch_id) {
+      supabase
+        .from('branches')
+        .select('name')
+        .eq('id', user.branch_id)
+        .single()
+        .then(({ data }) => { if (data) setBranchName(data.name) })
+    } else {
+      // Super admin — fall back to org name (hardcoded for now, dynamic in Sprint 8)
+      setBranchName('Centry CMS')
+    }
+  }, [user?.branch_id])
 
   const handleSignOut = async () => {
     await signOut()
@@ -125,6 +164,9 @@ export function Sidebar() {
   }
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/')
+
+  const roleLabel = user?.role ? (ROLE_LABELS[user.role] ?? user.role) : ''
+  const subtitle = [roleLabel, branchName].filter(Boolean).join(' · ')
 
   return (
     <aside style={{
@@ -144,27 +186,38 @@ export function Sidebar() {
       {/* Brand */}
       <div style={{
         padding: '20px 16px 18px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
         borderBottom: '0.5px solid rgba(255,255,255,0.08)',
       }}>
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-          <polygon
-            points="13,1.2 24,7.35 24,19.65 13,25.8 2,19.65 2,7.35"
-            fill="none" stroke="white" strokeWidth="1.4" strokeOpacity="0.9"
-          />
-          <circle cx="13" cy="13" r="2.5" fill="white" fillOpacity="0.9" />
-        </svg>
-        <span style={{
-          fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-          fontWeight: 600,
-          fontSize: 15,
-          color: '#fff',
-          letterSpacing: '-0.01em',
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+            <polygon
+              points="13,1.2 24,7.35 24,19.65 13,25.8 2,19.65 2,7.35"
+              fill="none" stroke="white" strokeWidth="1.4" strokeOpacity="0.9"
+            />
+            <circle cx="13" cy="13" r="2.5" fill="white" fillOpacity="0.9" />
+          </svg>
+          <span style={{
+            fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+            fontWeight: 600,
+            fontSize: 15,
+            color: '#fff',
+            letterSpacing: '-0.01em',
+          }}>
+            Centry CMS
+          </span>
+        </div>
+        {/* Org/church name */}
+        <div style={{
+          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+          fontWeight: 500,
+          fontSize: 10,
+          color: 'rgba(255,255,255,0.45)',
+          letterSpacing: '0.08em',
+          marginTop: 6,
+          marginLeft: 36,
         }}>
-          Centry CMS
-        </span>
+          HILLTOP
+        </div>
       </div>
 
       {/* Nav */}
@@ -255,112 +308,142 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* User info (bottom) */}
+      {/* User card (bottom) */}
       <div style={{
         borderTop: '0.5px solid rgba(255,255,255,0.08)',
-        padding: '12px 16px',
-        position: 'relative',
-      }} ref={dropdownRef}>
-        <button
-          onClick={() => setDropdownOpen(v => !v)}
-          style={{
+        padding: '8px',
+      }}>
+        <div
+          ref={dropdownRef}
+          style={{ position: 'relative' }}
+          onMouseEnter={() => setUserCardHovered(true)}
+          onMouseLeave={() => setUserCardHovered(false)}
+        >
+          {/* Card surface */}
+          <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: 10,
-            width: '100%',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: 0,
+            background: userCardHovered || dropdownOpen
+              ? 'rgba(255,255,255,0.09)'
+              : 'rgba(255,255,255,0.06)',
             borderRadius: 8,
-          }}
-        >
-          <div style={{
-            width: 32,
-            height: 32,
-            borderRadius: '50%',
-            background: '#4F6BED',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
+            padding: '8px 8px',
+            transition: 'background 0.15s',
           }}>
-            <span style={{
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 500,
-              fontSize: 12,
-              color: '#fff',
-            }}>
-              {user?.full_name ? getInitials(user.full_name) : '?'}
-            </span>
-          </div>
-          <div style={{ textAlign: 'left', flex: 1, minWidth: 0 }}>
+            {/* Avatar */}
             <div style={{
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 500,
-              fontSize: 13,
-              color: '#fff',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: '#4F6BED',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
             }}>
-              {user?.full_name ?? 'User'}
+              <span style={{
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontWeight: 500,
+                fontSize: 12,
+                color: '#fff',
+              }}>
+                {user?.full_name ? getInitials(user.full_name) : '?'}
+              </span>
             </div>
-            <div style={{
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontSize: 11,
-              color: 'rgba(255,255,255,0.45)',
-              textTransform: 'capitalize',
-            }}>
-              {user?.role?.replace('_', ' ') ?? 'Member'}
-            </div>
-          </div>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
-            <path d="M3 4.5L6 7.5L9 4.5" stroke="rgba(255,255,255,0.35)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
 
-        {dropdownOpen && (
-          <div style={{
-            position: 'absolute',
-            bottom: '100%',
-            left: 12,
-            right: 12,
-            marginBottom: 6,
-            background: '#fff',
-            borderRadius: 8,
-            border: '0.5px solid #E5E7EB',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-            overflow: 'hidden',
-          }}>
+            {/* Name + role · branch */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontWeight: 500,
+                fontSize: 13,
+                color: '#fff',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>
+                {user?.full_name ?? 'User'}
+              </div>
+              <div style={{
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.45)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>
+                {subtitle || '…'}
+              </div>
+            </div>
+
+            {/* Three-dot button — hover only */}
             <button
-              onClick={handleSignOut}
+              onClick={() => setDropdownOpen(v => !v)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                width: '100%',
-                padding: '10px 14px',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontSize: 13,
-                color: '#EF4444',
-                textAlign: 'left',
-                transition: 'background 0.1s',
+                color: 'rgba(255,255,255,0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 4,
+                borderRadius: 4,
+                flexShrink: 0,
+                opacity: userCardHovered || dropdownOpen ? 1 : 0,
+                transition: 'opacity 0.15s, background 0.1s',
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              aria-label="User menu"
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M5 12H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                <path d="M9.5 9.5L12 7l-2.5-2.5M12 7H5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Sign out
+              <DotsIcon />
             </button>
           </div>
-        )}
+
+          {/* Dropdown */}
+          {dropdownOpen && (
+            <div style={{
+              position: 'absolute',
+              bottom: 'calc(100% + 6px)',
+              left: 0,
+              right: 0,
+              background: '#fff',
+              borderRadius: 8,
+              border: '0.5px solid #E5E7EB',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+              overflow: 'hidden',
+            }}>
+              <button
+                onClick={handleSignOut}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  width: '100%',
+                  padding: '10px 14px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                  fontSize: 13,
+                  color: '#EF4444',
+                  textAlign: 'left',
+                  transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M5 12H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                  <path d="M9.5 9.5L12 7l-2.5-2.5M12 7H5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Sign out
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </aside>
   )
