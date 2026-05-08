@@ -401,8 +401,7 @@ export function DonationsPage() {
               color: tab.active ? '#4F6BED' : '#6B7280',
               borderBottom: tab.active ? '2px solid #4F6BED' : '2px solid transparent',
               marginBottom: -1,
-              background: 'none', border: 'none',
-              borderBottom: tab.active ? '2px solid #4F6BED' : '2px solid transparent',
+              background: 'none',
               cursor: 'pointer', transition: 'color 0.12s',
             }}
             onMouseEnter={e => { if (!tab.active) e.currentTarget.style.color = '#374151' }}

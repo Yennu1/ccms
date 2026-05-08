@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
@@ -169,58 +169,6 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
   )
 }
 
-function ActionMenu({
-  household,
-  onClose,
-  onDelete,
-}: {
-  household: Household
-  onClose: () => void
-  onDelete: (id: string) => void
-}) {
-  const navigate = useNavigate()
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function handle(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
-    }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
-  }, [onClose])
-
-  const item = (label: string, onClick: () => void, color?: string) => (
-    <button
-      key={label}
-      onClick={() => { onClick(); onClose() }}
-      style={{
-        display: 'block', width: '100%', textAlign: 'left',
-        background: 'none', border: 'none', cursor: 'pointer',
-        padding: '8px 14px',
-        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-        fontSize: 13, color: color ?? '#111827',
-      }}
-      onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-    >
-      {label}
-    </button>
-  )
-
-  return (
-    <div ref={ref} style={{
-      position: 'absolute', right: 8, top: '100%', zIndex: 50,
-      background: '#fff', border: '0.5px solid #E5E7EB',
-      borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-      minWidth: 160, padding: '4px 0',
-    }}>
-      {item('View household', () => navigate(`/members/households/${household.id}`))}
-      {item('Edit', () => navigate(`/members/households/${household.id}`))}
-      <div style={{ height: '0.5px', background: '#E5E7EB', margin: '4px 0' }} />
-      {item('Delete', () => onDelete(household.id), '#EF4444')}
-    </div>
-  )
-}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -238,8 +186,6 @@ export function HouseholdsPage() {
   const [branchFilter, setBranchFilter] = useState('all')
   const [sortBy, setSortBy] = useState<SortBy>('recent')
   const [page, setPage] = useState(1)
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-
   const fetchHouseholds = async () => {
     if (!user?.org_id) return
     setLoading(true)
@@ -288,13 +234,6 @@ export function HouseholdsPage() {
   }, [user?.org_id])
 
   useEffect(() => { setPage(1) }, [search, branchFilter, sortBy])
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this household? Members will be unassigned.')) return
-    await supabase.from('members').update({ household_id: null }).eq('household_id', id)
-    await supabase.from('households').delete().eq('id', id)
-    fetchHouseholds()
-  }
 
   const filtered = households.filter(h => {
     const q = search.toLowerCase()
