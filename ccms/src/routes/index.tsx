@@ -9,6 +9,10 @@ import { MemberEditPage } from '../pages/members/MemberEditPage'
 import { HouseholdsPage } from '../pages/members/HouseholdsPage'
 import { HouseholdNewPage } from '../pages/members/HouseholdNewPage'
 import { HouseholdProfilePage } from '../pages/members/HouseholdProfilePage'
+import { DonationsPage } from '../pages/donations/DonationsPage'
+import { RecordGivingPage } from '../pages/donations/RecordGivingPage'
+import { TransactionDetailPage } from '../pages/donations/TransactionDetailPage'
+import { PledgesPage } from '../pages/donations/PledgesPage'
 import { SettingsPage } from '../pages/settings/SettingsPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { AppLayout } from '../layouts/AppLayout'
@@ -45,6 +49,10 @@ export const router = createBrowserRouter([
           { path: '/households', element: <Navigate to="/members/households" replace /> },
           { path: '/households/new', element: <Navigate to="/members/households/new" replace /> },
           { path: '/households/:id', element: <HouseholdProfileRedirect /> },
+          { path: '/donations', element: <DonationsPage /> },
+          { path: '/donations/new', element: <RecordGivingPage /> },
+          { path: '/donations/pledges', element: <PledgesPage /> },
+          { path: '/donations/:id', element: <TransactionDetailPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],
       },

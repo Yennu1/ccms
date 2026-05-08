@@ -61,6 +61,24 @@ function getBreadcrumbs(pathname: string): BreadcrumbSegment[] {
   if (pathname === '/donations') {
     return [{ label: 'Donations', isLast: true }]
   }
+  if (pathname === '/donations/new') {
+    return [
+      { label: 'Donations', isLast: false },
+      { label: 'Record Giving', isLast: true },
+    ]
+  }
+  if (pathname === '/donations/pledges') {
+    return [
+      { label: 'Donations', isLast: false },
+      { label: 'Pledges', isLast: true },
+    ]
+  }
+  if (/^\/donations\/[^/]+$/.test(pathname)) {
+    return [
+      { label: 'Donations', isLast: false },
+      { label: 'Transaction', isLast: true },
+    ]
+  }
   if (pathname === '/events') {
     return [{ label: 'Events', isLast: true }]
   }
