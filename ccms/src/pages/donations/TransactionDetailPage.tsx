@@ -1,32 +1,33 @@
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../contexts/AuthContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Category = 'tithe' | 'offering' | 'building' | 'welfare' | 'thanksgiving' | 'special'
-type Method = 'cash' | 'momo' | 'bank' | 'cheque'
-
-interface TransactionDetail {
+interface TxDetail {
   id: string
-  firstName: string
-  lastName: string
-  memberNumber: string
-  category: Category
   amount: number
-  method: Method
-  momoNetwork?: string
-  date: string
-  event: string
-  notes: string
-  recordedBy: string
-  createdAt: string
-  givingStreak: number
-  totalGiven: number
-  givingHistory: { month: string; amount: number }[]
+  payment_method: string
+  transaction_date: string
+  reference_number: string | null
+  notes: string | null
+  branch_id: string | null
+  member_id: string | null
+  category_id: string | null
+  event_id: string | null
+  created_at: string
+  transaction_categories: { id: string; name: string } | null
+  member: { id: string; first_name: string; last_name: string; member_number: string } | null
+  branches: { id: string; name: string } | null
+  events: { id: string; name: string; starts_at: string } | null
+  recorder: { id: string; full_name: string } | null
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORY_STYLES: Record<Category, { bg: string; color: string; dot: string; label: string }> = {
+const CAT_STYLE: Record<string, { bg: string; color: string; dot: string; label: string }> = {
   tithe:        { bg: '#FEF6E5', color: '#8A6418',  dot: '#C8964A', label: 'Tithe' },
   offering:     { bg: '#DCFCE7', color: '#166534',  dot: '#22C55E', label: 'Offering' },
   building:     { bg: '#E8ECF9', color: '#3349C7',  dot: '#7B93F5', label: 'Building Fund' },
@@ -35,11 +36,8 @@ const CATEGORY_STYLES: Record<Category, { bg: string; color: string; dot: string
   special:      { bg: '#FCE7F3', color: '#9D174D',  dot: '#EC4899', label: 'Special Offering' },
 }
 
-const METHOD_LABELS: Record<Method, string> = {
-  cash:   'Cash',
-  momo:   'Mobile Money',
-  bank:   'Bank Transfer',
-  cheque: 'Cheque',
+const METHOD_LABELS: Record<string, string> = {
+  cash: 'Cash', momo: 'Mobile Money', bank_transfer: 'Bank Transfer', bank: 'Bank Transfer', cheque: 'Cheque',
 }
 
 const AVATAR_PALETTE = [
@@ -53,6 +51,8 @@ const AVATAR_PALETTE = [
   { bg: '#F5F3FF', color: '#7C3AED' },
 ]
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function getAvatarColor(firstName: string, lastName: string) {
   const str = (firstName + lastName).toLowerCase()
   let hash = 0
@@ -64,56 +64,187 @@ function formatAmount(n: number) {
   return `₵${n.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-// Sample data keyed by transaction ID
-const TRANSACTIONS: Record<string, TransactionDetail> = {
-  'REF-001': {
-    id: 'REF-001', firstName: 'Kwame', lastName: 'Asante', memberNumber: 'GH-00001',
-    category: 'tithe', amount: 500, method: 'cash',
-    date: 'May 04, 2026', event: 'Sunday Service — May 4, 2026',
-    notes: 'Monthly tithe contribution.',
-    recordedBy: 'Admin User', createdAt: 'May 04, 2026, 10:32 AM',
-    givingStreak: 12, totalGiven: 14500,
-    givingHistory: [
-      { month: 'Nov', amount: 500 }, { month: 'Dec', amount: 500 },
-      { month: 'Jan', amount: 500 }, { month: 'Feb', amount: 500 },
-      { month: 'Mar', amount: 500 }, { month: 'Apr', amount: 500 },
-    ],
-  },
-  'REF-002': {
-    id: 'REF-002', firstName: 'Abena', lastName: 'Mensah', memberNumber: 'GH-00002',
-    category: 'offering', amount: 200, method: 'momo', momoNetwork: 'MTN',
-    date: 'May 04, 2026', event: 'Sunday Service — May 4, 2026',
-    notes: '',
-    recordedBy: 'Admin User', createdAt: 'May 04, 2026, 10:45 AM',
-    givingStreak: 8, totalGiven: 5600,
-    givingHistory: [
-      { month: 'Nov', amount: 150 }, { month: 'Dec', amount: 200 },
-      { month: 'Jan', amount: 180 }, { month: 'Feb', amount: 200 },
-      { month: 'Mar', amount: 200 }, { month: 'Apr', amount: 200 },
-    ],
-  },
+function formatDate(dateStr: string) {
+  try {
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-GH', {
+      month: 'short', day: '2-digit', year: 'numeric',
+    })
+  } catch { return dateStr }
 }
 
-const FALLBACK: TransactionDetail = {
-  id: 'REF-???', firstName: 'Unknown', lastName: 'Member', memberNumber: 'GH-00000',
-  category: 'offering', amount: 0, method: 'cash',
-  date: '—', event: '—', notes: '—',
-  recordedBy: '—', createdAt: '—',
-  givingStreak: 0, totalGiven: 0, givingHistory: [],
+function formatDateTime(dateStr: string) {
+  try {
+    return new Date(dateStr).toLocaleString('en-GH', {
+      month: 'short', day: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    })
+  } catch { return dateStr }
+}
+
+function getCatKey(name: string) {
+  const l = (name ?? '').toLowerCase()
+  if (l === 'tithe') return 'tithe'
+  if (l === 'offering') return 'offering'
+  if (l.includes('building')) return 'building'
+  if (l === 'welfare') return 'welfare'
+  if (l === 'thanksgiving') return 'thanksgiving'
+  if (l.includes('special')) return 'special'
+  return 'offering'
+}
+
+function calculateStreak(txDates: string[]): number {
+  const now = new Date()
+  let streak = 0
+  for (let i = 0; i < 12; i++) {
+    const monthStr = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      .toISOString().slice(0, 7)
+    if (txDates.some(d => d.startsWith(monthStr))) {
+      streak++
+    } else if (i > 0) {
+      break
+    }
+  }
+  return streak
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function TransactionDetailPage() {
   const navigate = useNavigate()
-  const { id } = useParams<{ id: string }>()
-  const tx = TRANSACTIONS[id ?? ''] ?? FALLBACK
+  const { id }   = useParams<{ id: string }>()
+  const { user } = useAuth()
 
-  const cat = CATEGORY_STYLES[tx.category]
-  const { bg: avBg, color: avColor } = getAvatarColor(tx.firstName, tx.lastName)
-  const initials = `${tx.firstName[0]}${tx.lastName[0]}`
+  const [tx,        setTx]        = useState<TxDetail | null>(null)
+  const [loading,   setLoading]   = useState(true)
+  const [notFound,  setNotFound]  = useState(false)
+  const [ytdTotal,  setYtdTotal]  = useState(0)
+  const [streak,    setStreak]    = useState(0)
+  const [history,   setHistory]   = useState<{ month: string; amount: number }[]>([])
+  const [deleting,  setDeleting]  = useState(false)
 
-  const maxHistory = Math.max(...tx.givingHistory.map(h => h.amount), 1)
+  useEffect(() => {
+    if (!id || !user) return
+    const fetchTransaction = async () => {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('transactions')
+        .select(`
+          id, amount, payment_method, transaction_date, reference_number,
+          notes, branch_id, member_id, category_id, event_id, created_at,
+          transaction_categories(id, name),
+          member:members!transactions_member_id_fkey(id, first_name, last_name, member_number),
+          branches(id, name),
+          events(id, name, starts_at),
+          recorder:profiles!transactions_recorded_by_fkey(id, full_name)
+        `)
+        .eq('id', id)
+        .single()
+
+      if (error || !data) {
+        setNotFound(true)
+        setLoading(false)
+        return
+      }
+
+      const txData = data as unknown as TxDetail
+      setTx(txData)
+
+      // Fetch member stats if we have a member
+      if (txData.member_id) {
+        const yearStart = `${new Date().getFullYear()}-01-01`
+        const sixMonthsAgo = new Date()
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5)
+        const sixMonthsAgoStr = new Date(sixMonthsAgo.getFullYear(), sixMonthsAgo.getMonth(), 1)
+          .toISOString().split('T')[0]
+
+        const [ytdRes, histRes] = await Promise.all([
+          supabase
+            .from('transactions')
+            .select('amount')
+            .eq('org_id', user.org_id)
+            .eq('member_id', txData.member_id)
+            .gte('transaction_date', yearStart),
+          supabase
+            .from('transactions')
+            .select('amount, transaction_date')
+            .eq('org_id', user.org_id)
+            .eq('member_id', txData.member_id)
+            .gte('transaction_date', sixMonthsAgoStr)
+            .order('transaction_date', { ascending: true }),
+        ])
+
+        if (!ytdRes.error) {
+          setYtdTotal((ytdRes.data ?? []).reduce((s: number, r: { amount: number }) => s + r.amount, 0))
+        }
+
+        if (!histRes.error && histRes.data) {
+          // Build per-month totals for last 6 months
+          const grouped: Record<string, number> = {}
+          const dates: string[] = []
+          histRes.data.forEach((r: { amount: number; transaction_date: string }) => {
+            const mo = r.transaction_date.slice(0, 7)
+            grouped[mo] = (grouped[mo] ?? 0) + r.amount
+            dates.push(r.transaction_date)
+          })
+          const monthsArr: { month: string; amount: number }[] = []
+          for (let i = 5; i >= 0; i--) {
+            const d = new Date()
+            d.setMonth(d.getMonth() - i)
+            const key = d.toISOString().slice(0, 7)
+            const label = d.toLocaleDateString('en-GH', { month: 'short' })
+            monthsArr.push({ month: label, amount: grouped[key] ?? 0 })
+          }
+          setHistory(monthsArr)
+          setStreak(calculateStreak(dates))
+        }
+      }
+
+      setLoading(false)
+    }
+    fetchTransaction()
+  }, [id, user])
+
+  const handleDelete = async () => {
+    if (!tx || !window.confirm('Delete this transaction? This cannot be undone.')) return
+    setDeleting(true)
+    const { error } = await supabase.from('transactions').delete().eq('id', tx.id)
+    setDeleting(false)
+    if (error) {
+      toast.error(error.message)
+    } else {
+      toast.success('Transaction deleted')
+      navigate('/donations')
+    }
+  }
+
+  const handleEmailReceipt = () => {
+    if (!tx) return
+    const memberName = tx.member
+      ? `${tx.member.first_name} ${tx.member.last_name}`
+      : 'Anonymous'
+    const catName = tx.transaction_categories?.name ?? '—'
+    const body = encodeURIComponent(
+      `OFFICIAL GIVING RECEIPT\n\nHILLTOP CHURCH\n\nMember: ${memberName}\nCategory: ${catName}\nAmount: ${formatAmount(tx.amount)}\nDate: ${formatDate(tx.transaction_date)}\nReference: ${tx.reference_number ?? tx.id}\n\nGod loves a cheerful giver. Thank you for your faithfulness.`
+    )
+    window.location.href = `mailto:?subject=Giving Receipt — ${formatDate(tx.transaction_date)}&body=${body}`
+  }
+
+  const printStyles = `
+  @media print {
+    body * { visibility: hidden !important; }
+    #print-only-receipt { display: block !important; }
+    #print-only-receipt,
+    #print-only-receipt * { visibility: visible !important; }
+    #print-only-receipt {
+      position: fixed !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: 100% !important;
+      padding: 40px !important;
+      background: white !important;
+    }
+  }
+`
 
   const rowStyle: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between',
@@ -130,12 +261,54 @@ export function TransactionDetailPage() {
     textAlign: 'right',
   }
 
+  // ─── Loading ────────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+          Loading transaction…
+        </div>
+      </div>
+    )
+  }
+
+  if (notFound || !tx) {
+    return (
+      <div style={{ textAlign: 'center', padding: '80px 0' }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 18, color: '#111827', marginBottom: 8 }}>
+          Transaction not found
+        </div>
+        <button
+          onClick={() => navigate('/donations')}
+          style={{
+            height: 36, padding: '0 16px', borderRadius: 8,
+            border: '0.5px solid #E5E7EB', background: '#fff',
+            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+            fontWeight: 600, fontSize: 13, color: '#374151', cursor: 'pointer',
+          }}
+        >
+          Back to Donations
+        </button>
+      </div>
+    )
+  }
+
+  const catName = tx.transaction_categories?.name ?? ''
+  const catKey  = getCatKey(catName)
+  const cat     = CAT_STYLE[catKey] ?? CAT_STYLE.offering
+  const firstName = tx.member?.first_name ?? 'Anonymous'
+  const lastName  = tx.member?.last_name ?? ''
+  const { bg: avBg, color: avColor } = getAvatarColor(firstName, lastName)
+  const initials = `${firstName[0] ?? 'A'}${lastName[0] ?? ''}`.toUpperCase()
+  const maxHistory = Math.max(...history.map(h => h.amount), 1)
+
   return (
     <>
       <style>{`
         .td-action:hover { background: #FAFBFE !important; border-color: #D1D5DB !important; }
-        .td-void:hover { background: #FEE2E2 !important; border-color: #FCA5A5 !important; color: #DC2626 !important; }
+        .td-del:hover { background: #FEE2E2 !important; border-color: #FCA5A5 !important; color: #DC2626 !important; }
       `}</style>
+      <style>{printStyles}</style>
 
       {/* Page Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
@@ -161,16 +334,14 @@ export function TransactionDetailPage() {
           }}>
             Transaction
           </h1>
-          <p style={{
-            fontFamily: "'IBM Plex Mono', monospace",
-            fontSize: 12, color: '#6B7280', margin: '2px 0 0',
-          }}>
-            {tx.id}
+          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#6B7280', margin: '2px 0 0' }}>
+            {tx.reference_number ?? tx.id}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             className="td-action"
+            onClick={() => navigate(`/donations/${id}/edit`)}
             style={{
               height: 34, padding: '0 14px', borderRadius: 8,
               border: '0.5px solid #E5E7EB', background: '#fff',
@@ -180,40 +351,43 @@ export function TransactionDetailPage() {
               transition: 'all 0.12s',
             }}
           >
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-              <path d="M3.5 2h9v12l-1.5-1-1.5 1-1.5-1-1.5 1-1.5-1-1.5 1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-              <path d="M6 5h4M6 8h4M6 11h2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            Print Receipt
-          </button>
-          <button
-            className="td-action"
-            onClick={() => navigate('/donations/new')}
-            style={{
-              height: 34, padding: '0 14px', borderRadius: 8,
-              border: '0.5px solid #E5E7EB', background: '#fff',
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 600, fontSize: 13, color: '#374151', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6,
-              transition: 'all 0.12s',
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-              <path d="M11.5 2.5l2 2-9 9H2.5v-2l9-9z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+              <path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Edit
           </button>
           <button
-            className="td-void"
+            className="td-action"
+            onClick={handleEmailReceipt}
             style={{
               height: 34, padding: '0 14px', borderRadius: 8,
               border: '0.5px solid #E5E7EB', background: '#fff',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 600, fontSize: 13, color: '#6B7280', cursor: 'pointer',
+              fontWeight: 600, fontSize: 13, color: '#374151', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
               transition: 'all 0.12s',
             }}
           >
-            Void
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+              <rect x="1.5" y="3.5" width="13" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M1.5 5l6.5 4.5L14.5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            Send Receipt
+          </button>
+          <button
+            className="td-del"
+            disabled={deleting}
+            onClick={handleDelete}
+            style={{
+              height: 34, padding: '0 14px', borderRadius: 8,
+              border: '0.5px solid #E5E7EB', background: '#fff',
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+              fontWeight: 600, fontSize: 13, color: '#6B7280',
+              cursor: deleting ? 'not-allowed' : 'pointer',
+              transition: 'all 0.12s',
+            }}
+          >
+            {deleting ? 'Deleting…' : 'Delete'}
           </button>
         </div>
       </div>
@@ -261,7 +435,7 @@ export function TransactionDetailPage() {
                     fontWeight: 600, fontSize: 11.5,
                   }}>
                     <span style={{ width: 5, height: 5, borderRadius: '50%', background: cat.dot }} />
-                    {cat.label}
+                    {catName || cat.label}
                   </span>
                   <span style={{
                     display: 'inline-flex', alignItems: 'center',
@@ -270,14 +444,11 @@ export function TransactionDetailPage() {
                     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                     fontWeight: 600, fontSize: 11.5,
                   }}>
-                    {METHOD_LABELS[tx.method]}
-                    {tx.method === 'momo' && tx.momoNetwork ? ` · ${tx.momoNetwork}` : ''}
+                    {METHOD_LABELS[tx.payment_method] ?? tx.payment_method}
                   </span>
                 </div>
               </div>
-              <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4,
-              }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                 <span style={{
                   background: '#DCFCE7', color: '#166534',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
@@ -287,7 +458,7 @@ export function TransactionDetailPage() {
                   Confirmed
                 </span>
                 <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>
-                  {tx.id}
+                  {tx.reference_number ?? tx.id.slice(0, 8).toUpperCase()}
                 </span>
               </div>
             </div>
@@ -296,28 +467,42 @@ export function TransactionDetailPage() {
             <div style={{ padding: '4px 24px 8px' }}>
               <div style={rowStyle}>
                 <span style={rowLabel}>Date</span>
-                <span style={{ ...rowValue, fontFamily: "'IBM Plex Mono', monospace" }}>{tx.date}</span>
+                <span style={{ ...rowValue, fontFamily: "'IBM Plex Mono', monospace" }}>{formatDate(tx.transaction_date)}</span>
               </div>
-              <div style={rowStyle}>
-                <span style={rowLabel}>Event</span>
-                <span style={rowValue}>{tx.event}</span>
-              </div>
+              {tx.events && (
+                <div style={rowStyle}>
+                  <span style={rowLabel}>Event</span>
+                  <span style={rowValue}>{tx.events.name}</span>
+                </div>
+              )}
+              {tx.branches && (
+                <div style={rowStyle}>
+                  <span style={rowLabel}>Branch</span>
+                  <span style={rowValue}>{tx.branches.name}</span>
+                </div>
+              )}
               <div style={rowStyle}>
                 <span style={rowLabel}>Member</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{
-                    width: 22, height: 22, borderRadius: '50%',
-                    background: avBg, color: avColor,
-                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                    fontWeight: 700, fontSize: 9,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    {initials}
-                  </div>
-                  <span style={rowValue}>{tx.firstName} {tx.lastName}</span>
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>
-                    {tx.memberNumber}
-                  </span>
+                  {tx.member ? (
+                    <>
+                      <div style={{
+                        width: 22, height: 22, borderRadius: '50%',
+                        background: avBg, color: avColor,
+                        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                        fontWeight: 700, fontSize: 9,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {initials}
+                      </div>
+                      <span style={rowValue}>{firstName} {lastName}</span>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>
+                        {tx.member.member_number}
+                      </span>
+                    </>
+                  ) : (
+                    <span style={rowValue}>Anonymous</span>
+                  )}
                 </div>
               </div>
               {tx.notes && (
@@ -329,9 +514,9 @@ export function TransactionDetailPage() {
               <div style={{ ...rowStyle, borderBottom: 'none' }}>
                 <span style={rowLabel}>Recorded by</span>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={rowValue}>{tx.recordedBy}</div>
+                  <div style={rowValue}>{tx.recorder?.full_name ?? '—'}</div>
                   <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>
-                    {tx.createdAt}
+                    {formatDateTime(tx.created_at)}
                   </div>
                 </div>
               </div>
@@ -339,7 +524,7 @@ export function TransactionDetailPage() {
           </div>
 
           {/* Giving history card */}
-          {tx.givingHistory.length > 0 && (
+          {history.some(h => h.amount > 0) && (
             <div style={{
               background: '#fff', border: '0.5px solid #E5E7EB',
               borderRadius: 12, padding: 20,
@@ -354,20 +539,18 @@ export function TransactionDetailPage() {
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontSize: 12, color: '#6B7280', marginBottom: 16,
               }}>
-                Last 6 months · {tx.category === 'tithe' ? 'Tithe' : 'Offering'} only
+                Last 6 months
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 64 }}>
-                {tx.givingHistory.map((h, i) => (
+                {history.map((h, i) => (
                   <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
                     <div style={{
-                      width: '100%', background: i === tx.givingHistory.length - 1 ? '#4F6BED' : '#E8ECF9',
+                      width: '100%',
+                      background: i === history.length - 1 ? '#4F6BED' : '#E8ECF9',
                       borderRadius: 4,
-                      height: `${Math.round((h.amount / maxHistory) * 48) + 8}px`,
+                      height: h.amount > 0 ? `${Math.round((h.amount / maxHistory) * 48) + 8}px` : '4px',
                     }} />
-                    <span style={{
-                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                      fontSize: 10, color: '#9CA3AF',
-                    }}>
+                    <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10, color: '#9CA3AF' }}>
                       {h.month}
                     </span>
                   </div>
@@ -385,7 +568,6 @@ export function TransactionDetailPage() {
             background: '#fff', border: '0.5px solid #E5E7EB',
             borderRadius: 12, overflow: 'hidden',
           }}>
-            {/* Perforated top */}
             <div style={{
               padding: '16px 20px 14px',
               borderBottom: '1.5px dashed #E5E7EB',
@@ -394,11 +576,20 @@ export function TransactionDetailPage() {
               <div style={{
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontSize: 10, letterSpacing: '0.14em',
-                textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 12,
+                textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 4,
                 display: 'flex', justifyContent: 'space-between',
               }}>
-                <span>Official Receipt</span>
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{tx.id}</span>
+                <span>HILLTOP CHURCH</span>
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                  {tx.reference_number ?? tx.id.slice(0, 8).toUpperCase()}
+                </span>
+              </div>
+              <div style={{
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontSize: 9, letterSpacing: '0.12em',
+                textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 12,
+              }}>
+                OFFICIAL GIVING RECEIPT
               </div>
               <div style={{
                 fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
@@ -411,143 +602,256 @@ export function TransactionDetailPage() {
 
             <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>From</span>
+                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Member</span>
                 <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
-                  {tx.firstName} {tx.lastName}
+                  {tx.member ? `${firstName} ${lastName}` : 'Anonymous'}
                 </span>
               </div>
+              {tx.member && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Member No.</span>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#374151' }}>
+                    {tx.member.member_number}
+                  </span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Purpose</span>
+                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Category</span>
                 <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
-                  {cat.label}
+                  {catName || '—'}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Payment</span>
                 <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
-                  {METHOD_LABELS[tx.method]}
+                  {METHOD_LABELS[tx.payment_method] ?? tx.payment_method}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Date</span>
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#374151' }}>{tx.date}</span>
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#374151' }}>
+                  {formatDate(tx.transaction_date)}
+                </span>
               </div>
-
               <div style={{ borderTop: '1px dashed #E5E7EB', paddingTop: 10, marginTop: 2 }}>
                 <div style={{
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontSize: 10.5, color: '#9CA3AF', textAlign: 'center', lineHeight: 1.5,
                 }}>
-                  This receipt is issued by the church as confirmation of a voluntary contribution. Thank you for your faithfulness.
+                  "God loves a cheerful giver." — Thank you for your faithfulness.
                 </div>
               </div>
             </div>
           </div>
 
+          <button
+            onClick={() => window.print()}
+            style={{
+              width: '100%',
+              marginTop: 12,
+              height: 38,
+              borderRadius: 8,
+              border: '0.5px solid #E5E7EB',
+              background: '#fff',
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+              fontSize: 13,
+              fontWeight: 500,
+              color: '#374151',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+  <rect x="2" y="5" width="10" height="7" rx="1" stroke="currentColor" strokeWidth="1.3" fill="none"/>
+  <path d="M4 5V2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V5" stroke="currentColor" strokeWidth="1.3"/>
+  <rect x="4" y="8" width="6" height="1" rx="0.5" fill="currentColor"/>
+  <rect x="4" y="10" width="4" height="1" rx="0.5" fill="currentColor"/>
+</svg>  Download / Print PDF
+          </button>
+
           {/* Contributor card */}
+          {tx.member && (
+            <div style={{
+              background: '#fff', border: '0.5px solid #E5E7EB',
+              borderRadius: 12, padding: 20,
+            }}>
+              <div style={{
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontWeight: 600, fontSize: 11, textTransform: 'uppercase',
+                letterSpacing: '0.12em', color: '#9CA3AF', marginBottom: 14,
+              }}>
+                Contributor
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: '50%',
+                  background: avBg, color: avColor,
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                  fontWeight: 700, fontSize: 16,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  {initials}
+                </div>
+                <div>
+                  <div style={{
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                    fontWeight: 600, fontSize: 14, color: '#111827',
+                  }}>
+                    {firstName} {lastName}
+                  </div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+                    {tx.member.member_number}
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+                <div style={{ background: '#F4F5F7', borderRadius: 8, padding: '10px 12px' }}>
+                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF', marginBottom: 3 }}>
+                    Giving Streak
+                  </div>
+                  <div style={{
+                    fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+                    fontWeight: 700, fontSize: 20, color: '#111827',
+                  }}>
+                    {streak}
+                    <span style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', marginLeft: 3 }}>mo</span>
+                  </div>
+                </div>
+                <div style={{ background: '#F4F5F7', borderRadius: 8, padding: '10px 12px' }}>
+                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF', marginBottom: 3 }}>
+                    Total Given YTD
+                  </div>
+                  <div style={{
+                    fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+                    fontWeight: 700, fontSize: 16, color: '#111827',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {formatAmount(ytdTotal)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Streak dots */}
+              <div>
+                <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#6B7280', marginBottom: 8 }}>
+                  Consecutive months
+                </div>
+                <div style={{ display: 'flex', gap: 5 }}>
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        width: 16, height: 16, borderRadius: 4,
+                        background: i < streak ? '#4F6BED' : '#E5E7EB',
+                        opacity: i < streak ? (0.4 + (i / Math.max(streak, 1)) * 0.6) : 1,
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={() => navigate(`/members/${tx.member!.id}`)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  marginTop: 16, padding: 0,
+                  background: 'none', border: 'none',
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                  fontWeight: 600, fontSize: 13, color: '#4F6BED',
+                  cursor: 'pointer',
+                }}
+              >
+                View member profile
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Hidden receipt for print only */}
+      <div id="print-only-receipt" style={{ display: 'none' }}>
+        <div style={{
+          padding: '16px 20px 14px',
+          borderBottom: '1.5px dashed #E5E7EB',
+          background: '#FAFBFE',
+        }}>
           <div style={{
-            background: '#fff', border: '0.5px solid #E5E7EB',
-            borderRadius: 12, padding: 20,
+            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+            fontSize: 10, letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 4,
+            display: 'flex', justifyContent: 'space-between',
           }}>
+            <span>HILLTOP CHURCH</span>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+              {tx.reference_number ?? tx.id.slice(0, 8).toUpperCase()}
+            </span>
+          </div>
+          <div style={{
+            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+            fontSize: 9, letterSpacing: '0.12em',
+            textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 12,
+          }}>
+            OFFICIAL GIVING RECEIPT
+          </div>
+          <div style={{
+            fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+            fontWeight: 700, fontSize: 26, color: '#111827',
+            letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums',
+          }}>
+            {formatAmount(tx.amount)}
+          </div>
+        </div>
+
+        <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Member</span>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
+              {tx.member ? `${firstName} ${lastName}` : 'Anonymous'}
+            </span>
+          </div>
+          {tx.member && (
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Member No.</span>
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#374151' }}>
+                {tx.member.member_number}
+              </span>
+            </div>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Category</span>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
+              {catName || '—'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Payment</span>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
+              {METHOD_LABELS[tx.payment_method] ?? tx.payment_method}
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Date</span>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#374151' }}>
+              {formatDate(tx.transaction_date)}
+            </span>
+          </div>
+          <div style={{ borderTop: '1px dashed #E5E7EB', paddingTop: 10, marginTop: 2 }}>
             <div style={{
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 600, fontSize: 11, textTransform: 'uppercase',
-              letterSpacing: '0.12em', color: '#9CA3AF', marginBottom: 14,
+              fontSize: 10.5, color: '#9CA3AF', textAlign: 'center', lineHeight: 1.5,
             }}>
-              Contributor
+              "God loves a cheerful giver." — Thank you for your faithfulness.
             </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: '50%',
-                background: avBg, color: avColor,
-                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontWeight: 700, fontSize: 16,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                {initials}
-              </div>
-              <div>
-                <div style={{
-                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                  fontWeight: 600, fontSize: 14, color: '#111827',
-                }}>
-                  {tx.firstName} {tx.lastName}
-                </div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                  {tx.memberNumber}
-                </div>
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-              <div style={{
-                background: '#F4F5F7', borderRadius: 8, padding: '10px 12px',
-              }}>
-                <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF', marginBottom: 3 }}>
-                  Giving Streak
-                </div>
-                <div style={{
-                  fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-                  fontWeight: 700, fontSize: 20, color: '#111827',
-                }}>
-                  {tx.givingStreak}
-                  <span style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', marginLeft: 3 }}>mo</span>
-                </div>
-              </div>
-              <div style={{
-                background: '#F4F5F7', borderRadius: 8, padding: '10px 12px',
-              }}>
-                <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF', marginBottom: 3 }}>
-                  Total Given
-                </div>
-                <div style={{
-                  fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-                  fontWeight: 700, fontSize: 20, color: '#111827',
-                  fontVariantNumeric: 'tabular-nums',
-                }}>
-                  {formatAmount(tx.totalGiven)}
-                </div>
-              </div>
-            </div>
-
-            {/* Streak dots */}
-            <div>
-              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#6B7280', marginBottom: 8 }}>
-                Consecutive months
-              </div>
-              <div style={{ display: 'flex', gap: 5 }}>
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      width: 16, height: 16, borderRadius: 4,
-                      background: i < tx.givingStreak ? '#4F6BED' : '#E5E7EB',
-                      opacity: i < tx.givingStreak ? (0.4 + (i / tx.givingStreak) * 0.6) : 1,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <button
-              onClick={() => navigate(`/members/${tx.memberNumber.toLowerCase()}`)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                marginTop: 16, padding: 0,
-                background: 'none', border: 'none',
-                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontWeight: 600, fontSize: 13, color: '#4F6BED',
-                cursor: 'pointer',
-              }}
-            >
-              View member profile
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
           </div>
         </div>
       </div>

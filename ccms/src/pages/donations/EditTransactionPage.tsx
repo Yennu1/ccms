@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,13 +9,12 @@ import { useAuth } from '../../contexts/AuthContext'
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const givingSchema = z.object({
+const schema = z.object({
   member_id: z.string().optional(),
   is_anonymous: z.boolean(),
   category_id: z.string().min(1, 'Please select a category'),
   amount: z.number().min(0.01, 'Amount must be greater than 0'),
   payment_method: z.enum(['cash', 'momo', 'bank_transfer', 'cheque']),
-  momo_network: z.string().optional(),
   event_id: z.string().optional(),
   transaction_date: z.string().min(1, 'Please select a date'),
   reference_number: z.string().optional(),
@@ -23,7 +22,7 @@ const givingSchema = z.object({
   branch_id: z.string().min(1, 'Please select a branch'),
 })
 
-type FormValues = z.infer<typeof givingSchema>
+type FormValues = z.infer<typeof schema>
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,12 +46,6 @@ const METHOD_LABELS: Record<string, string> = {
   cash: 'Cash', momo: 'Mobile Money', bank_transfer: 'Bank Transfer', cheque: 'Cheque',
 }
 
-const MOMO_NETWORKS = [
-  { key: 'mtn',        label: 'MTN',        color: '#F59E0B' },
-  { key: 'vodafone',   label: 'Vodafone',   color: '#EF4444' },
-  { key: 'airteltigo', label: 'AirtelTigo', color: '#3B82F6' },
-]
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getCatKey(name: string) {
@@ -70,18 +63,11 @@ function getCatStyle(name: string) {
   return CAT_STYLE[getCatKey(name)] ?? CAT_STYLE.offering
 }
 
-function formatEventDate(dateStr: string) {
-  try {
-    return new Date(dateStr).toLocaleDateString('en-GH', { month: 'short', day: 'numeric', year: 'numeric' })
-  } catch {
-    return dateStr
-  }
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function RecordGivingPage() {
+export function EditTransactionPage() {
   const navigate = useNavigate()
+  const { id }   = useParams<{ id: string }>()
   const { user } = useAuth()
 
   const [members,    setMembers]    = useState<DbMember[]>([])
@@ -91,37 +77,27 @@ export function RecordGivingPage() {
   const [dataLoading, setDataLoading] = useState(true)
   const [submitting,  setSubmitting]  = useState(false)
 
-  // UI-only state
   const [memberSearch,       setMemberSearch]       = useState('')
   const [memberDropdownOpen, setMemberDropdownOpen] = useState(false)
-  const [momoNetwork, setMomoNetwork] = useState('mtn')
-  const [momoNumber,  setMomoNumber]  = useState('')
 
   const {
     register, handleSubmit, setValue, watch,
     formState: { errors },
   } = useForm<FormValues>({
-    resolver: zodResolver(givingSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
-      transaction_date: new Date().toISOString().split('T')[0],
-      payment_method: 'cash' as const,
+      payment_method: 'cash',
       is_anonymous: false,
     },
   })
 
-  // Watched form values for live preview + conditional rendering
-  const isAnonymous       = watch('is_anonymous')
+  const isAnonymous        = watch('is_anonymous')
   const selectedCategoryId = watch('category_id')
-  const selectedMethod    = watch('payment_method')
-  const selectedMemberId  = watch('member_id')
-  const amountValue       = watch('amount')
-  const transactionDate   = watch('transaction_date')
-  const selectedEventId   = watch('event_id')
+  const selectedMethod     = watch('payment_method')
+  const selectedMemberId   = watch('member_id')
 
-  // Derived
   const selectedMember   = members.find(m => m.id === selectedMemberId)
   const selectedCategory = categories.find(c => c.id === selectedCategoryId)
-  const selectedEvent    = events.find(e => e.id === selectedEventId)
   const filteredMembers  = members.filter(m => {
     if (!memberSearch) return true
     const q = memberSearch.toLowerCase()
@@ -129,12 +105,16 @@ export function RecordGivingPage() {
       m.member_number.toLowerCase().includes(q)
   })
 
-  // Fetch reference data on mount
   useEffect(() => {
-    if (!user?.org_id) return
+    if (!user?.org_id || !id) return
     const load = async () => {
       setDataLoading(true)
-      const [memRes, catRes, branchRes, eventRes] = await Promise.all([
+      const [txRes, memRes, catRes, branchRes, eventRes] = await Promise.all([
+        supabase
+          .from('transactions')
+          .select('id, amount, payment_method, transaction_date, reference_number, notes, branch_id, member_id, category_id, event_id')
+          .eq('id', id)
+          .single(),
         supabase.from('members')
           .select('id, first_name, last_name, member_number')
           .eq('org_id', user.org_id)
@@ -153,50 +133,64 @@ export function RecordGivingPage() {
           .order('starts_at', { ascending: false })
           .limit(20),
       ])
+
       if (!memRes.error)    setMembers((memRes.data ?? []) as DbMember[])
-      if (!catRes.error) {
-        const cats = (catRes.data ?? []) as DbCategory[]
-        setCategories(cats)
-        if (cats.length > 0) setValue('category_id', cats[0].id)
-      }
-      if (!branchRes.error) {
-        const brs = (branchRes.data ?? []) as DbBranch[]
-        setBranches(brs)
-        if (brs.length > 0) setValue('branch_id', brs[0].id)
-      }
+      if (!catRes.error)    setCategories((catRes.data ?? []) as DbCategory[])
+      if (!branchRes.error) setBranches((branchRes.data ?? []) as DbBranch[])
       if (!eventRes.error)  setEvents((eventRes.data ?? []) as DbEvent[])
+
+      if (!txRes.error && txRes.data) {
+        const tx = txRes.data as {
+          amount: number; payment_method: string; transaction_date: string;
+          reference_number: string | null; notes: string | null;
+          branch_id: string | null; member_id: string | null;
+          category_id: string | null; event_id: string | null;
+        }
+        const isAnon = !tx.member_id
+        setValue('is_anonymous', isAnon)
+        if (!isAnon && tx.member_id) setValue('member_id', tx.member_id)
+        if (tx.category_id) setValue('category_id', tx.category_id)
+        setValue('amount', tx.amount)
+        setValue('payment_method', tx.payment_method as FormValues['payment_method'])
+        setValue('transaction_date', tx.transaction_date)
+        if (tx.reference_number) setValue('reference_number', tx.reference_number)
+        if (tx.notes) setValue('notes', tx.notes)
+        if (tx.branch_id) setValue('branch_id', tx.branch_id)
+        if (tx.event_id) setValue('event_id', tx.event_id)
+      }
+
       setDataLoading(false)
     }
     load()
-  }, [user?.org_id, setValue])
+  }, [user?.org_id, id, setValue])
 
   const onSubmit = async (data: FormValues) => {
-    if (!user) return
+    if (!user || !id) return
     setSubmitting(true)
-    const { error } = await supabase.from('transactions').insert({
-      org_id: user.org_id,
-      branch_id: data.branch_id,
-      member_id: data.is_anonymous ? null : (data.member_id || null),
-      category_id: data.category_id,
-      amount: data.amount,
-      currency: 'GHS',
-      payment_method: data.payment_method,
-      event_id: data.event_id || null,
-      transaction_date: data.transaction_date,
-      reference_number: data.reference_number || null,
-      notes: data.notes || null,
-      recorded_by: user.id,
-    })
+    const { error } = await supabase
+      .from('transactions')
+      .update({
+        branch_id:        data.branch_id,
+        member_id:        data.is_anonymous ? null : (data.member_id || null),
+        category_id:      data.category_id,
+        amount:           data.amount,
+        payment_method:   data.payment_method,
+        event_id:         data.event_id || null,
+        transaction_date: data.transaction_date,
+        reference_number: data.reference_number || null,
+        notes:            data.notes || null,
+      })
+      .eq('id', id)
     setSubmitting(false)
     if (!error) {
-      toast.success('Giving recorded successfully')
-      navigate('/donations')
+      toast.success('Transaction updated')
+      navigate(`/donations/${id}`)
     } else {
       toast.error(error.message)
     }
   }
 
-  // ─── Style shorthands ──────────────────────────────────────────────────────
+  // ─── Styles ────────────────────────────────────────────────────────────────
 
   const card: React.CSSProperties = {
     background: '#fff', border: '0.5px solid #E5E7EB',
@@ -231,22 +225,31 @@ export function RecordGivingPage() {
 
   const activeCatStyle = selectedCategory ? getCatStyle(selectedCategory.name) : null
 
+  if (dataLoading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+          Loading…
+        </div>
+      </div>
+    )
+  }
+
   return (
     <>
       <style>{`
-        .rg-input:focus { border-color: #4F6BED !important; }
-        .rg-select:focus { border-color: #4F6BED !important; outline: none; }
+        .et-input:focus { border-color: #4F6BED !important; }
+        .et-select:focus { border-color: #4F6BED !important; outline: none; }
         .cat-pill:hover { opacity: 0.8; }
         .method-pill:hover { opacity: 0.85; }
-        .network-pill:hover { opacity: 0.85; }
         .member-result:hover { background: #F4F5F7 !important; }
-        .rg-action-btn:hover { background: #F4F5F7 !important; }
+        .et-action-btn:hover { background: #F4F5F7 !important; }
       `}</style>
 
       {/* Page Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
         <button
-          onClick={() => navigate('/donations')}
+          onClick={() => navigate(`/donations/${id}`)}
           style={{
             width: 32, height: 32, borderRadius: 8,
             border: '0.5px solid #E5E7EB', background: '#fff',
@@ -265,29 +268,27 @@ export function RecordGivingPage() {
             fontWeight: 700, fontSize: 20, color: '#111827',
             letterSpacing: '-0.015em', margin: 0,
           }}>
-            Record Giving
+            Edit Transaction
           </h1>
           <p style={{
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
             fontSize: 13, color: '#6B7280', margin: '2px 0 0',
           }}>
-            Log a cash, MoMo, or bank contribution
+            Update the details of this giving record
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        {/* Two-column layout */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, alignItems: 'start' }}>
 
-          {/* ── Left: Form sections ── */}
+          {/* ── Left ── */}
           <div>
 
-            {/* Section 1: Contributor */}
+            {/* Contributor */}
             <div style={card}>
               <div style={sectionLabel}>Contributor</div>
 
-              {/* Anonymous toggle */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151' }}>
                   Anonymous giving
@@ -305,7 +306,6 @@ export function RecordGivingPage() {
                     border: 'none', cursor: 'pointer', position: 'relative',
                     transition: 'background 0.15s',
                   }}
-                  aria-label="Toggle anonymous"
                 >
                   <span style={{
                     position: 'absolute', top: 3,
@@ -317,7 +317,6 @@ export function RecordGivingPage() {
                 </button>
               </div>
 
-              {/* Member selector */}
               {isAnonymous ? (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 10,
@@ -335,9 +334,6 @@ export function RecordGivingPage() {
                   <div>
                     <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#374151' }}>
                       Anonymous Giver
-                    </div>
-                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>
-                      No member record linked
                     </div>
                   </div>
                 </div>
@@ -374,7 +370,6 @@ export function RecordGivingPage() {
                         type="button"
                         onClick={() => setValue('member_id', undefined)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: 2, display: 'grid', placeItems: 'center' }}
-                        aria-label="Remove member"
                       >
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                           <path d="M2 2l8 8M10 2 2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -384,11 +379,10 @@ export function RecordGivingPage() {
                   ) : (
                     <div style={{ position: 'relative' }}>
                       <input
-                        className="rg-input"
+                        className="et-input"
                         type="text"
-                        placeholder={dataLoading ? 'Loading members…' : 'Search member by name or ID...'}
+                        placeholder="Search member by name or ID..."
                         value={memberSearch}
-                        disabled={dataLoading}
                         onChange={e => { setMemberSearch(e.target.value); setMemberDropdownOpen(true) }}
                         onFocus={() => setMemberDropdownOpen(true)}
                         onBlur={() => setTimeout(() => setMemberDropdownOpen(false), 150)}
@@ -443,47 +437,38 @@ export function RecordGivingPage() {
               )}
             </div>
 
-            {/* Section 2: Giving Details */}
+            {/* Giving Details */}
             <div style={card}>
               <div style={sectionLabel}>Giving Details</div>
 
               <label style={fieldLabel}>Category</label>
-              {dataLoading ? (
-                <div style={{ height: 36, background: '#F3F4F6', borderRadius: 8, marginBottom: 20 }} />
-              ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: errors.category_id ? 4 : 20 }}>
-                  {categories.map(c => {
-                    const style = getCatStyle(c.name)
-                    const isSelected = selectedCategoryId === c.id
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        className="cat-pill"
-                        onClick={() => setValue('category_id', c.id)}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          padding: '6px 12px', borderRadius: 999, cursor: 'pointer',
-                          border: isSelected ? `1.5px solid ${style.dot}` : '1.5px solid transparent',
-                          background: isSelected ? style.bg : '#F4F5F7',
-                          color: isSelected ? style.color : '#6B7280',
-                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontWeight: 600, fontSize: 12.5, transition: 'all 0.12s',
-                        }}
-                      >
-                        <span style={{
-                          width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-                          background: isSelected ? style.dot : '#D1D5DB',
-                        }} />
-                        {c.name}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-              {errors.category_id && (
-                <div style={{ ...errorStyle, marginBottom: 16 }}>{errors.category_id.message}</div>
-              )}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: errors.category_id ? 4 : 20 }}>
+                {categories.map(c => {
+                  const style = getCatStyle(c.name)
+                  const isSelected = selectedCategoryId === c.id
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className="cat-pill"
+                      onClick={() => setValue('category_id', c.id)}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        padding: '6px 12px', borderRadius: 999, cursor: 'pointer',
+                        border: isSelected ? `1.5px solid ${style.dot}` : '1.5px solid transparent',
+                        background: isSelected ? style.bg : '#F4F5F7',
+                        color: isSelected ? style.color : '#6B7280',
+                        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                        fontWeight: 600, fontSize: 12.5, transition: 'all 0.12s',
+                      }}
+                    >
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: isSelected ? style.dot : '#D1D5DB' }} />
+                      {c.name}
+                    </button>
+                  )
+                })}
+              </div>
+              {errors.category_id && <div style={{ ...errorStyle, marginBottom: 16 }}>{errors.category_id.message}</div>}
 
               <label style={fieldLabel}>Amount</label>
               <div style={{ position: 'relative', marginBottom: errors.amount ? 4 : 20 }}>
@@ -493,7 +478,7 @@ export function RecordGivingPage() {
                   fontSize: 18, fontWeight: 500, color: '#9CA3AF', pointerEvents: 'none',
                 }}>₵</span>
                 <input
-                  className="rg-input"
+                  className="et-input"
                   type="number"
                   min="0"
                   step="0.01"
@@ -503,13 +488,10 @@ export function RecordGivingPage() {
                     ...inputBase, height: 50, paddingLeft: 30,
                     fontFamily: "'IBM Plex Mono', monospace",
                     fontSize: 22, fontWeight: 600, color: '#111827',
-                    letterSpacing: '-0.01em',
                   }}
                 />
               </div>
-              {errors.amount && (
-                <div style={{ ...errorStyle, marginBottom: 16 }}>{errors.amount.message}</div>
-              )}
+              {errors.amount && <div style={{ ...errorStyle, marginBottom: 16 }}>{errors.amount.message}</div>}
 
               <label style={fieldLabel}>Payment Method</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
@@ -532,54 +514,16 @@ export function RecordGivingPage() {
                   </button>
                 ))}
               </div>
-
-              {selectedMethod === 'momo' && (
-                <div style={{
-                  background: '#FAFBFE', border: '0.5px solid #E8ECF9',
-                  borderRadius: 10, padding: 14, marginTop: 14,
-                }}>
-                  <label style={{ ...fieldLabel, marginBottom: 10 }}>Network</label>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-                    {MOMO_NETWORKS.map(n => (
-                      <button
-                        key={n.key}
-                        type="button"
-                        className="network-pill"
-                        onClick={() => setMomoNetwork(n.key)}
-                        style={{
-                          flex: 1, height: 34, borderRadius: 8, cursor: 'pointer',
-                          border: momoNetwork === n.key ? `1.5px solid ${n.color}` : '1.5px solid #E5E7EB',
-                          background: momoNetwork === n.key ? `${n.color}18` : '#fff',
-                          color: momoNetwork === n.key ? n.color : '#6B7280',
-                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontWeight: 600, fontSize: 12.5, transition: 'all 0.12s',
-                        }}
-                      >
-                        {n.label}
-                      </button>
-                    ))}
-                  </div>
-                  <label style={fieldLabel}>MoMo Number (optional)</label>
-                  <input
-                    className="rg-input"
-                    type="tel"
-                    placeholder="024 XXX XXXX"
-                    value={momoNumber}
-                    onChange={e => setMomoNumber(e.target.value)}
-                    style={{ ...inputBase, fontFamily: "'IBM Plex Mono', monospace" }}
-                  />
-                </div>
-              )}
             </div>
 
-            {/* Section 3: Branch, Event & Date */}
+            {/* Branch, Event & Date */}
             <div style={card}>
               <div style={sectionLabel}>Event &amp; Date</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={fieldLabel}>Branch</label>
                   <select
-                    className="rg-select"
+                    className="et-select"
                     {...register('branch_id')}
                     style={{ ...inputBase, padding: '0 12px', cursor: 'pointer' } as React.CSSProperties}
                   >
@@ -588,43 +532,37 @@ export function RecordGivingPage() {
                       <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
                   </select>
-                  {errors.branch_id && (
-                    <div style={errorStyle}>{errors.branch_id.message}</div>
-                  )}
+                  {errors.branch_id && <div style={errorStyle}>{errors.branch_id.message}</div>}
                 </div>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={fieldLabel}>Linked Event</label>
                   <select
-                    className="rg-select"
+                    className="et-select"
                     {...register('event_id')}
                     style={{ ...inputBase, padding: '0 12px', cursor: 'pointer' } as React.CSSProperties}
                   >
                     <option value="">No specific event</option>
                     {events.map(e => (
-                      <option key={e.id} value={e.id}>
-                        {e.name} — {formatEventDate(e.starts_at)}
-                      </option>
+                      <option key={e.id} value={e.id}>{e.name}</option>
                     ))}
                   </select>
                 </div>
                 <div>
                   <label style={fieldLabel}>Transaction Date</label>
                   <input
-                    className="rg-input"
+                    className="et-input"
                     type="date"
                     {...register('transaction_date')}
                     style={{ ...inputBase, fontFamily: "'IBM Plex Mono', monospace" }}
                   />
-                  {errors.transaction_date && (
-                    <div style={errorStyle}>{errors.transaction_date.message}</div>
-                  )}
+                  {errors.transaction_date && <div style={errorStyle}>{errors.transaction_date.message}</div>}
                 </div>
                 <div>
                   <label style={fieldLabel}>Reference Number (optional)</label>
                   <input
-                    className="rg-input"
+                    className="et-input"
                     type="text"
-                    placeholder="Auto-generated if left blank"
+                    placeholder="e.g. TXN-001"
                     {...register('reference_number')}
                     style={{ ...inputBase, fontFamily: "'IBM Plex Mono', monospace" }}
                   />
@@ -632,12 +570,12 @@ export function RecordGivingPage() {
               </div>
             </div>
 
-            {/* Section 4: Notes */}
+            {/* Notes */}
             <div style={card}>
               <div style={sectionLabel}>Notes</div>
               <textarea
-                className="rg-input"
-                placeholder="Any additional notes about this contribution..."
+                className="et-input"
+                placeholder="Any additional notes..."
                 {...register('notes')}
                 rows={4}
                 style={{
@@ -648,20 +586,17 @@ export function RecordGivingPage() {
             </div>
           </div>
 
-          {/* ── Right: Live preview card ── */}
+          {/* ── Right: preview ── */}
           <div style={{ position: 'sticky', top: 24 }}>
             <div style={{
               background: '#FAFBFE', border: '0.5px solid #E8ECF9',
               borderRadius: 12, padding: 20,
             }}>
               <div style={sectionLabel}>Preview</div>
-
-              {/* Receipt card */}
               <div style={{
                 background: '#fff', border: '0.5px solid #E5E7EB',
                 borderRadius: 10, overflow: 'hidden',
               }}>
-                {/* Receipt header */}
                 <div style={{ padding: '14px 16px', borderBottom: '1px dashed #E5E7EB' }}>
                   <div style={{
                     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
@@ -676,8 +611,8 @@ export function RecordGivingPage() {
                     letterSpacing: '-0.02em', lineHeight: 1.1,
                     fontVariantNumeric: 'tabular-nums',
                   }}>
-                    {amountValue && amountValue > 0
-                      ? `₵${amountValue.toLocaleString('en-GH', { minimumFractionDigits: 2 })}`
+                    {watch('amount') > 0
+                      ? `₵${watch('amount').toLocaleString('en-GH', { minimumFractionDigits: 2 })}`
                       : '₵0.00'}
                   </div>
                   {activeCatStyle && (
@@ -695,10 +630,8 @@ export function RecordGivingPage() {
                     </div>
                   )}
                 </div>
-
-                {/* Receipt details */}
                 <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Member</span>
                     <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
                       {isAnonymous ? 'Anonymous' : selectedMember
@@ -706,37 +639,20 @@ export function RecordGivingPage() {
                         : '—'}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Method</span>
                     <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
                       {METHOD_LABELS[selectedMethod] ?? selectedMethod}
-                      {selectedMethod === 'momo' && momoNetwork
-                        ? ` · ${MOMO_NETWORKS.find(n => n.key === momoNetwork)?.label ?? ''}`
-                        : ''}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                    <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF', flexShrink: 0 }}>Event</span>
-                    <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500, textAlign: 'right' }}>
-                      {selectedEvent?.name ?? '—'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Date</span>
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#374151' }}>
-                      {transactionDate || '—'}
+                      {watch('transaction_date') || '—'}
                     </span>
                   </div>
                 </div>
               </div>
-
-              <p style={{
-                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontSize: 11.5, color: '#9CA3AF', textAlign: 'center',
-                lineHeight: 1.5, marginTop: 12,
-              }}>
-                A receipt is available to print after saving.
-              </p>
             </div>
           </div>
         </div>
@@ -753,12 +669,12 @@ export function RecordGivingPage() {
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
             fontSize: 12, color: '#9CA3AF', flex: 1,
           }}>
-            {Object.keys(errors).length > 0 ? 'Please fix errors before saving' : 'Ready to save'}
+            {Object.keys(errors).length > 0 ? 'Please fix errors before saving' : 'Ready to update'}
           </span>
           <button
             type="button"
-            className="rg-action-btn"
-            onClick={() => navigate('/donations')}
+            className="et-action-btn"
+            onClick={() => navigate(`/donations/${id}`)}
             style={{
               height: 36, padding: '0 16px', borderRadius: 8,
               border: '0.5px solid #E5E7EB', background: '#fff',
@@ -778,14 +694,12 @@ export function RecordGivingPage() {
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
               fontWeight: 600, fontSize: 13, color: '#fff',
               cursor: submitting ? 'not-allowed' : 'pointer',
-              display: 'flex', alignItems: 'center', gap: 8,
             }}
           >
-            {submitting ? 'Saving…' : 'Save Giving'}
+            {submitting ? 'Saving…' : 'Save Changes'}
           </button>
         </div>
 
-        {/* Spacer for sticky bar */}
         <div style={{ height: 64 }} />
       </form>
     </>

@@ -716,11 +716,14 @@ export function MemberProfilePage() {
 
   const fetchTransactions = async () => {
     if (!id || !user) return
+    const currentYear = new Date().getFullYear()
+    const startOfYear = `${currentYear}-01-01`
     const { data } = await supabase
       .from('transactions')
       .select('amount, transaction_date')
       .eq('member_id', id)
       .eq('org_id', user.org_id)
+      .gte('transaction_date', startOfYear)
       .order('transaction_date', { ascending: false })
     setTransactions((data ?? []) as Transaction[])
   }
@@ -788,10 +791,7 @@ export function MemberProfilePage() {
   const avatarColors = getAvatarColor(member.first_name, member.last_name)
 
   // Giving summary
-  const currentYear = new Date().getFullYear()
-  const ytdTotal = transactions
-    .filter(t => new Date(t.transaction_date).getFullYear() === currentYear)
-    .reduce((sum, t) => sum + (t.amount ?? 0), 0)
+  const ytdTotal = transactions.reduce((sum, t) => sum + (t.amount ?? 0), 0)
   const lastGift = transactions[0] ?? null
 
   return (

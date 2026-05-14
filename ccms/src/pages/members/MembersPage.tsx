@@ -278,13 +278,14 @@ export function MembersPage() {
   const [branchFilter, setBranchFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
 
-  const [menuPos, setMenuPos] = useState<{ memberId: string; top: number; left: number } | null>(null)
+  const [menuPos, setMenuPos] = useState<{ memberId: string; memberStatus: string; top: number; left: number } | null>(null)
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null)
 
-  useEffect(() => {
+  const fetchMembers = async () => {
     if (!user?.org_id) return
     setLoading(true)
     setError(null)
-    supabase
+    const { data, error: err } = await supabase
       .from('members')
       .select(`
         *,
@@ -297,11 +298,13 @@ export function MembersPage() {
       `)
       .eq('org_id', user.org_id)
       .order('created_at', { ascending: false })
-      .then(({ data, error: err }) => {
-        if (err) setError(err.message)
-        else setMembers((data as Member[]) ?? [])
-        setLoading(false)
-      })
+    if (err) setError(err.message)
+    else setMembers((data as Member[]) ?? [])
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    fetchMembers()
   }, [user?.org_id])
 
   useEffect(() => {
@@ -335,6 +338,17 @@ export function MembersPage() {
   }, [user?.org_id])
 
   useEffect(() => { setPage(1) }, [search, statusFilter, genderFilter, ageGroupFilter, membershipLengthFilter, ministryFilter, branchFilter])
+
+  const handleToggleStatus = async (memberId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
+    await supabase
+      .from('members')
+      .update({ membership_status: newStatus })
+      .eq('id', memberId)
+    fetchMembers()
+    setMenuPos(null)
+    toast.success(`Member ${newStatus === 'active' ? 'activated' : 'deactivated'}`)
+  }
 
   useEffect(() => {
     if (!menuPos) return
@@ -425,8 +439,6 @@ export function MembersPage() {
           100% { background-position: -200% 0; }
         }
         .member-row:hover { background: #F9FAFB !important; }
-        .member-row:hover .row-arrow { opacity: 1 !important; }
-        .member-row:hover .row-menu-btn { opacity: 1 !important; }
         .filter-input:focus { border-color: #4F6BED !important; }
         .filter-select:focus { border-color: #4F6BED !important; outline: none; }
       `}</style>
@@ -463,6 +475,14 @@ export function MembersPage() {
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
           >
             Edit Member
+          </button>
+          <button
+            style={{ ...menuItemStyle, color: menuPos.memberStatus === 'active' ? '#EF4444' : '#22C55E' }}
+            onClick={() => handleToggleStatus(menuPos.memberId, menuPos.memberStatus)}
+            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            {menuPos.memberStatus === 'active' ? 'Deactivate' : 'Activate'}
           </button>
         </div>
       )}
@@ -679,16 +699,19 @@ export function MembersPage() {
             ) : (
               paginated.map(member => (
                 <tr
-                  key={member.id}
-                  className="member-row"
-                  onClick={() => navigate(`/members/${member.id}`)}
-                  style={{
-                    borderBottom: '0.5px solid #F3F4F6',
-                    height: 56, background: '#fff',
-                    transition: 'background 0.1s',
-                    cursor: 'pointer',
-                  }}
-                >
+          key={member.id}
+          className="member-row"
+          onClick={() => navigate(`/members/${member.id}`)}
+          //onMouseEnter={() => setHoveredRow(member.id)}
+          onMouseEnter={() => { setHoveredRow(member.id); console.log('hover:', member.id) }}
+          onMouseLeave={() => setHoveredRow(null)}
+          style={{
+            borderBottom: '0.5px solid #F3F4F6',
+            height: 56, background: '#fff',
+            transition: 'background 0.1s',
+            cursor: 'pointer',
+          }} >
+                
                   {/* Member */}
                   <td style={{ padding: '0 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -763,7 +786,7 @@ export function MembersPage() {
                           setMenuPos(
                             menuPos?.memberId === member.id
                               ? null
-                              : { memberId: member.id, top: rect.bottom + 4, left: rect.right - 160 }
+                              : { memberId: member.id, memberStatus: member.membership_status, top: rect.bottom + 4, left: rect.right - 160 }
                           )
                         }}
                         style={{
@@ -780,7 +803,7 @@ export function MembersPage() {
                         className="row-arrow"
                         style={{
                           color: '#9CA3AF',
-                          opacity: 1,
+                          opacity:1,
                           transition: 'opacity 0.1s',
                           display: 'flex',
                           alignItems: 'center',

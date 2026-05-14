@@ -13,6 +13,9 @@ import { DonationsPage } from '../pages/donations/DonationsPage'
 import { RecordGivingPage } from '../pages/donations/RecordGivingPage'
 import { TransactionDetailPage } from '../pages/donations/TransactionDetailPage'
 import { PledgesPage } from '../pages/donations/PledgesPage'
+import { AddPledgePage } from '../pages/donations/AddPledgePage'
+import { EditTransactionPage } from '../pages/donations/EditTransactionPage'
+import { EditPledgePage } from '../pages/donations/EditPledgePage'
 import { SettingsPage } from '../pages/settings/SettingsPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { AppLayout } from '../layouts/AppLayout'
@@ -52,6 +55,9 @@ export const router = createBrowserRouter([
           { path: '/donations', element: <DonationsPage /> },
           { path: '/donations/new', element: <RecordGivingPage /> },
           { path: '/donations/pledges', element: <PledgesPage /> },
+          { path: '/donations/pledges/new', element: <AddPledgePage /> },
+          { path: '/donations/pledges/:id/edit', element: <EditPledgePage /> },
+          { path: '/donations/:id/edit', element: <EditTransactionPage /> },
           { path: '/donations/:id', element: <TransactionDetailPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],

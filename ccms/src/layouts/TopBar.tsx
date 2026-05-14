@@ -110,10 +110,10 @@ export function TopBar() {
   useEffect(() => {
     if (!user?.org_id) return
     supabase
-      .from('organizations')
+      .from('organisations')
       .select('name')
       .eq('id', user.org_id)
-      .single()
+      .maybeSingle()
       .then(({ data }) => { if (data?.name) setOrgName(data.name) })
   }, [user?.org_id])
 

@@ -1,22 +1,22 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../contexts/AuthContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type PledgeStatus = 'active' | 'fulfilled' | 'overdue' | 'cancelled'
 
-interface Pledge {
+interface PledgeRow {
   id: string
-  firstName: string
-  lastName: string
-  memberNumber: string
-  description: string
-  totalPledged: number
-  amountPaid: number
-  startDate: string
-  dueDate: string
+  total_amount: number
+  amount_paid: number
+  due_date: string | null
   status: PledgeStatus
+  created_at: string
+  transaction_categories: { id: string; name: string } | null
+  member: { id: string; first_name: string; last_name: string; member_number: string } | null
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -39,6 +39,8 @@ const AVATAR_PALETTE = [
   { bg: '#F5F3FF', color: '#7C3AED' },
 ]
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function getAvatarColor(firstName: string, lastName: string) {
   const str = (firstName + lastName).toLowerCase()
   let hash = 0
@@ -50,44 +52,24 @@ function formatAmount(n: number) {
   return `₵${n.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-const SAMPLE_PLEDGES: Pledge[] = [
-  {
-    id: 'PLG-001', firstName: 'Kwame', lastName: 'Asante', memberNumber: 'GH-00001',
-    description: 'Building Fund Pledge', totalPledged: 5000, amountPaid: 3500,
-    startDate: 'Jan 2026', dueDate: 'Dec 2026', status: 'active',
-  },
-  {
-    id: 'PLG-002', firstName: 'Abena', lastName: 'Mensah', memberNumber: 'GH-00002',
-    description: 'Annual Tithe Pledge', totalPledged: 2400, amountPaid: 2400,
-    startDate: 'Jan 2026', dueDate: 'Dec 2026', status: 'fulfilled',
-  },
-  {
-    id: 'PLG-003', firstName: 'Kofi', lastName: 'Boateng', memberNumber: 'GH-00003',
-    description: 'Building Fund Pledge', totalPledged: 10000, amountPaid: 2000,
-    startDate: 'Mar 2025', dueDate: 'Feb 2026', status: 'overdue',
-  },
-  {
-    id: 'PLG-004', firstName: 'Ama', lastName: 'Owusu', memberNumber: 'GH-00004',
-    description: 'Welfare Fund Pledge', totalPledged: 1200, amountPaid: 600,
-    startDate: 'Feb 2026', dueDate: 'Jul 2026', status: 'active',
-  },
-  {
-    id: 'PLG-005', firstName: 'Emmanuel', lastName: 'Darko', memberNumber: 'GH-00005',
-    description: 'Special Offering Pledge', totalPledged: 500, amountPaid: 0,
-    startDate: 'Apr 2026', dueDate: 'Jun 2026', status: 'cancelled',
-  },
-  {
-    id: 'PLG-006', firstName: 'Akosua', lastName: 'Frimpong', memberNumber: 'GH-00006',
-    description: 'Building Fund Pledge', totalPledged: 3000, amountPaid: 3000,
-    startDate: 'Jan 2026', dueDate: 'Jun 2026', status: 'fulfilled',
-  },
-]
+function formatDueDate(dateStr: string | null) {
+  if (!dateStr) return '—'
+  try {
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-GH', { month: 'short', year: 'numeric' })
+  } catch {
+    return dateStr
+  }
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function ProgressBar({ paid, total }: { paid: number; total: number }) {
+function ProgressBar({ paid, total, status }: { paid: number; total: number; status: PledgeStatus }) {
   const pct = total > 0 ? Math.min(100, (paid / total) * 100) : 0
-  const color = pct >= 100 ? '#22C55E' : pct < 30 ? '#EF4444' : '#4F6BED'
+  const color = status === 'fulfilled' || pct >= 100
+    ? '#22C55E'
+    : status === 'overdue'
+      ? '#EF4444'
+      : '#4F6BED'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -107,13 +89,25 @@ function ProgressBar({ paid, total }: { paid: number; total: number }) {
           {Math.round(pct)}%
         </span>
       </div>
-      <div style={{
-        fontFamily: "'IBM Plex Mono', monospace",
-        fontSize: 11, color: '#9CA3AF',
-      }}>
+      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>
         {formatAmount(paid)} / {formatAmount(total)}
       </div>
     </div>
+  )
+}
+
+function SkeletonRow() {
+  return (
+    <tr style={{ borderBottom: '0.5px solid #EFF1F7', height: 60 }}>
+      {[22, 18, 28, 10, 10, 5].map((w, i) => (
+        <td key={i} style={{ padding: '0 18px' }}>
+          <div style={{
+            height: 12, width: `${w * 4}px`, borderRadius: 6,
+            background: '#F3F4F6', animation: 'pulse 1.5s ease-in-out infinite',
+          }} />
+        </td>
+      ))}
+    </tr>
   )
 }
 
@@ -121,26 +115,59 @@ function ProgressBar({ paid, total }: { paid: number; total: number }) {
 
 export function PledgesPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
 
-  const [search, setSearch] = useState('')
+  const [pledges,  setPledges]  = useState<PledgeRow[]>([])
+  const [loading,  setLoading]  = useState(true)
+
+  const [search,       setSearch]       = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | PledgeStatus>('all')
 
-  const filtered = SAMPLE_PLEDGES.filter(p => {
+  useEffect(() => {
+    if (!user?.org_id) return
+    const fetchPledges = async () => {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('pledges')
+        .select(`
+          id, total_amount, amount_paid, due_date, status, created_at,
+          transaction_categories(id, name),
+          member:members!pledges_member_id_fkey(id, first_name, last_name, member_number)
+        `)
+        .eq('org_id', user.org_id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        toast.error('Failed to load pledges')
+      } else {
+        setPledges((data ?? []) as unknown as PledgeRow[])
+      }
+      setLoading(false)
+    }
+    fetchPledges()
+  }, [user?.org_id])
+
+  const filtered = pledges.filter(p => {
+    const firstName = p.member?.first_name ?? ''
+    const lastName  = p.member?.last_name ?? ''
+    const memberNum = p.member?.member_number ?? ''
+    const catName   = p.transaction_categories?.name ?? ''
     const q = search.toLowerCase()
     const matchesSearch = !q ||
-      `${p.firstName} ${p.lastName}`.toLowerCase().includes(q) ||
-      p.memberNumber.toLowerCase().includes(q) ||
-      p.description.toLowerCase().includes(q) ||
+      `${firstName} ${lastName}`.toLowerCase().includes(q) ||
+      memberNum.toLowerCase().includes(q) ||
+      catName.toLowerCase().includes(q) ||
       p.id.toLowerCase().includes(q)
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter
     return matchesSearch && matchesStatus
   })
 
-  const totalPledged   = SAMPLE_PLEDGES.reduce((s, p) => s + p.totalPledged, 0)
-  const totalPaid      = SAMPLE_PLEDGES.reduce((s, p) => s + p.amountPaid, 0)
-  const activePledges  = SAMPLE_PLEDGES.filter(p => p.status === 'active').length
-  const overduePledges = SAMPLE_PLEDGES.filter(p => p.status === 'overdue').length
-  const fulfilledPledges = SAMPLE_PLEDGES.filter(p => p.status === 'fulfilled').length
+  const today = new Date().toISOString().split('T')[0]
+  const totalPledged   = pledges.reduce((s, p) => s + p.total_amount, 0)
+  const totalPaid      = pledges.reduce((s, p) => s + p.amount_paid, 0)
+  const activePledges  = pledges.filter(p => p.status === 'active').length
+  const overduePledges = pledges.filter(p => p.status === 'active' && p.due_date && p.due_date < today).length
+  const fulfilledPledges = pledges.filter(p => p.status === 'fulfilled').length
 
   const inputStyle: React.CSSProperties = {
     height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB',
@@ -162,6 +189,7 @@ export function PledgesPage() {
   return (
     <>
       <style>{`
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
         .pl-row:hover { background: #FAFBFE !important; }
         .pl-row:hover .pl-actions { opacity: 1 !important; }
         .pl-filter-select:focus { border-color: #4F6BED !important; outline: none; }
@@ -180,11 +208,11 @@ export function PledgesPage() {
             Pledges
           </h1>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280' }}>
-            {activePledges} active · {overduePledges} overdue · {fulfilledPledges} fulfilled
+            {loading ? 'Loading…' : `${activePledges} active · ${overduePledges} overdue · ${fulfilledPledges} fulfilled`}
           </div>
         </div>
         <button
-          onClick={() => toast.info('Record pledge feature coming soon')}
+          onClick={() => navigate('/donations/pledges/new')}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             height: 36, padding: '0 16px', borderRadius: 8,
@@ -196,7 +224,7 @@ export function PledgesPage() {
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
             <path d="M8 3.5v9M3.5 8h9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
           </svg>
-          Record Pledge
+          Add Pledge
         </button>
       </div>
 
@@ -231,10 +259,10 @@ export function PledgesPage() {
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
         {[
-          { label: 'Total Pledged',   value: formatAmount(totalPledged),   sub: `${SAMPLE_PLEDGES.length} pledges`,       color: '#4F6BED', bgIcon: '#EEF1FE' },
-          { label: 'Total Paid',      value: formatAmount(totalPaid),       sub: `${Math.round((totalPaid / totalPledged) * 100)}% of pledges`,  color: '#22C55E', bgIcon: '#DCFCE7' },
-          { label: 'Active Pledges',  value: String(activePledges),          sub: 'In progress',                           color: '#3B82F6', bgIcon: '#DBEAFE' },
-          { label: 'Overdue',         value: String(overduePledges),         sub: 'Need follow-up',                        color: '#EF4444', bgIcon: '#FEE2E2' },
+          { label: 'Total Pledged',  value: loading ? '—' : formatAmount(totalPledged),  sub: `${pledges.length} pledges`,                              color: '#4F6BED', bgIcon: '#EEF1FE' },
+          { label: 'Total Paid',     value: loading ? '—' : formatAmount(totalPaid),     sub: totalPledged > 0 ? `${Math.round((totalPaid / totalPledged) * 100)}% of pledges` : '—',  color: '#22C55E', bgIcon: '#DCFCE7' },
+          { label: 'Active Pledges', value: loading ? '—' : String(activePledges),        sub: 'In progress',                                             color: '#3B82F6', bgIcon: '#DBEAFE' },
+          { label: 'Overdue',        value: loading ? '—' : String(overduePledges),       sub: 'Need follow-up',                                          color: '#EF4444', bgIcon: '#FEE2E2' },
         ].map(c => (
           <div key={c.label} style={{
             background: '#fff', border: '0.5px solid #E6E8F0',
@@ -255,10 +283,7 @@ export function PledgesPage() {
             }}>
               {c.value}
             </div>
-            <div style={{
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontSize: 12, color: '#9CA3AF',
-            }}>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>
               {c.sub}
             </div>
           </div>
@@ -299,7 +324,7 @@ export function PledgesPage() {
           <option value="cancelled">Cancelled</option>
         </select>
         <select className="pl-filter-select" style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}>
-          <option>All Branches</option>
+          <option>All Categories</option>
         </select>
       </div>
 
@@ -312,7 +337,7 @@ export function PledgesPage() {
           <thead>
             <tr>
               <th style={{ ...th, width: '22%' }}>Member</th>
-              <th style={th}>Description</th>
+              <th style={th}>Category</th>
               <th style={{ ...th, width: '28%' }}>Progress</th>
               <th style={th}>Due Date</th>
               <th style={th}>Status</th>
@@ -320,19 +345,44 @@ export function PledgesPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {loading ? (
+              Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)
+            ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{
                   padding: '60px 0', textAlign: 'center',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                  fontSize: 13, color: '#9CA3AF',
+                  fontSize: 13,
                 }}>
-                  No pledges match your filters.
+                  {pledges.length === 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                      <div style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>
+                        No pledges recorded yet.
+                      </div>
+                      <button
+                        onClick={() => navigate('/donations/pledges/new')}
+                        style={{
+                          marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 8,
+                          height: 36, padding: '0 16px', borderRadius: 8,
+                          border: 'none', background: '#4F6BED', color: '#fff',
+                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                          fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                        }}
+                      >
+                        Add Pledge
+                      </button>
+                    </div>
+                  ) : (
+                    <span style={{ color: '#9CA3AF' }}>No pledges match your filters.</span>
+                  )}
                 </td>
               </tr>
             ) : filtered.map(p => {
-              const { bg: avBg, color: avColor } = getAvatarColor(p.firstName, p.lastName)
-              const st = STATUS_STYLES[p.status]
+              const firstName = p.member?.first_name ?? '—'
+              const lastName  = p.member?.last_name ?? ''
+              const memberNum = p.member?.member_number ?? '—'
+              const { bg: avBg, color: avColor } = getAvatarColor(firstName, lastName)
+              const st = STATUS_STYLES[p.status] ?? STATUS_STYLES.active
               return (
                 <tr
                   key={p.id}
@@ -340,9 +390,8 @@ export function PledgesPage() {
                   style={{
                     borderBottom: '0.5px solid #EFF1F7',
                     height: 60, background: '#fff',
-                    transition: 'background 0.1s', cursor: 'pointer',
+                    transition: 'background 0.1s', cursor: 'default',
                   }}
-                  onClick={() => toast.info(`Pledge ${p.id} — coming soon`)}
                 >
                   <td style={{ padding: '0 18px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -354,32 +403,32 @@ export function PledgesPage() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         flexShrink: 0,
                       }}>
-                        {p.firstName[0]}{p.lastName[0]}
+                        {firstName[0]}{lastName[0]}
                       </div>
                       <div>
                         <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>
-                          {p.firstName} {p.lastName}
+                          {firstName} {lastName}
                         </div>
                         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>
-                          {p.memberNumber}
+                          {memberNum}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td style={{ padding: '0 18px' }}>
                     <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151' }}>
-                      {p.description}
+                      {p.transaction_categories?.name ?? '—'}
                     </div>
                     <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                      {p.id}
+                      {p.id.slice(0, 8).toUpperCase()}
                     </div>
                   </td>
                   <td style={{ padding: '0 18px' }}>
-                    <ProgressBar paid={p.amountPaid} total={p.totalPledged} />
+                    <ProgressBar paid={p.amount_paid} total={p.total_amount} status={p.status} />
                   </td>
                   <td style={{ padding: '0 18px' }}>
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#6B7280' }}>
-                      {p.dueDate}
+                      {formatDueDate(p.due_date)}
                     </span>
                   </td>
                   <td style={{ padding: '0 18px' }}>
@@ -395,11 +444,11 @@ export function PledgesPage() {
                     </span>
                   </td>
                   <td style={{ padding: '0 12px' }}>
-                    <div className="pl-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, opacity: 0, transition: 'opacity 0.1s' }}>
+                    <div className="pl-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, opacity: 1 }}>
                       <button
                         className="pl-icon"
-                        aria-label="More"
-                        onClick={e => { e.stopPropagation(); toast.info('Actions coming soon') }}
+                        aria-label="Edit pledge"
+                        onClick={e => { e.stopPropagation(); navigate(`/donations/pledges/${p.id}/edit`) }}
                         style={{
                           width: 28, height: 28, borderRadius: 6,
                           border: '0.5px solid #E5E7EB', background: '#fff',
@@ -408,10 +457,10 @@ export function PledgesPage() {
                           transition: 'all 0.1s',
                         }}
                       >
-                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                          <circle cx="3" cy="8" r="1.3" fill="currentColor" />
-                          <circle cx="8" cy="8" r="1.3" fill="currentColor" />
-                          <circle cx="13" cy="8" r="1.3" fill="currentColor" />
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path d="M9.5 2.5L11.5 4.5L4.5 11.5H2.5V9.5L9.5 2.5Z" 
+                            stroke="currentColor" strokeWidth="1.3" 
+                            strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       </button>
                     </div>
