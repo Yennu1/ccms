@@ -60,3 +60,43 @@
     font-family: 'IBM Plex Sans', system-ui, sans-serif;
   }
 }
+
+/* ── Print: show only the attendance sheet ─────────────────────────────────── */
+
+#ccms-print-sheet {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+@media print {
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  body * { visibility: hidden; }
+
+  #ccms-print-sheet,
+  #ccms-print-sheet * { visibility: visible; }
+
+  #ccms-print-sheet {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    visibility: visible;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm;
+  }
+}
