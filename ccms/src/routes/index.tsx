@@ -16,6 +16,11 @@ import { PledgesPage } from '../pages/donations/PledgesPage'
 import { AddPledgePage } from '../pages/donations/AddPledgePage'
 import { EditTransactionPage } from '../pages/donations/EditTransactionPage'
 import { EditPledgePage } from '../pages/donations/EditPledgePage'
+import { EventsListPage } from '../pages/events/EventsListPage'
+import { CreateEventPage } from '../pages/events/CreateEventPage'
+import { EditEventPage } from '../pages/events/EditEventPage'
+import { EventDetailPage } from '../pages/events/EventDetailPage'
+import { CalendarViewPage } from '../pages/events/CalendarViewPage'
 import { SettingsPage } from '../pages/settings/SettingsPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { AppLayout } from '../layouts/AppLayout'
@@ -59,6 +64,11 @@ export const router = createBrowserRouter([
           { path: '/donations/pledges/:id/edit', element: <EditPledgePage /> },
           { path: '/donations/:id/edit', element: <EditTransactionPage /> },
           { path: '/donations/:id', element: <TransactionDetailPage /> },
+          { path: '/events', element: <EventsListPage /> },
+          { path: '/events/calendar', element: <CalendarViewPage /> },
+          { path: '/events/new', element: <CreateEventPage /> },
+          { path: '/events/:id', element: <EventDetailPage /> },
+          { path: '/events/:id/edit', element: <EditEventPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],
       },

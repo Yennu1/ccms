@@ -186,6 +186,8 @@ export function HouseholdsPage() {
   const [branchFilter, setBranchFilter] = useState('all')
   const [sortBy, setSortBy] = useState<SortBy>('recent')
   const [page, setPage] = useState(1)
+  
+
   const fetchHouseholds = async () => {
     if (!user?.org_id) return
     setLoading(true)

@@ -653,6 +653,253 @@ function AddRelationshipModal({
   )
 }
 
+// ─── Attendance Tab Component ─────────────────────────────────────────────────
+
+interface AttRecord {
+  id: string
+  event_id: string
+  present: boolean
+  events: { id: string; name: string; event_type: string | null; starts_at: string } | null
+}
+
+function getWeekNumber(date: Date): number {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7))
+  const yearStart = new Date(d.getFullYear(), 0, 1)
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+}
+
+const ATT_TYPE_STYLES: Record<string, { bg: string; color: string; dot: string; label: string }> = {
+  sunday_service:         { bg: '#E8ECF9', color: '#3349C7', dot: '#4F6BED', label: 'Sunday Service' },
+  midweek_service:        { bg: '#EDE9FE', color: '#5B21B6', dot: '#8B5CF6', label: 'Midweek Service' },
+  prayer_meeting:         { bg: '#F0FDFA', color: '#0F766E', dot: '#0D9488', label: 'Prayer Meeting' },
+  youth_service:          { bg: '#FFF7ED', color: '#C2410C', dot: '#F97316', label: 'Youth Service' },
+  special_programme:      { bg: '#FEF6E5', color: '#8A6418', dot: '#C8964A', label: 'Special Programme' },
+  outreach:               { bg: '#DCFCE7', color: '#166534', dot: '#22C55E', label: 'Outreach' },
+  conference:             { bg: '#DBEAFE', color: '#1E40AF', dot: '#3B82F6', label: 'Conference' },
+  funeral_burial_service: { bg: '#F3F4F6', color: '#6B7280', dot: '#9CA3AF', label: 'Funeral/Burial' },
+}
+
+function getAttTypeStyle(type: string | null) {
+  return ATT_TYPE_STYLES[type ?? ''] ?? { bg: '#F3F4F6', color: '#6B7280', dot: '#9CA3AF', label: type ?? 'Event' }
+}
+
+function heatmapColor(count: number): string {
+  if (count === 0) return '#E8ECF9'
+  if (count === 1) return '#C4CEEB'
+  if (count === 2) return '#8FA3E8'
+  return '#4F6BED'
+}
+
+const ATT_PAGE = 10
+
+function MemberAttendanceTab({ memberId }: { memberId: string }) {
+  const navigate = useNavigate()
+  const [records, setRecords] = useState<AttRecord[]>([])
+  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+
+  useEffect(() => {
+    supabase
+      .from('attendance')
+      .select('id, event_id, present, events(id, name, event_type, starts_at)')
+      .eq('member_id', memberId)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setRecords((data ?? []) as unknown as AttRecord[])
+        setLoading(false)
+      })
+  }, [memberId])
+
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const threeMonthsAgo = new Date(now)
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+
+  const last3MonthsRecords = records.filter(r => r.events && new Date(r.events.starts_at) >= threeMonthsAgo)
+  const last3MonthsPresent = last3MonthsRecords.filter(r => r.present).length
+  const attendanceRate = last3MonthsRecords.length > 0
+    ? Math.round((last3MonthsPresent / last3MonthsRecords.length) * 100)
+    : 0
+
+  const ytdTotal = records.filter(r => r.present && r.events && new Date(r.events.starts_at).getFullYear() === currentYear).length
+
+  // Weekly streak: consecutive weeks going back from this week with ≥1 present record
+  const presentRecords = records.filter(r => r.present && r.events)
+  const presentWeeks = new Set(
+    presentRecords.map(r => {
+      const d = new Date(r.events!.starts_at)
+      return `${d.getFullYear()}-${getWeekNumber(d)}`
+    })
+  )
+  let streak = 0
+  const cur = new Date()
+  for (let w = 0; w < 52; w++) {
+    const key = `${cur.getFullYear()}-${getWeekNumber(cur)}`
+    if (presentWeeks.has(key)) { streak++ }
+    else if (w > 0) break
+    cur.setDate(cur.getDate() - 7)
+  }
+
+  // Heatmap: weeks of current year
+  const startOfYear = new Date(currentYear, 0, 1)
+  const weeksInYear = 52
+  const countByWeek: Record<number, number> = {}
+  for (const r of records) {
+    if (!r.present || !r.events) continue
+    const d = new Date(r.events.starts_at)
+    if (d.getFullYear() !== currentYear) continue
+    const wk = getWeekNumber(d)
+    countByWeek[wk] = (countByWeek[wk] ?? 0) + 1
+  }
+
+  // History table
+  const historyRecords = records.filter(r => r.events)
+  const totalPages = Math.max(1, Math.ceil(historyRecords.length / ATT_PAGE))
+  const paginated = historyRecords.slice((page - 1) * ATT_PAGE, page * ATT_PAGE)
+
+  const statCardStyle: React.CSSProperties = {
+    background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 10,
+    padding: '14px 16px', flex: 1, position: 'relative', overflow: 'hidden',
+  }
+
+  if (loading) return (
+    <div style={{ padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+      Loading attendance…
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* Stat Cards */}
+      <div style={{ display: 'flex', gap: 14 }}>
+        <div style={statCardStyle}>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Attendance Rate</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: '#111827', lineHeight: 1.1 }}>{last3MonthsRecords.length === 0 ? '—' : `${attendanceRate}%`}</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>last 3 months</div>
+          <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#4F6BED' }} />
+        </div>
+        <div style={statCardStyle}>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Current Streak</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: '#111827', lineHeight: 1.1 }}>{streak} <span style={{ fontSize: 14, fontWeight: 500, color: '#6B7280' }}>wks</span></div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>consecutive weeks</div>
+          <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#22C55E' }} />
+        </div>
+        <div style={statCardStyle}>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Services YTD</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: '#111827', lineHeight: 1.1 }}>{ytdTotal}</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>{currentYear} year-to-date</div>
+          <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#C8964A' }} />
+        </div>
+      </div>
+
+      {/* Heatmap */}
+      <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: '16px 20px' }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827', marginBottom: 12 }}>
+          Attendance Heatmap — {currentYear}
+        </div>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          {Array.from({ length: weeksInYear }, (_, i) => {
+            const wk = i + 1
+            const count = countByWeek[wk] ?? 0
+            const startDay = new Date(startOfYear)
+            startDay.setDate(startDay.getDate() + (wk - 1) * 7)
+            const label = `Week ${wk}: ${count} service${count !== 1 ? 's' : ''} attended`
+            return (
+              <div
+                key={wk}
+                title={label}
+                style={{
+                  width: 14, height: 14, borderRadius: 3,
+                  background: heatmapColor(count),
+                  cursor: 'default',
+                  transition: 'transform 0.1s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.3)')}
+                onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+              />
+            )
+          })}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
+          <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF' }}>Less</span>
+          {[0, 1, 2, 3].map(n => (
+            <div key={n} style={{ width: 12, height: 12, borderRadius: 2, background: heatmapColor(n) }} />
+          ))}
+          <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF' }}>More</span>
+        </div>
+      </div>
+
+      {/* History Table */}
+      <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ padding: '14px 18px', borderBottom: '0.5px solid #F3F4F6' }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>Attendance History</div>
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Event', 'Type', 'Date', 'Status', ''].map((h, i) => (
+                <th key={i} style={{ padding: '10px 18px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 10.5, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left', borderBottom: '0.5px solid #EFF1F7', background: '#FAFBFE', whiteSpace: 'nowrap' }}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {paginated.length === 0 ? (
+              <tr><td colSpan={5} style={{ padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>No attendance records found.</td></tr>
+            ) : paginated.map((r) => {
+              if (!r.events) return null
+              const ts = getAttTypeStyle(r.events.event_type)
+              return (
+                <tr key={r.id} onClick={() => navigate(`/events/${r.events!.id}`)} style={{ borderBottom: '0.5px solid #EFF1F7', height: 52, background: '#fff', cursor: 'pointer', transition: 'background 0.1s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#FAFBFE')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+                  <td style={{ padding: '0 18px' }}>
+                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#111827' }}>{r.events.name}</div>
+                  </td>
+                  <td style={{ padding: '0 18px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px', borderRadius: 999, background: ts.bg, color: ts.color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap' }}>
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: ts.dot }} />
+                      {ts.label}
+                    </span>
+                  </td>
+                  <td style={{ padding: '0 18px' }}>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: '#6B7280' }}>
+                      {format(new Date(r.events.starts_at), 'MMM dd, yyyy')}
+                    </span>
+                  </td>
+                  <td style={{ padding: '0 18px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 9px', borderRadius: 999, background: r.present ? '#DCFCE7' : '#F3F4F6', color: r.present ? '#166534' : '#6B7280', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11.5 }}>
+                      {r.present ? 'Present' : 'Absent'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '0 12px' }}>
+                    <button onClick={e => { e.stopPropagation(); navigate(`/events/${r.events!.id}`) }} style={{ width: 26, height: 26, borderRadius: 5, border: '0.5px solid #E5E7EB', background: '#fff', display: 'grid', placeItems: 'center', color: '#6B7280', cursor: 'pointer' }}>
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        {historyRecords.length > ATT_PAGE && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderTop: '0.5px solid #EFF1F7', background: '#FCFCFE' }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280' }}>
+              {Math.min((page - 1) * ATT_PAGE + 1, historyRecords.length)}–{Math.min(page * ATT_PAGE, historyRecords.length)} of {historyRecords.length}
+            </span>
+            <div style={{ flex: 1 }} />
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: page === 1 ? 'not-allowed' : 'pointer', color: page === 1 ? '#D1D5DB' : '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12 }}>← Prev</button>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: page === totalPages ? '#D1D5DB' : '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12 }}>Next →</button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function MemberProfilePage() {
@@ -664,6 +911,7 @@ export function MemberProfilePage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [toggling, setToggling] = useState(false)
+  const [activeTab, setActiveTab] = useState<'overview' | 'attendance'>('overview')
 
   const [relationships, setRelationships] = useState<Relationship[]>([])
   const [hoveredRelId, setHoveredRelId] = useState<string | null>(null)
@@ -898,8 +1146,35 @@ export function MemberProfilePage() {
         </div>
       </div>
 
+      {/* Tab Bar */}
+      <div style={{ display: 'flex', gap: 4, borderBottom: '0.5px solid #E5E7EB', marginBottom: 24 }}>
+        {[
+          { key: 'overview' as const, label: 'Overview' },
+          { key: 'attendance' as const, label: 'Attendance' },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              padding: '10px 14px',
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+              fontWeight: 600, fontSize: 13,
+              color: activeTab === tab.key ? '#4F6BED' : '#6B7280',
+              borderBottom: activeTab === tab.key ? '2px solid #4F6BED' : '2px solid transparent',
+              marginBottom: -1, background: 'none', cursor: 'pointer', transition: 'color 0.12s',
+            }}
+            onMouseEnter={e => { if (activeTab !== tab.key) e.currentTarget.style.color = '#374151' }}
+            onMouseLeave={e => { if (activeTab !== tab.key) e.currentTarget.style.color = '#6B7280' }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'attendance' && <MemberAttendanceTab memberId={member.id} />}
+
       {/* Two Column Layout */}
-      <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+      {activeTab === 'overview' && <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
 
         {/* ── LEFT COLUMN ── */}
         <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1322,7 +1597,7 @@ export function MemberProfilePage() {
             )}
           </div>
         </div>
-      </div>
+      </div>}
     </>
   )
 }

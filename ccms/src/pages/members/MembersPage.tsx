@@ -279,8 +279,6 @@ export function MembersPage() {
   const [page, setPage] = useState(1)
 
   const [menuPos, setMenuPos] = useState<{ memberId: string; memberStatus: string; top: number; left: number } | null>(null)
-  const [hoveredRow, setHoveredRow] = useState<string | null>(null)
-
   const fetchMembers = async () => {
     if (!user?.org_id) return
     setLoading(true)
@@ -703,8 +701,6 @@ export function MembersPage() {
           className="member-row"
           onClick={() => navigate(`/members/${member.id}`)}
           //onMouseEnter={() => setHoveredRow(member.id)}
-          onMouseEnter={() => { setHoveredRow(member.id); console.log('hover:', member.id) }}
-          onMouseLeave={() => setHoveredRow(null)}
           style={{
             borderBottom: '0.5px solid #F3F4F6',
             height: 56, background: '#fff',
