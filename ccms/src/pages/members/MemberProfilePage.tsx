@@ -21,6 +21,38 @@ interface GroupMembership {
   } | null
 }
 
+interface GroupMembershipFull {
+  id: string
+  role: string
+  joined_at: string | null
+  left_at: string | null
+  is_active: boolean
+  groups: {
+    id: string
+    name: string
+    meeting_schedule: string | null
+    ministries: { id: string; name: string } | null
+  } | null
+}
+
+interface SidebarGroupMembership {
+  id: string
+  role: string
+  joined_at: string | null
+  groups: {
+    id: string
+    name: string
+    meeting_schedule: string | null
+    ministries: { id: string; name: string } | null
+  } | null
+}
+
+interface GroupOption {
+  id: string
+  name: string
+  ministries: { id: string; name: string } | null
+}
+
 interface RelatedMember {
   id: string
   first_name: string
@@ -147,6 +179,13 @@ function capitalize(s: string | null): string {
 
 function formatAmount(amount: number): string {
   return `₵${amount.toLocaleString('en-GH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+}
+
+function parseMeetingSchedule(s: string | null): { day: string; time: string; venue: string } | null {
+  if (!s) return null
+  const parts = s.split(' · ')
+  if (parts.length < 2) return null
+  return { day: parts[0] ?? '', time: parts[1] ?? '', venue: parts[2] ?? '' }
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -653,6 +692,195 @@ function AddRelationshipModal({
   )
 }
 
+// ─── Assign to Group Modal ────────────────────────────────────────────────────
+
+function AssignToGroupModal({
+  memberId,
+  orgId,
+  existingGroupIds,
+  onAssign,
+  onClose,
+}: {
+  memberId: string
+  orgId: string
+  existingGroupIds: string[]
+  onAssign: () => void
+  onClose: () => void
+}) {
+  const [groups, setGroups] = useState<GroupOption[]>([])
+  const [loadingGroups, setLoadingGroups] = useState(true)
+  const [selectedGroupId, setSelectedGroupId] = useState('')
+  const [role, setRole] = useState<'member' | 'leader'>('member')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    supabase
+      .from('groups')
+      .select('id, name, ministries(id, name)')
+      .eq('org_id', orgId)
+      .order('name')
+      .then(({ data }) => {
+        if (data) setGroups((data as unknown as GroupOption[]).filter(g => !existingGroupIds.includes(g.id)))
+        setLoadingGroups(false)
+      })
+  }, [orgId])
+
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [])
+
+  const selectedGroup = groups.find(g => g.id === selectedGroupId)
+  const filtered = groups.filter(g => {
+    const q = query.toLowerCase()
+    return !q || g.name.toLowerCase().includes(q) || (g.ministries?.name ?? '').toLowerCase().includes(q)
+  })
+
+  const handleSubmit = async () => {
+    if (!selectedGroupId) return
+    setSaving(true)
+    setError(null)
+    const { error: err } = await supabase
+      .from('group_memberships')
+      .insert({
+        org_id: orgId,
+        group_id: selectedGroupId,
+        member_id: memberId,
+        role,
+        joined_at: new Date().toISOString().split('T')[0],
+        is_active: true,
+      })
+    if (err) { setError(err.message); setSaving(false); return }
+    toast.success('Member assigned to group')
+    onAssign()
+  }
+
+  const inputBase: React.CSSProperties = {
+    width: '100%', height: 38, borderRadius: 8,
+    border: '0.5px solid #E5E7EB',
+    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+    fontSize: 13, color: '#111827', background: '#fff',
+    outline: 'none', padding: '0 10px', boxSizing: 'border-box',
+  }
+
+  const labelStyle: React.CSSProperties = {
+    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+    fontWeight: 500, fontSize: 12, color: '#374151',
+    display: 'block', marginBottom: 6,
+  }
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #E5E7EB', padding: 24, width: 460, maxWidth: '90vw', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: '#111827', marginBottom: 6 }}>
+          Assign to Group
+        </div>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280', marginBottom: 20 }}>
+          Add this member to a group in your church.
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>Group</label>
+          {loadingGroups ? (
+            <div style={{ height: 38, background: '#F3F4F6', borderRadius: 8 }} />
+          ) : (
+            <div ref={dropdownRef} style={{ position: 'relative' }}>
+              <input
+                type="text"
+                value={dropdownOpen ? query : selectedGroup?.name ?? ''}
+                onChange={e => { setQuery(e.target.value); setDropdownOpen(true) }}
+                onFocus={() => { setQuery(''); setDropdownOpen(true) }}
+                onClick={() => { setQuery(''); setDropdownOpen(true) }}
+                placeholder="Search groups..."
+                style={{ ...inputBase, paddingRight: 32, cursor: 'pointer' }}
+                readOnly={!dropdownOpen}
+              />
+              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', display: 'flex' }}>
+                <ChevronDownIcon />
+              </span>
+              {dropdownOpen && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 200, maxHeight: 200, overflowY: 'auto', padding: '4px 0' }}>
+                  {filtered.length === 0 ? (
+                    <div style={{ padding: '10px 12px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+                      No groups available
+                    </div>
+                  ) : filtered.map(g => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => { setSelectedGroupId(g.id); setDropdownOpen(false); setQuery('') }}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', textAlign: 'left', background: g.id === selectedGroupId ? '#F0F2FE' : 'none', border: 'none', cursor: 'pointer', padding: '8px 12px' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+                      onMouseLeave={e => (e.currentTarget.style.background = g.id === selectedGroupId ? '#F0F2FE' : 'none')}
+                    >
+                      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#111827' }}>{g.name}</div>
+                      {g.ministries && (
+                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF' }}>{g.ministries.name}</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={labelStyle}>Role</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {(['member', 'leader'] as const).map(r => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRole(r)}
+                style={{ flex: 1, height: 38, borderRadius: 8, border: `0.5px solid ${role === r ? '#4F6BED' : '#E5E7EB'}`, background: role === r ? '#EEF0FD' : '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: role === r ? '#4F6BED' : '#6B7280', transition: 'all 0.12s' }}
+              >
+                {r === 'member' ? 'Member' : 'Leader'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error && (
+          <div style={{ background: '#FEF2F2', border: '0.5px solid #FECACA', borderRadius: 8, padding: '10px 12px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#991B1B', marginBottom: 16 }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button
+            onClick={onClose}
+            style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#374151' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!selectedGroupId || saving}
+            style={{ height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: !selectedGroupId || saving ? '#818CF8' : '#4F6BED', cursor: !selectedGroupId || saving ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#fff', transition: 'background 0.15s' }}
+          >
+            {saving ? 'Assigning…' : 'Assign to Group'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Attendance Tab Component ─────────────────────────────────────────────────
 
 interface AttRecord {
@@ -900,6 +1128,252 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
   )
 }
 
+// ─── Groups Tab Component ─────────────────────────────────────────────────────
+
+const GROUPS_PAGE = 10
+
+function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string }) {
+  const navigate = useNavigate()
+  const [memberships, setMemberships] = useState<GroupMembershipFull[]>([])
+  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [leavingId, setLeavingId] = useState<string | null>(null)
+  const [confirmLeaveId, setConfirmLeaveId] = useState<string | null>(null)
+  const [showAssignModal, setShowAssignModal] = useState(false)
+
+  const fetchMemberships = async () => {
+    const { data } = await supabase
+      .from('group_memberships')
+      .select('id, role, joined_at, left_at, is_active, groups(id, name, meeting_schedule, ministries(id, name))')
+      .eq('member_id', memberId)
+      .order('joined_at', { ascending: false })
+    setMemberships((data ?? []) as unknown as GroupMembershipFull[])
+    setLoading(false)
+  }
+
+  useEffect(() => { fetchMemberships() }, [memberId])
+
+  const handleLeave = async (gmId: string) => {
+    setLeavingId(gmId)
+    await supabase
+      .from('group_memberships')
+      .update({ is_active: false, left_at: new Date().toISOString().split('T')[0] })
+      .eq('id', gmId)
+    toast.success('Left group')
+    setConfirmLeaveId(null)
+    setLeavingId(null)
+    await fetchMemberships()
+  }
+
+  const active = memberships.filter(m => m.is_active)
+  const past = memberships.filter(m => !m.is_active)
+  const existingGroupIds = active.map(m => m.groups?.id ?? '').filter(Boolean)
+  const leaderCount = active.filter(m => m.role === 'leader').length
+  const totalPages = Math.max(1, Math.ceil(past.length / GROUPS_PAGE))
+  const paginatedPast = past.slice((page - 1) * GROUPS_PAGE, page * GROUPS_PAGE)
+
+  const statCardStyle: React.CSSProperties = {
+    background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 10,
+    padding: '14px 16px', flex: 1, position: 'relative', overflow: 'hidden',
+  }
+
+  if (loading) return (
+    <div style={{ padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+      Loading groups…
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {showAssignModal && (
+        <AssignToGroupModal
+          memberId={memberId}
+          orgId={orgId}
+          existingGroupIds={existingGroupIds}
+          onAssign={async () => { setShowAssignModal(false); await fetchMemberships() }}
+          onClose={() => setShowAssignModal(false)}
+        />
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          onClick={() => setShowAssignModal(true)}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: 'none', background: '#4F6BED', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#fff' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#3F5BD9')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#4F6BED')}
+        >
+          + Assign to Group
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', gap: 14 }}>
+        <div style={statCardStyle}>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Total Groups Joined</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: '#111827', lineHeight: 1.1 }}>{memberships.length}</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>all time</div>
+          <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#4F6BED' }} />
+        </div>
+        <div style={statCardStyle}>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Active Groups</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: '#111827', lineHeight: 1.1 }}>{active.length}</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>currently active</div>
+          <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#22C55E' }} />
+        </div>
+        <div style={statCardStyle}>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Leadership Roles</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: '#111827', lineHeight: 1.1 }}>{leaderCount}</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>group leader positions</div>
+          <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#C8964A' }} />
+        </div>
+      </div>
+
+      {active.length === 0 ? (
+        <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+          Not a member of any active groups yet.
+        </div>
+      ) : (
+        <div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 12 }}>
+            Active Groups
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+            {active.map(gm => {
+              const g = gm.groups
+              if (!g) return null
+              const schedule = parseMeetingSchedule(g.meeting_schedule)
+              const isConfirming = confirmLeaveId === gm.id
+              return (
+                <div key={gm.id} style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: 18 }}>
+                  {g.ministries && (
+                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4F6BED', marginBottom: 6 }}>
+                      {g.ministries.name}
+                    </div>
+                  )}
+                  <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 8 }}>
+                    {g.name}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: schedule ? 8 : 12 }}>
+                    <span style={{ background: gm.role === 'leader' ? '#FFF8EC' : '#F3F4F6', color: gm.role === 'leader' ? '#C8964A' : '#6B7280', borderRadius: 5, padding: '2px 8px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11 }}>
+                      {gm.role === 'leader' ? 'Leader' : 'Member'}
+                    </span>
+                    {gm.joined_at && (
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>
+                        Joined {format(new Date(gm.joined_at), 'MMM d, yyyy')}
+                      </span>
+                    )}
+                  </div>
+                  {schedule && (
+                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280', marginBottom: 12 }}>
+                      {schedule.day} · {schedule.time}
+                      {schedule.venue && <span style={{ color: '#9CA3AF' }}> · {schedule.venue}</span>}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={() => navigate(`/groups/${g.ministries?.id}/${g.id}`)}
+                      style={{ flex: 1, height: 32, borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#374151', transition: 'border-color 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = '#4F6BED')}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
+                    >
+                      View Group
+                    </button>
+                    {!isConfirming ? (
+                      <button
+                        onClick={() => setConfirmLeaveId(gm.id)}
+                        style={{ height: 32, padding: '0 10px', borderRadius: 6, border: '0.5px solid #FCA5A5', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#EF4444', transition: 'background 0.15s' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')}
+                        onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                      >
+                        Leave
+                      </button>
+                    ) : (
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button
+                          onClick={() => setConfirmLeaveId(null)}
+                          style={{ height: 32, padding: '0 8px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#6B7280' }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleLeave(gm.id)}
+                          disabled={leavingId === gm.id}
+                          style={{ height: 32, padding: '0 8px', borderRadius: 6, border: 'none', background: '#EF4444', cursor: leavingId === gm.id ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#fff' }}
+                        >
+                          {leavingId === gm.id ? '…' : 'Confirm'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {past.length > 0 && (
+        <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 18px', borderBottom: '0.5px solid #F3F4F6' }}>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>Past Memberships</div>
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                {['Group', 'Ministry', 'Role', 'Joined', 'Left'].map((h, i) => (
+                  <th key={i} style={{ padding: '10px 18px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 10.5, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left', borderBottom: '0.5px solid #EFF1F7', background: '#FAFBFE', whiteSpace: 'nowrap' }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedPast.map(gm => (
+                <tr key={gm.id} style={{ borderBottom: '0.5px solid #EFF1F7', height: 48, background: '#fff' }}>
+                  <td style={{ padding: '0 18px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#111827' }}>
+                    {gm.groups?.name ?? '—'}
+                  </td>
+                  <td style={{ padding: '0 18px' }}>
+                    {gm.groups?.ministries ? (
+                      <span style={{ background: '#E8ECF9', color: '#4F6BED', borderRadius: 5, padding: '2px 8px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11 }}>
+                        {gm.groups.ministries.name}
+                      </span>
+                    ) : '—'}
+                  </td>
+                  <td style={{ padding: '0 18px' }}>
+                    <span style={{ background: gm.role === 'leader' ? '#FFF8EC' : '#F3F4F6', color: gm.role === 'leader' ? '#C8964A' : '#6B7280', borderRadius: 5, padding: '2px 8px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11 }}>
+                      {gm.role === 'leader' ? 'Leader' : 'Member'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '0 18px' }}>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: '#6B7280' }}>
+                      {gm.joined_at ? format(new Date(gm.joined_at), 'MMM dd, yyyy') : '—'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '0 18px' }}>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: '#6B7280' }}>
+                      {gm.left_at ? format(new Date(gm.left_at), 'MMM dd, yyyy') : '—'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {past.length > GROUPS_PAGE && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderTop: '0.5px solid #EFF1F7', background: '#FCFCFE' }}>
+              <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280' }}>
+                {Math.min((page - 1) * GROUPS_PAGE + 1, past.length)}–{Math.min(page * GROUPS_PAGE, past.length)} of {past.length}
+              </span>
+              <div style={{ flex: 1 }} />
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: page === 1 ? 'not-allowed' : 'pointer', color: page === 1 ? '#D1D5DB' : '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12 }}>← Prev</button>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: page === totalPages ? '#D1D5DB' : '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12 }}>Next →</button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function MemberProfilePage() {
@@ -911,7 +1385,7 @@ export function MemberProfilePage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [toggling, setToggling] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'attendance'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'groups'>('overview')
 
   const [relationships, setRelationships] = useState<Relationship[]>([])
   const [hoveredRelId, setHoveredRelId] = useState<string | null>(null)
@@ -919,6 +1393,11 @@ export function MemberProfilePage() {
   const [showAddRel, setShowAddRel] = useState(false)
 
   const [transactions, setTransactions] = useState<Transaction[]>([])
+
+  const [sidebarGroups, setSidebarGroups] = useState<SidebarGroupMembership[]>([])
+  const [sidebarGroupsLoading, setSidebarGroupsLoading] = useState(true)
+  const [sidebarLeaveConfirmId, setSidebarLeaveConfirmId] = useState<string | null>(null)
+  const [sidebarLeaving, setSidebarLeaving] = useState(false)
 
   const fetchMember = async () => {
     if (!id) return
@@ -976,8 +1455,35 @@ export function MemberProfilePage() {
     setTransactions((data ?? []) as Transaction[])
   }
 
+  const fetchSidebarGroups = async () => {
+    if (!id) return
+    setSidebarGroupsLoading(true)
+    const { data } = await supabase
+      .from('group_memberships')
+      .select('id, role, joined_at, groups(id, name, meeting_schedule, ministries(id, name))')
+      .eq('member_id', id)
+      .eq('is_active', true)
+      .order('joined_at', { ascending: false })
+    setSidebarGroups((data ?? []) as unknown as SidebarGroupMembership[])
+    setSidebarGroupsLoading(false)
+  }
+
+  const handleSidebarLeave = async (gmId: string) => {
+    setSidebarLeaving(true)
+    await supabase
+      .from('group_memberships')
+      .update({ is_active: false, left_at: new Date().toISOString().split('T')[0] })
+      .eq('id', gmId)
+    toast.success('Left group')
+    setSidebarLeaveConfirmId(null)
+    setSidebarLeaving(false)
+    await fetchSidebarGroups()
+    await fetchMember()
+  }
+
   useEffect(() => {
     fetchMember()
+    fetchSidebarGroups()
   }, [id])
 
   useEffect(() => {
@@ -1151,6 +1657,7 @@ export function MemberProfilePage() {
         {[
           { key: 'overview' as const, label: 'Overview' },
           { key: 'attendance' as const, label: 'Attendance' },
+          { key: 'groups' as const, label: 'Groups' },
         ].map(tab => (
           <button
             key={tab.key}
@@ -1172,6 +1679,7 @@ export function MemberProfilePage() {
       </div>
 
       {activeTab === 'attendance' && <MemberAttendanceTab memberId={member.id} />}
+      {activeTab === 'groups' && <MemberGroupsTab memberId={member.id} orgId={member.org_id} />}
 
       {/* Two Column Layout */}
       {activeTab === 'overview' && <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
@@ -1237,73 +1745,88 @@ export function MemberProfilePage() {
           {/* Ministry & Groups */}
           <div style={cardStyle}>
             <div style={cardHeaderStyle}>Ministry & Groups</div>
-            {member.group_memberships && member.group_memberships.length > 0 ? (
-              <div>
-                {member.group_memberships.map((gm, i) => {
-                  const joinedYear = gm.joined_at ? new Date(gm.joined_at).getFullYear() : null
-                  const sinceLabel = joinedYear
-                    ? `${capitalize(gm.role)} since ${joinedYear}`
-                    : capitalize(gm.role)
+            {sidebarGroupsLoading ? (
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF', padding: '8px 0' }}>
+                Loading…
+              </div>
+            ) : sidebarGroups.length === 0 ? (
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF', textAlign: 'center', padding: 24 }}>
+                Not assigned to any groups yet
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {sidebarGroups.map(gm => {
+                  const g = gm.groups
+                  const ministryId = g?.ministries?.id
+                  const groupId = g?.id
+                  const isConfirming = sidebarLeaveConfirmId === gm.id
                   return (
-                    <div
-                      key={gm.id}
-                      style={{
-                        display: 'flex', alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '10px 0',
-                        borderBottom: i < member.group_memberships!.length - 1
-                          ? '0.5px solid #F3F4F6'
-                          : 'none',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{
-                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontWeight: 500, fontSize: 13, color: '#111827',
-                        }}>
-                          {gm.groups?.name ?? '—'}
+                    <div key={gm.id} style={{ border: '0.5px solid #E8ECF9', borderRadius: 8, padding: '10px 12px', background: '#FAFBFF' }}>
+                      {g?.ministries && (
+                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10, color: '#4F6BED', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 3 }}>
+                          {g.ministries.name}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>
+                          {g?.name ?? '—'}
                         </span>
-                        {gm.groups?.ministries && (
-                          <span style={{
-                            background: '#E8ECF9', color: '#4F6BED',
-                            borderRadius: 5, padding: '2px 8px',
-                            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                            fontWeight: 500, fontSize: 11,
-                          }}>
-                            {gm.groups.ministries.name}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <span style={{
-                          background: gm.role === 'leader' ? '#FFF8EC' : '#F3F4F6',
-                          color: gm.role === 'leader' ? '#C8964A' : '#6B7280',
-                          borderRadius: 5, padding: '2px 8px',
-                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontWeight: 500, fontSize: 11,
-                        }}>
+                        <span style={{ background: gm.role === 'leader' ? '#FFF8EC' : '#F3F4F6', color: gm.role === 'leader' ? '#C8964A' : '#6B7280', borderRadius: 5, padding: '2px 7px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11, flexShrink: 0 }}>
                           {capitalize(gm.role)}
                         </span>
-                        {joinedYear && (
-                          <div style={{
-                            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                            fontSize: 12, color: '#9CA3AF', marginTop: 2,
-                          }}>
-                            {sinceLabel}
-                          </div>
+                      </div>
+                      {g?.meeting_schedule && (
+                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280', marginBottom: 3 }}>
+                          {g.meeting_schedule}
+                        </div>
+                      )}
+                      {gm.joined_at && (
+                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginBottom: 8 }}>
+                          Joined {format(new Date(gm.joined_at), 'MMM d, yyyy')}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {ministryId && groupId && (
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/groups/${ministryId}/${groupId}`)}
+                            style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid #C7D2FB', background: '#E8ECF9', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11, color: '#4F6BED' }}
+                          >
+                            View Group
+                          </button>
+                        )}
+                        {isConfirming ? (
+                          <>
+                            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#6B7280', display: 'flex', alignItems: 'center' }}>Leave?</span>
+                            <button
+                              type="button"
+                              disabled={sidebarLeaving}
+                              onClick={() => handleSidebarLeave(gm.id)}
+                              style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid #FECACA', background: '#FEF2F2', cursor: sidebarLeaving ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11, color: '#DC2626' }}
+                            >
+                              {sidebarLeaving ? 'Leaving…' : 'Confirm'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSidebarLeaveConfirmId(null)}
+                              style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11, color: '#6B7280' }}
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setSidebarLeaveConfirmId(gm.id)}
+                            style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11, color: '#6B7280' }}
+                          >
+                            Leave Group
+                          </button>
                         )}
                       </div>
                     </div>
                   )
                 })}
-              </div>
-            ) : (
-              <div style={{
-                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontSize: 13, color: '#9CA3AF',
-                textAlign: 'center', padding: 24,
-              }}>
-                Not assigned to any groups yet
               </div>
             )}
           </div>

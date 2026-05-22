@@ -28,7 +28,6 @@ const schema = z.object({
   baptism_date:      z.string(),
   membership_status: z.string().min(1, 'Required'),
   branch_id:         z.string().min(1, 'Please select a branch'),
-  ministry_id:       z.string(),
   notes:             z.string(),
 })
 
@@ -37,7 +36,6 @@ type FormValues = z.infer<typeof schema>
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 interface Branch   { id: string; name: string }
-interface Ministry { id: string; name: string }
 
 interface MemberData {
   id: string
@@ -271,7 +269,6 @@ export function MemberEditPage() {
   const [loading,     setLoading]     = useState(true)
   const [notFound,    setNotFound]    = useState(false)
   const [branches,    setBranches]    = useState<Branch[]>([])
-  const [ministries,  setMinistries]  = useState<Ministry[]>([])
   const [submitting,  setSubmitting]  = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [autoSaveText] = useState('just now')
@@ -287,7 +284,7 @@ export function MemberEditPage() {
       first_name: '', last_name: '', email: '', phone: '',
       date_of_birth: '', gender: '', marital_status: '', occupation: '',
       address: '', city: '', region: '', membership_date: '', baptism_date: '',
-      membership_status: 'active', branch_id: '', ministry_id: '', notes: '',
+      membership_status: 'active', branch_id: '', notes: '',
     },
   })
 
@@ -329,7 +326,6 @@ export function MemberEditPage() {
       baptism_date:      member.baptism_date      ?? '',
       membership_status: member.membership_status,
       branch_id:         member.branch_id         ?? '',
-      ministry_id:       '',
       notes:             member.notes             ?? '',
     })
   }, [member, reset])
@@ -339,8 +335,6 @@ export function MemberEditPage() {
     let active = true
     supabase.from('branches').select('id, name').eq('org_id', user.org_id)
       .then(({ data }) => { if (active && data) setBranches(data) })
-    supabase.from('ministries').select('id, name').eq('org_id', user.org_id)
-      .then(({ data }) => { if (active && data) setMinistries(data) })
     return () => { active = false }
   }, [user?.org_id])
 
@@ -646,19 +640,6 @@ export function MemberEditPage() {
                 <option value="">Select branch</option>
                 {branches.map(b => (
                   <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-              </select>
-            </FieldWrapper>
-
-            <FieldWrapper label="Ministry">
-              <select
-                {...register('ministry_id')}
-                className="form-input"
-                style={{ ...inputBase(false), cursor: 'pointer' }}
-              >
-                <option value="">Select ministry (optional)</option>
-                {ministries.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
               </select>
             </FieldWrapper>
