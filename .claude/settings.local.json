@@ -18,7 +18,14 @@
       "Bash(./node_modules/.bin/tsc --noEmit)",
       "Bash(node_modules/.bin/tsc --noEmit)",
       "Bash(ls /c/Users/yenul/Desktop/CCMS/ccms/node_modules/.bin/tsc*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(python -c \"import gzip, sys; data=open\\('webfetch-1778115033451-k8qqb2.bin','rb'\\).read\\(\\); print\\(gzip.decompress\\(data\\).decode\\('utf-8', errors='replace'\\)[:8000]\\)\")",
+      "Bash(python -c ' *)",
+      "mcp__claude_ai_Supabase__list_projects",
+      "mcp__claude_ai_Supabase__list_tables",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "Bash(git add *)"
     ]
   }
 }
