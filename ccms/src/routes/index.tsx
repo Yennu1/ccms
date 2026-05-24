@@ -21,6 +21,11 @@ import { CreateEventPage } from '../pages/events/CreateEventPage'
 import { EditEventPage } from '../pages/events/EditEventPage'
 import { EventDetailPage } from '../pages/events/EventDetailPage'
 import { CalendarViewPage } from '../pages/events/CalendarViewPage'
+import { MinistriesPage } from '../pages/groups/MinistriesPage'
+import { MinistryNewPage } from '../pages/groups/MinistryNewPage'
+import { MinistryDetailPage } from '../pages/groups/MinistryDetailPage'
+import { GroupNewPage } from '../pages/groups/GroupNewPage'
+import { GroupDetailPage } from '../pages/groups/GroupDetailPage'
 import { SettingsPage } from '../pages/settings/SettingsPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { AppLayout } from '../layouts/AppLayout'
@@ -69,6 +74,11 @@ export const router = createBrowserRouter([
           { path: '/events/new', element: <CreateEventPage /> },
           { path: '/events/:id', element: <EventDetailPage /> },
           { path: '/events/:id/edit', element: <EditEventPage /> },
+          { path: '/groups', element: <MinistriesPage /> },
+          { path: '/groups/new', element: <MinistryNewPage /> },
+          { path: '/groups/:ministryId', element: <MinistryDetailPage /> },
+          { path: '/groups/:ministryId/new', element: <GroupNewPage /> },
+          { path: '/groups/:ministryId/:groupId', element: <GroupDetailPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],
       },
