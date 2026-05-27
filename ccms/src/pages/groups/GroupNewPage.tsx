@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext'
 
 interface Ministry { id: string; name: string; org_id: string }
 interface MemberOption { id: string; first_name: string; last_name: string; member_number: string | null }
+interface ScheduleEntry { localId: string; day: string; time: string; venue: string }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -32,6 +33,133 @@ function BackIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fil
 function ChevronDownIcon() { return <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}><path d="M3 4.5L6 7.5L9 4.5" stroke="#9CA3AF" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg> }
 function SlashIcon() { return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M5 14L11 2" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" /></svg> }
 
+// ─── Schedule Builder ─────────────────────────────────────────────────────────
+
+function ScheduleBuilder({ entries, onChange }: {
+  entries: ScheduleEntry[]
+  onChange: (entries: ScheduleEntry[]) => void
+}) {
+  const inputSt: React.CSSProperties = {
+    width: '100%', height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB',
+    fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#111827',
+    background: '#fff', outline: 'none', padding: '0 10px', boxSizing: 'border-box',
+  }
+
+  const update = (id: string, field: keyof Omit<ScheduleEntry, 'localId'>, value: string) =>
+    onChange(entries.map(e => e.localId === id ? { ...e, [field]: value } : e))
+
+  const remove = (id: string) => {
+    if (entries.length <= 1) return
+    onChange(entries.filter(e => e.localId !== id))
+  }
+
+  const add = () => onChange([
+    ...entries,
+    { localId: `${Date.now()}`, day: '', time: '', venue: '' },
+  ])
+
+  return (
+    <div>
+      {entries.map((entry, i) => (
+        <div key={entry.localId} style={{
+          background: '#F9FAFB', border: '0.5px solid #E5E7EB',
+          borderRadius: 8, padding: '12px 14px', marginBottom: 10,
+        }}>
+          {/* Row header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              {entries.length > 1 ? `Schedule ${i + 1}` : 'Schedule'}
+            </span>
+            {entries.length > 1 && (
+              <button
+                type="button"
+                onClick={() => remove(entry.localId)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 17, lineHeight: 1, padding: '0 4px', display: 'flex', alignItems: 'center' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}
+                aria-label="Remove schedule"
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          {/* Day pills */}
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#6B7280', marginBottom: 6 }}>Meeting Day</div>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {DAYS.map(day => {
+                const active = entry.day === day
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => update(entry.localId, 'day', active ? '' : day)}
+                    style={{
+                      height: 28, padding: '0 10px', borderRadius: 999,
+                      border: `1.5px solid ${active ? '#4F6BED' : '#E5E7EB'}`,
+                      background: active ? '#EEF1FD' : '#fff',
+                      cursor: 'pointer',
+                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                      fontWeight: active ? 600 : 500, fontSize: 12,
+                      color: active ? '#4F6BED' : '#374151',
+                      transition: 'all 0.12s',
+                    }}
+                  >
+                    {day.slice(0, 3)}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Time + Venue */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 8 }}>
+            <div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#6B7280', marginBottom: 4 }}>Time</div>
+              <input
+                className="gn-input"
+                type="time"
+                value={entry.time}
+                onChange={e => update(entry.localId, 'time', e.target.value)}
+                style={inputSt}
+              />
+            </div>
+            <div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#6B7280', marginBottom: 4 }}>Venue <span style={{ color: '#9CA3AF' }}>(optional)</span></div>
+              <input
+                className="gn-input"
+                type="text"
+                value={entry.venue}
+                onChange={e => update(entry.localId, 'venue', e.target.value)}
+                placeholder="e.g. Fellowship Hall"
+                style={inputSt}
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={add}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          height: 32, padding: '0 12px', borderRadius: 8,
+          border: '0.5px solid #E5E7EB', background: '#fff',
+          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+          fontWeight: 500, fontSize: 12.5, color: '#4F6BED',
+          cursor: 'pointer', transition: 'all 0.12s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = '#EEF1FD')}
+        onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+      >
+        + Add Another Meeting Time
+      </button>
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function GroupNewPage() {
@@ -52,9 +180,9 @@ export function GroupNewPage() {
   const [name, setName] = useState(draft?.name ?? '')
   const [description, setDescription] = useState(draft?.description ?? '')
   const [leaderId, setLeaderId] = useState(draft?.leaderId ?? '')
-  const [meetingDay, setMeetingDay] = useState(draft?.meetingDay ?? '')
-  const [meetingTime, setMeetingTime] = useState(draft?.meetingTime ?? '')
-  const [meetingVenue, setMeetingVenue] = useState(draft?.meetingVenue ?? '')
+  const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>(
+    draft?.scheduleEntries ?? [{ localId: 'init', day: '', time: '', venue: '' }]
+  )
   const [isActive, setIsActive] = useState(draft?.isActive ?? true)
   const [leaderQuery, setLeaderQuery] = useState('')
   const [leaderOpen, setLeaderOpen] = useState(false)
@@ -76,10 +204,10 @@ export function GroupNewPage() {
   useEffect(() => {
     const t = setTimeout(() => {
       if (!ministryId) return
-      localStorage.setItem(DRAFT_KEY(ministryId), JSON.stringify({ name, description, leaderId, meetingDay, meetingTime, meetingVenue, isActive }))
+      localStorage.setItem(DRAFT_KEY(ministryId), JSON.stringify({ name, description, leaderId, scheduleEntries, isActive }))
     }, 600)
     return () => clearTimeout(t)
-  }, [name, description, leaderId, meetingDay, meetingTime, meetingVenue, isActive, ministryId])
+  }, [name, description, leaderId, scheduleEntries, isActive, ministryId])
 
   useEffect(() => {
     function h(e: MouseEvent) { if (leaderRef.current && !leaderRef.current.contains(e.target as Node)) setLeaderOpen(false) }
@@ -108,22 +236,31 @@ export function GroupNewPage() {
 
     setSaving(true)
 
-    const scheduleParts = [meetingDay, meetingTime, meetingVenue].filter(Boolean)
-    const meetingSchedule = scheduleParts.length > 0 ? scheduleParts.join(' · ') : null
-
-    const payload = {
+    const { data, error } = await supabase.from('groups').insert({
       org_id: user.org_id,
       ministry_id: ministryId,
       branch_id: null,
       name: name.trim(),
       description: description.trim() || null,
       leader_id: leaderId || null,
-      meeting_schedule: meetingSchedule,
+      meeting_schedule: null,
       is_active: isActive,
-    }
+    }).select().single()
 
-    const { data, error } = await supabase.from('groups').insert(payload).select().single()
     if (error) { toast.error('Failed to create group: ' + error.message); setSaving(false); return }
+
+    const validSchedules = scheduleEntries.filter(s => s.day && s.time)
+    if (validSchedules.length > 0) {
+      const { error: schErr } = await supabase.from('group_schedules').insert(
+        validSchedules.map(s => ({
+          group_id: data.id,
+          meeting_day: s.day,
+          meeting_time: s.time,
+          meeting_venue: s.venue || null,
+        }))
+      )
+      if (schErr) console.warn('Failed to save schedules:', schErr.message)
+    }
 
     localStorage.removeItem(DRAFT_KEY(ministryId))
     toast.success('Group created successfully')
@@ -155,6 +292,7 @@ export function GroupNewPage() {
 
       <div style={{ maxWidth: 640 }}>
         <form onSubmit={handleSubmit} noValidate>
+          {/* Group Details */}
           <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: 24, marginBottom: 16 }}>
             <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 20, paddingBottom: 12, borderBottom: '0.5px solid #F3F4F6' }}>Group Details</div>
 
@@ -213,33 +351,8 @@ export function GroupNewPage() {
               )}
             </div>
 
-            {/* Meeting Day Pill Selector */}
-            <div style={{ marginBottom: 18 }}>
-              <label style={labelStyle}>Meeting Day <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(optional)</span></label>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {DAYS.map(day => (
-                  <button key={day} type="button" onClick={() => setMeetingDay(meetingDay === day ? '' : day)}
-                    style={{ height: 34, padding: '0 14px', borderRadius: 999, border: `1.5px solid ${meetingDay === day ? '#4F6BED' : '#E5E7EB'}`, background: meetingDay === day ? '#EEF1FD' : '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: meetingDay === day ? 600 : 500, fontSize: 13, color: meetingDay === day ? '#4F6BED' : '#374151', transition: 'all 0.12s' }}>
-                    {day.slice(0, 3)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Meeting Time */}
-            <div style={{ marginBottom: 18 }}>
-              <label style={labelStyle}>Meeting Time <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(optional)</span></label>
-              <input className="gn-input" type="time" value={meetingTime} onChange={e => setMeetingTime(e.target.value)} style={{ ...inputBase, width: 'auto', minWidth: 160 }} />
-            </div>
-
-            {/* Meeting Venue */}
-            <div style={{ marginBottom: 18 }}>
-              <label style={labelStyle}>Meeting Venue <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(optional)</span></label>
-              <input className="gn-input" type="text" value={meetingVenue} onChange={e => setMeetingVenue(e.target.value)} placeholder="e.g. Fellowship Hall" style={{ ...inputBase }} />
-            </div>
-
             {/* Status */}
-            <div style={{ marginBottom: 4 }}>
+            <div>
               <label style={labelStyle}>Status</label>
               <div style={{ display: 'flex', gap: 8 }}>
                 {[{ v: true, l: 'Active' }, { v: false, l: 'Inactive' }].map(opt => (
@@ -249,6 +362,13 @@ export function GroupNewPage() {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Meeting Schedule */}
+          <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: 24, marginBottom: 16 }}>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 4, paddingBottom: 12, borderBottom: '0.5px solid #F3F4F6' }}>Meeting Schedule</div>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF', marginBottom: 16 }}>Add one or more recurring meeting times for this group.</div>
+            <ScheduleBuilder entries={scheduleEntries} onChange={setScheduleEntries} />
           </div>
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
