@@ -564,7 +564,6 @@ export function GroupDetailPage() {
   const existingMemberIds = members.map(m => m.member?.id ?? '').filter(Boolean)
   const tabs: { key: GroupTab; label: string }[] = [
     { key: 'members', label: `Members (${members.length})` },
-    { key: 'settings', label: 'Settings' },
   ]
 
   const inputStyle: React.CSSProperties = { height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#111827', background: '#fff', outline: 'none' }
