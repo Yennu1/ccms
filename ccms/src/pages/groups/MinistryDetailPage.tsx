@@ -16,11 +16,14 @@ interface Ministry {
   leader: { id: string; first_name: string; last_name: string; member_number: string | null } | null
 }
 
+interface GroupSchedule { id: string; group_id: string; meeting_day: string; meeting_time: string; meeting_venue: string | null }
+
 interface Group {
   id: string; name: string; description: string | null; is_active: boolean
   meeting_schedule: string | null; leader_id: string | null
   leader: { id: string; first_name: string; last_name: string } | null
   _memberCount?: number
+  _schedules?: GroupSchedule[]
 }
 
 interface MinistryMember {
@@ -46,10 +49,13 @@ function avatarColor(name: string) {
   return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length]
 }
 
-function parseMeetingSchedule(s: string | null) {
-  if (!s) return { day: null, time: null, venue: null }
-  const parts = s.split(' · ')
-  return { day: parts[0] ?? null, time: parts[1] ?? null, venue: parts[2] ?? null }
+function formatScheduleTime(t: string): string {
+  const [hStr, mStr] = t.split(':')
+  const h = parseInt(hStr, 10)
+  const m = mStr ?? '00'
+  const period = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 === 0 ? 12 : h % 12
+  return `${h12}:${m} ${period}`
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -272,17 +278,17 @@ export function MinistryDetailPage() {
       .eq('ministry_id', ministryId)
       .order('name')
     const groupList = (data ?? []) as unknown as Group[]
-    // Get member counts
     const ids = groupList.map(g => g.id)
     if (ids.length > 0) {
-      const { data: counts } = await supabase
-        .from('group_memberships')
-        .select('group_id')
-        .in('group_id', ids)
-        .eq('is_active', true)
+      const [{ data: counts }, { data: schedData }] = await Promise.all([
+        supabase.from('group_memberships').select('group_id').in('group_id', ids).eq('is_active', true),
+        supabase.from('group_schedules').select('id, group_id, meeting_day, meeting_time, meeting_venue').in('group_id', ids).order('meeting_day'),
+      ])
       const countMap: Record<string, number> = {}
       ;(counts ?? []).forEach((r: { group_id: string }) => { countMap[r.group_id] = (countMap[r.group_id] ?? 0) + 1 })
-      groupList.forEach(g => { g._memberCount = countMap[g.id] ?? 0 })
+      const schedMap: Record<string, GroupSchedule[]> = {}
+      ;(schedData ?? []).forEach((s: GroupSchedule) => { schedMap[s.group_id] = [...(schedMap[s.group_id] ?? []), s] })
+      groupList.forEach(g => { g._memberCount = countMap[g.id] ?? 0; g._schedules = schedMap[g.id] ?? [] })
     }
     setGroups(groupList)
   }, [ministryId])
@@ -446,7 +452,9 @@ export function MinistryDetailPage() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
               {filteredGroups.map(group => {
-                const { day, time, venue } = parseMeetingSchedule(group.meeting_schedule)
+                const scheds = group._schedules ?? []
+                const first = scheds[0]
+                const extra = scheds.length - 1
                 return (
                   <div key={group.id} className="md-group-card" onClick={() => navigate(`/groups/${ministry.id}/${group.id}`)} style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: 18, cursor: 'pointer', transition: 'border-color 0.15s' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -462,9 +470,10 @@ export function MinistryDetailPage() {
                         <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151' }}>{group.leader.first_name} {group.leader.last_name}</span>
                       </div>
                     )}
-                    {(day || time || venue) && (
-                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginBottom: 10 }}>
-                        {[day, time, venue].filter(Boolean).join(' · ')}
+                    {first && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginBottom: 10 }}>
+                        <span>{[first.meeting_day.slice(0, 3), formatScheduleTime(first.meeting_time), first.meeting_venue].filter(Boolean).join(' · ')}</span>
+                        {extra > 0 && <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 10.5, color: '#4F6BED', background: '#E8ECF9', borderRadius: 4, padding: '1px 5px' }}>+{extra} more</span>}
                       </div>
                     )}
                     <div style={{ paddingTop: 10, borderTop: '0.5px solid #F3F4F6', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280' }}>

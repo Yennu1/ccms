@@ -25,6 +25,8 @@ interface GroupMember {
 
 interface MemberOption { id: string; first_name: string; last_name: string; member_number: string | null }
 interface Ministry { id: string; name: string }
+interface GroupSchedule { id: string; group_id: string; meeting_day: string; meeting_time: string; meeting_venue: string | null }
+interface ScheduleEntry { localId: string; day: string; time: string; venue: string }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -40,13 +42,16 @@ function avatarColor(name: string) {
   return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length]
 }
 
-function parseMeetingSchedule(s: string | null) {
-  if (!s) return { day: null, time: null, venue: null }
-  const parts = s.split(' · ')
-  return { day: parts[0] ?? null, time: parts[1] ?? null, venue: parts[2] ?? null }
-}
-
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+function formatScheduleTime(t: string): string {
+  const [hStr, mStr] = t.split(':')
+  const h = parseInt(hStr, 10)
+  const m = mStr ?? '00'
+  const period = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 === 0 ? 12 : h % 12
+  return `${h12}:${m} ${period}`
+}
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -175,18 +180,86 @@ function AddMemberModal({ group, existingMemberIds, orgId, onAdd, onClose }: {
   )
 }
 
+// ─── Schedule Builder ─────────────────────────────────────────────────────────
+
+function ScheduleBuilder({ entries, onChange, disabled = false }: {
+  entries: ScheduleEntry[]
+  onChange: (entries: ScheduleEntry[]) => void
+  disabled?: boolean
+}) {
+  const inputSt: React.CSSProperties = {
+    width: '100%', height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB',
+    fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#111827',
+    background: '#fff', outline: 'none', padding: '0 10px', boxSizing: 'border-box',
+    opacity: disabled ? 0.6 : 1,
+  }
+
+  const update = (id: string, field: keyof Omit<ScheduleEntry, 'localId'>, value: string) => {
+    if (disabled) return
+    onChange(entries.map(e => e.localId === id ? { ...e, [field]: value } : e))
+  }
+
+  const add = () => {
+    if (disabled) return
+    onChange([...entries, { localId: `${Date.now()}`, day: '', time: '', venue: '' }])
+  }
+
+  return (
+    <div>
+      {entries.map((entry, i) => (
+        <div key={entry.localId} style={{ background: '#F9FAFB', border: '0.5px solid #E5E7EB', borderRadius: 8, padding: '12px 14px', marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{entries.length > 1 ? `Schedule ${i + 1}` : 'Schedule'}</span>
+            {entries.length > 1 && !disabled && (
+              <button type="button" onClick={() => onChange(entries.filter(e => e.localId !== entry.localId))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 17, lineHeight: 1, padding: '0 4px', display: 'flex', alignItems: 'center' }} onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')} onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}>×</button>
+            )}
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#6B7280', marginBottom: 6 }}>Meeting Day</div>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {DAYS.map(day => {
+                const active = entry.day === day
+                return (
+                  <button key={day} type="button" disabled={disabled} onClick={() => update(entry.localId, 'day', active ? '' : day)} style={{ height: 28, padding: '0 10px', borderRadius: 999, border: `1.5px solid ${active ? '#4F6BED' : '#E5E7EB'}`, background: active ? '#EEF1FD' : '#fff', cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: active ? 600 : 500, fontSize: 12, color: active ? '#4F6BED' : '#374151', opacity: disabled ? 0.6 : 1 }}>{day.slice(0, 3)}</button>
+                )
+              })}
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 8 }}>
+            <div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#6B7280', marginBottom: 4 }}>Time</div>
+              <input type="time" value={entry.time} disabled={disabled} onChange={e => update(entry.localId, 'time', e.target.value)} style={inputSt} />
+            </div>
+            <div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#6B7280', marginBottom: 4 }}>Venue <span style={{ color: '#9CA3AF' }}>(optional)</span></div>
+              <input type="text" value={entry.venue} disabled={disabled} onChange={e => update(entry.localId, 'venue', e.target.value)} placeholder="e.g. Fellowship Hall" style={inputSt} />
+            </div>
+          </div>
+        </div>
+      ))}
+      {!disabled && (
+        <button type="button" onClick={add} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, color: '#4F6BED', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = '#EEF1FD')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+          + Add Another Meeting Time
+        </button>
+      )}
+    </div>
+  )
+}
+
 // ─── Settings Tab ─────────────────────────────────────────────────────────────
 
-function GroupSettingsTab({ group, ministries, members, canManage, onSaved }: {
+function GroupSettingsTab({ group, ministries, members, canManage, onSaved, initialSchedules }: {
   group: Group; ministries: Ministry[]; members: MemberOption[]; canManage: boolean; onSaved: () => void
+  initialSchedules: GroupSchedule[]
 }) {
   const navigate = useNavigate()
   const [name, setName] = useState(group.name)
   const [description, setDescription] = useState(group.description ?? '')
-  const { day: initDay, time: initTime, venue: initVenue } = parseMeetingSchedule(group.meeting_schedule)
-  const [meetingDay, setMeetingDay] = useState(initDay ?? '')
-  const [meetingTime, setMeetingTime] = useState(initTime ?? '')
-  const [meetingVenue, setMeetingVenue] = useState(initVenue ?? '')
+  const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>(() =>
+    initialSchedules.length > 0
+      ? initialSchedules.map(s => ({ localId: s.id, day: s.meeting_day, time: s.meeting_time.slice(0, 5), venue: s.meeting_venue ?? '' }))
+      : [{ localId: 'init', day: '', time: '', venue: '' }]
+  )
   const [leaderId, setLeaderId] = useState(group.leader_id ?? '')
   const [ministryId, setMinistryId] = useState(group.ministry_id ?? '')
   const [isActive, setIsActive] = useState(group.is_active)
@@ -212,20 +285,26 @@ function GroupSettingsTab({ group, ministries, members, canManage, onSaved }: {
   const handleSave = async () => {
     if (!name.trim()) { toast.error('Name is required'); return }
     setSaving(true)
-    const scheduleParts = [meetingDay, meetingTime, meetingVenue].filter(Boolean)
-    const meetingSchedule = scheduleParts.length > 0 ? scheduleParts.join(' · ') : null
     const { error } = await supabase.from('groups').update({
       name: name.trim(), description: description.trim() || null,
-      leader_id: leaderId || null, meeting_schedule: meetingSchedule,
+      leader_id: leaderId || null, meeting_schedule: null,
       ministry_id: ministryId || null, is_active: isActive,
     }).eq('id', group.id)
     if (error) { toast.error('Failed to save: ' + error.message); setSaving(false); return }
+    await supabase.from('group_schedules').delete().eq('group_id', group.id)
+    const validEntries = scheduleEntries.filter(s => s.day && s.time)
+    if (validEntries.length > 0) {
+      await supabase.from('group_schedules').insert(
+        validEntries.map(s => ({ group_id: group.id, meeting_day: s.day, meeting_time: s.time, meeting_venue: s.venue || null }))
+      )
+    }
     toast.success('Group updated')
     setSaving(false); onSaved()
   }
 
   const handleDelete = async () => {
     setDeleting(true)
+    await supabase.from('group_schedules').delete().eq('group_id', group.id)
     await supabase.from('group_memberships').delete().eq('group_id', group.id)
     await supabase.from('groups').delete().eq('id', group.id)
     toast.success('Group deleted')
@@ -265,17 +344,11 @@ function GroupSettingsTab({ group, ministries, members, canManage, onSaved }: {
           </div>
         </div>
 
-        {/* Meeting Day */}
+        {/* Meeting Schedule */}
         <div style={{ marginBottom: 16 }}>
-          <label style={labelSt}>Meeting Day</label>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {DAYS.map(day => (
-              <button key={day} type="button" disabled={!canManage} onClick={() => setMeetingDay(meetingDay === day ? '' : day)} style={{ height: 32, padding: '0 12px', borderRadius: 999, border: `1.5px solid ${meetingDay === day ? '#4F6BED' : '#E5E7EB'}`, background: meetingDay === day ? '#EEF1FD' : '#fff', cursor: canManage ? 'pointer' : 'not-allowed', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: meetingDay === day ? 600 : 500, fontSize: 12, color: meetingDay === day ? '#4F6BED' : '#374151', opacity: canManage ? 1 : 0.6 }}>{day.slice(0, 3)}</button>
-            ))}
-          </div>
+          <label style={labelSt}>Meeting Schedule</label>
+          <ScheduleBuilder entries={scheduleEntries} onChange={setScheduleEntries} disabled={!canManage} />
         </div>
-        <div style={{ marginBottom: 16 }}><label style={labelSt}>Meeting Time</label><input type="time" value={meetingTime} onChange={e => setMeetingTime(e.target.value)} disabled={!canManage} style={{ ...inputBase, width: 'auto', minWidth: 160, opacity: canManage ? 1 : 0.6 }} /></div>
-        <div style={{ marginBottom: 16 }}><label style={labelSt}>Meeting Venue</label><input type="text" value={meetingVenue} onChange={e => setMeetingVenue(e.target.value)} disabled={!canManage} placeholder="e.g. Fellowship Hall" style={{ ...inputBase, opacity: canManage ? 1 : 0.6 }} /></div>
 
         {/* Transfer Ministry */}
         {canManage && (
@@ -337,6 +410,7 @@ export function GroupDetailPage() {
   const [members, setMembers] = useState<GroupMember[]>([])
   const [memberOptions, setMemberOptions] = useState<MemberOption[]>([])
   const [ministries, setMinistries] = useState<Ministry[]>([])
+  const [schedules, setSchedules] = useState<GroupSchedule[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [activeTab, setActiveTab] = useState<GroupTab>('members')
@@ -374,8 +448,19 @@ export function GroupDetailPage() {
     setMembers((data ?? []) as unknown as GroupMember[])
   }, [groupId])
 
+  const fetchSchedules = useCallback(async () => {
+    if (!groupId) return
+    const { data } = await supabase
+      .from('group_schedules')
+      .select('id, group_id, meeting_day, meeting_time, meeting_venue')
+      .eq('group_id', groupId)
+      .order('meeting_day')
+    setSchedules((data ?? []) as GroupSchedule[])
+  }, [groupId])
+
   useEffect(() => { fetchGroup() }, [fetchGroup])
   useEffect(() => { fetchMembers() }, [fetchMembers])
+  useEffect(() => { fetchSchedules() }, [fetchSchedules])
 
   useEffect(() => {
     if (!user?.org_id) return
@@ -464,7 +549,6 @@ export function GroupDetailPage() {
     )
   }
 
-  const { day, time, venue } = parseMeetingSchedule(group.meeting_schedule)
   const leaderCount = members.filter(m => m.role === 'leader').length
   const memberCount = members.filter(m => m.role === 'member').length
 
@@ -518,8 +602,19 @@ export function GroupDetailPage() {
             )}
             <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: 999, background: group.is_active ? '#DCFCE7' : '#F3F4F6', color: group.is_active ? '#166534' : '#6B7280', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11 }}>{group.is_active ? 'Active' : 'Inactive'}</span>
           </div>
-          {(day || time || venue) && (
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#9CA3AF' }}>{[day, time, venue].filter(Boolean).join(' · ')}</div>
+          {schedules.length === 1 && (
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+              {[schedules[0].meeting_day, formatScheduleTime(schedules[0].meeting_time), schedules[0].meeting_venue].filter(Boolean).join(' · ')}
+            </div>
+          )}
+          {schedules.length > 1 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 2 }}>
+              {schedules.map(s => (
+                <div key={s.id} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#9CA3AF' }}>
+                  {[s.meeting_day.slice(0, 3), formatScheduleTime(s.meeting_time), s.meeting_venue].filter(Boolean).join(' · ')}
+                </div>
+              ))}
+            </div>
           )}
           {group.leader && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
@@ -651,7 +746,7 @@ export function GroupDetailPage() {
 
       {/* ── Settings Tab ───────────────────────────────────────────────────────── */}
       {activeTab === 'settings' && (
-        <GroupSettingsTab group={group} ministries={ministries} members={memberOptions} canManage={canManage} onSaved={fetchGroup} />
+        <GroupSettingsTab group={group} ministries={ministries} members={memberOptions} canManage={canManage} initialSchedules={schedules} onSaved={() => { fetchGroup(); fetchSchedules() }} />
       )}
     </>
   )
