@@ -19,6 +19,7 @@ interface TxRow {
   reference_number: string | null
   branch_id: string | null
   created_at: string
+  is_collective: boolean
   transaction_categories: { id: string; name: string } | null
   member: { id: string; first_name: string; last_name: string; member_number: string } | null
   branches: { id: string; name: string } | null
@@ -230,6 +231,40 @@ function SkeletonRow() {
   )
 }
 
+function CollectiveAvatar({ size = 32 }: { size?: number }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: '#EDE9FE', color: '#8B5CF6',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexShrink: 0,
+    }}>
+      <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 16 16" fill="none">
+        <circle cx="9.5" cy="6" r="3.5" stroke="currentColor" strokeWidth="1.3" />
+        <path d="M9.5 4.5v1.5l1 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M4 10.5A5.5 5.5 0 0 1 9.5 6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        <circle cx="4" cy="12" r="2" stroke="currentColor" strokeWidth="1.2" />
+        <circle cx="8" cy="13.5" r="1.5" stroke="currentColor" strokeWidth="1.2" />
+      </svg>
+    </div>
+  )
+}
+
+function CollectiveBadge() {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding: '3px 9px', borderRadius: 999,
+      background: '#FEF6E5', color: '#8A6418',
+      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+      fontWeight: 600, fontSize: 11.5, whiteSpace: 'nowrap',
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#C8964A', flexShrink: 0 }} />
+      Collective
+    </span>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function DonationsPage() {
@@ -247,6 +282,7 @@ export function DonationsPage() {
   const [categoryFilter, setCategoryFilter] = useState<'all' | Category>('all')
   const [methodFilter, setMethodFilter] = useState<'all' | string>('all')
   const [branchFilter, setBranchFilter] = useState('')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'collective' | 'individual'>('all')
   const [page, setPage] = useState(1)
 
   useEffect(() => {
@@ -258,7 +294,7 @@ export function DonationsPage() {
           .from('transactions')
           .select(`
             id, member_id, category_id, amount, payment_method,
-            transaction_date, reference_number, branch_id, created_at,
+            transaction_date, reference_number, branch_id, created_at, is_collective,
             transaction_categories(id, name),
             member:members!transactions_member_id_fkey(id, first_name, last_name, member_number),
             branches(id, name),
@@ -367,9 +403,14 @@ export function DonationsPage() {
 
       const matchesBranch = !branchFilter || t.branch_id === branchFilter
 
-      return matchesSearch && matchesDate && matchesCategory && matchesMethod && matchesBranch
+      const matchesType =
+        typeFilter === 'all' ||
+        (typeFilter === 'collective' && t.is_collective) ||
+        (typeFilter === 'individual' && !t.is_collective)
+
+      return matchesSearch && matchesDate && matchesCategory && matchesMethod && matchesBranch && matchesType
     })
-  }, [transactions, search, dateRange, categoryFilter, methodFilter, branchFilter])
+  }, [transactions, search, dateRange, categoryFilter, methodFilter, branchFilter, typeFilter])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -707,7 +748,7 @@ export function DonationsPage() {
 
       {/* Filter Bar */}
       <div style={{
-        display: 'grid', gridTemplateColumns: '1.7fr repeat(4, 1fr)', gap: 10,
+        display: 'grid', gridTemplateColumns: '1.7fr repeat(5, 1fr)', gap: 10,
         padding: 14, background: '#fff', border: '0.5px solid #E5E7EB',
         borderRadius: 12, marginBottom: 16,
       }}>
@@ -773,6 +814,16 @@ export function DonationsPage() {
             <option key={b.id} value={b.id}>{b.name}</option>
           ))}
         </select>
+        <select
+          className="filter-select-d"
+          value={typeFilter}
+          onChange={e => { setTypeFilter(e.target.value as typeof typeFilter); setPage(1) }}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}
+        >
+          <option value="all">All Types</option>
+          <option value="individual">Individual Only</option>
+          <option value="collective">Collective Only</option>
+        </select>
       </div>
 
       {/* Table Card */}
@@ -824,6 +875,7 @@ export function DonationsPage() {
                 </td>
               </tr>
             ) : paginated.map(t => {
+              const isCollective = t.is_collective === true
               const firstName = t.member?.first_name ?? 'Anonymous'
               const lastName = t.member?.last_name ?? ''
               const memberNumber = t.member?.member_number ?? '—'
@@ -841,19 +893,22 @@ export function DonationsPage() {
                 >
                   <td style={{ padding: '0 18px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                      <Avatar firstName={firstName} lastName={lastName || 'A'} />
+                      {isCollective
+                        ? <CollectiveAvatar />
+                        : <Avatar firstName={firstName} lastName={lastName || 'A'} />
+                      }
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {t.member ? `${firstName} ${lastName}` : 'Anonymous'}
+                          {isCollective ? 'Collective Offering' : t.member ? `${firstName} ${lastName}` : 'Anonymous'}
                         </div>
                         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>
-                          {memberNumber}
+                          {isCollective ? '—' : memberNumber}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td style={{ padding: '0 18px' }}>
-                    <CategoryPill categoryName={catName} />
+                    {isCollective ? <CollectiveBadge /> : <CategoryPill categoryName={catName} />}
                   </td>
                   <td style={{ padding: '0 18px', textAlign: 'right' }}>
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: '#111827', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>

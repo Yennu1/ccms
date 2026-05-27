@@ -50,6 +50,7 @@ interface TxRow {
   payment_method: string
   transaction_date: string
   reference_number: string | null
+  is_collective: boolean
   transaction_categories: { id: string; name: string } | null
   member: { first_name: string; last_name: string; member_number: string | null } | null
 }
@@ -142,6 +143,20 @@ function ArrowRightIcon() {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
+
+function CollectiveAvatar({ size = 28 }: { size?: number }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: '50%', background: '#EDE9FE', color: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 16 16" fill="none">
+        <circle cx="9.5" cy="6" r="3.5" stroke="currentColor" strokeWidth="1.3" />
+        <path d="M9.5 4.5v1.5l1 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M4 10.5A5.5 5.5 0 0 1 9.5 6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        <circle cx="4" cy="12" r="2" stroke="currentColor" strokeWidth="1.2" />
+        <circle cx="8" cy="13.5" r="1.5" stroke="currentColor" strokeWidth="1.2" />
+      </svg>
+    </div>
+  )
+}
 
 function MemberAvatar({ first, last, size = 32 }: { first: string; last: string; size?: number }) {
   const initials = `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase()
@@ -453,7 +468,7 @@ function DonationsTab({ eventId }: { eventId: string }) {
 
   useEffect(() => {
     supabase.from('transactions')
-      .select(`id, member_id, amount, payment_method, transaction_date, reference_number, transaction_categories(id, name), member:members!transactions_member_id_fkey(first_name, last_name, member_number)`)
+      .select(`id, member_id, amount, payment_method, transaction_date, reference_number, is_collective, transaction_categories(id, name), member:members!transactions_member_id_fkey(first_name, last_name, member_number)`)
       .eq('event_id', eventId)
       .order('transaction_date', { ascending: false })
       .then(({ data }) => { setTransactions((data ?? []) as unknown as TxRow[]); setLoading(false) })
@@ -498,6 +513,7 @@ function DonationsTab({ eventId }: { eventId: string }) {
                 <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>No giving records for this event yet.</div>
               </td></tr>
             ) : transactions.map(tx => {
+              const isCol = tx.is_collective === true
               const firstName = tx.member?.first_name ?? 'Anonymous'
               const lastName = tx.member?.last_name ?? ''
               const catName = tx.transaction_categories?.name ?? ''
@@ -507,18 +523,29 @@ function DonationsTab({ eventId }: { eventId: string }) {
                   onMouseEnter={e => (e.currentTarget.style.background = '#FAFBFE')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
                   <td style={{ padding: '0 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                      <MemberAvatar first={firstName} last={lastName || 'A'} size={28} />
+                      {isCol ? <CollectiveAvatar size={28} /> : <MemberAvatar first={firstName} last={lastName || 'A'} size={28} />}
                       <div>
-                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>{tx.member ? `${firstName} ${lastName}` : 'Anonymous'}</div>
-                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: '#9CA3AF' }}>{tx.member?.member_number ?? '—'}</div>
+                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>
+                          {isCol ? 'Collective Offering' : tx.member ? `${firstName} ${lastName}` : 'Anonymous'}
+                        </div>
+                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: '#9CA3AF' }}>
+                          {isCol ? '—' : tx.member?.member_number ?? '—'}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td style={{ padding: '0 16px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999, background: catS.bg, color: catS.color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11.5 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: catS.dot }} />
-                      {catName || '—'}
-                    </span>
+                    {isCol ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999, background: '#FEF6E5', color: '#8A6418', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11.5 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#C8964A' }} />
+                        Collective
+                      </span>
+                    ) : (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999, background: catS.bg, color: catS.color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11.5 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: catS.dot }} />
+                        {catName || '—'}
+                      </span>
+                    )}
                   </td>
                   <td style={{ padding: '0 16px', textAlign: 'right' }}>
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: '#111827', fontWeight: 600 }}>{formatAmount(tx.amount)}</span>
