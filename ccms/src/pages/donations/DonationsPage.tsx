@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext'
 
 type Category = 'tithe' | 'offering' | 'building' | 'welfare' | 'thanksgiving' | 'special'
 type DateRange = 'this-month' | 'last-month' | 'last-3-months' | 'this-year' | 'all-time'
+type CombinedFilter = 'all' | 'individual' | 'collective' | 'tithe' | 'offering' | 'sunday-offering' | 'pledge' | 'building' | 'thanksgiving' | 'harvest' | 'other'
 
 interface TxRow {
   id: string
@@ -279,10 +280,9 @@ export function DonationsPage() {
 
   const [search, setSearch] = useState('')
   const [dateRange, setDateRange] = useState<DateRange>('this-month')
-  const [categoryFilter, setCategoryFilter] = useState<'all' | Category>('all')
+  const [combinedFilter, setCombinedFilter] = useState<CombinedFilter>('all')
   const [methodFilter, setMethodFilter] = useState<'all' | string>('all')
   const [branchFilter, setBranchFilter] = useState('')
-  const [typeFilter, setTypeFilter] = useState<'all' | 'collective' | 'individual'>('all')
   const [page, setPage] = useState(1)
 
   useEffect(() => {
@@ -389,12 +389,6 @@ export function DonationsPage() {
         (!toDate || t.transaction_date <= toDate)
 
       const catName = (t.transaction_categories?.name ?? '').toLowerCase()
-      const matchesCategory = categoryFilter === 'all' || (() => {
-        const k = categoryFilter
-        if (k === 'building') return catName.includes('building')
-        if (k === 'special') return catName.includes('special')
-        return catName === k
-      })()
 
       const pm = (t.payment_method ?? '').toLowerCase()
       const matchesMethod = methodFilter === 'all' ||
@@ -403,14 +397,24 @@ export function DonationsPage() {
 
       const matchesBranch = !branchFilter || t.branch_id === branchFilter
 
-      const matchesType =
-        typeFilter === 'all' ||
-        (typeFilter === 'collective' && t.is_collective) ||
-        (typeFilter === 'individual' && !t.is_collective)
+      const matchesCombined =
+        combinedFilter === 'all' ||
+        (combinedFilter === 'collective' && t.is_collective === true) ||
+        (combinedFilter === 'individual' && !t.is_collective) ||
+        (combinedFilter === 'tithe' && catName.includes('tithe')) ||
+        (combinedFilter === 'offering' && catName === 'offering') ||
+        (combinedFilter === 'sunday-offering' && catName.includes('sunday')) ||
+        (combinedFilter === 'pledge' && catName.includes('pledge')) ||
+        (combinedFilter === 'building' && catName.includes('building')) ||
+        (combinedFilter === 'thanksgiving' && catName.includes('thanksgiving')) ||
+        (combinedFilter === 'harvest' && catName.includes('harvest')) ||
+        (combinedFilter === 'other' && !catName.includes('tithe') && catName !== 'offering' &&
+          !catName.includes('sunday') && !catName.includes('pledge') &&
+          !catName.includes('building') && !catName.includes('thanksgiving') && !catName.includes('harvest'))
 
-      return matchesSearch && matchesDate && matchesCategory && matchesMethod && matchesBranch && matchesType
+      return matchesSearch && matchesDate && matchesMethod && matchesBranch && matchesCombined
     })
-  }, [transactions, search, dateRange, categoryFilter, methodFilter, branchFilter, typeFilter])
+  }, [transactions, search, dateRange, combinedFilter, methodFilter, branchFilter])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -748,7 +752,7 @@ export function DonationsPage() {
 
       {/* Filter Bar */}
       <div style={{
-        display: 'grid', gridTemplateColumns: '1.7fr repeat(5, 1fr)', gap: 10,
+        display: 'grid', gridTemplateColumns: '1.7fr repeat(4, 1fr)', gap: 10,
         padding: 14, background: '#fff', border: '0.5px solid #E5E7EB',
         borderRadius: 12, marginBottom: 16,
       }}>
@@ -779,17 +783,23 @@ export function DonationsPage() {
         </select>
         <select
           className="filter-select-d"
-          value={categoryFilter}
-          onChange={e => { setCategoryFilter(e.target.value as typeof categoryFilter); setPage(1) }}
+          value={combinedFilter}
+          onChange={e => { setCombinedFilter(e.target.value as CombinedFilter); setPage(1) }}
           style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}
         >
-          <option value="all">All Categories</option>
-          <option value="tithe">Tithe</option>
-          <option value="offering">Offering</option>
-          <option value="building">Building Fund</option>
-          <option value="welfare">Welfare</option>
-          <option value="thanksgiving">Thanksgiving</option>
-          <option value="special">Special Offering</option>
+          <option value="all">All Types</option>
+          <option value="individual">Individual Only</option>
+          <option value="collective">Collective Only</option>
+          <optgroup label="Categories">
+            <option value="tithe">Tithe</option>
+            <option value="offering">Offering</option>
+            <option value="sunday-offering">Sunday Offering</option>
+            <option value="pledge">Pledge</option>
+            <option value="building">Building Fund</option>
+            <option value="thanksgiving">Thanksgiving</option>
+            <option value="harvest">Harvest</option>
+            <option value="other">Other</option>
+          </optgroup>
         </select>
         <select
           className="filter-select-d"
@@ -813,16 +823,6 @@ export function DonationsPage() {
           {branches.map(b => (
             <option key={b.id} value={b.id}>{b.name}</option>
           ))}
-        </select>
-        <select
-          className="filter-select-d"
-          value={typeFilter}
-          onChange={e => { setTypeFilter(e.target.value as typeof typeFilter); setPage(1) }}
-          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}
-        >
-          <option value="all">All Types</option>
-          <option value="individual">Individual Only</option>
-          <option value="collective">Collective Only</option>
         </select>
       </div>
 
