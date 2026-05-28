@@ -26,6 +26,7 @@ import { MinistryNewPage } from '../pages/groups/MinistryNewPage'
 import { MinistryDetailPage } from '../pages/groups/MinistryDetailPage'
 import { GroupNewPage } from '../pages/groups/GroupNewPage'
 import { GroupDetailPage } from '../pages/groups/GroupDetailPage'
+import { ReportsPage } from '../pages/reports/ReportsPage'
 import { SettingsPage } from '../pages/settings/SettingsPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { AppLayout } from '../layouts/AppLayout'
@@ -79,6 +80,7 @@ export const router = createBrowserRouter([
           { path: '/groups/:ministryId', element: <MinistryDetailPage /> },
           { path: '/groups/:ministryId/new', element: <GroupNewPage /> },
           { path: '/groups/:ministryId/:groupId', element: <GroupDetailPage /> },
+          { path: '/reports', element: <ReportsPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],
       },
