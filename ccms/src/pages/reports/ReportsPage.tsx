@@ -309,7 +309,8 @@ export function ReportsPage() {
       ])
       setWeeklyAtt((weekly.data ?? []) as WeeklyAtt[])
       setAttByType((byType.data ?? []) as AttByEventType[])
-      setAtRisk((risk.data ?? []) as AtRisk[])
+      const riskData = (risk.data ?? []) as AtRisk[]
+      setAtRisk(Array.from(new Map(riskData.map(m => [m.id, m])).values()))
     } finally {
       setLoadingAtt(false)
     }
@@ -613,7 +614,7 @@ export function ReportsPage() {
                   </thead>
                   <tbody>
                     {topGivers.map((g, i) => (
-                      <tr key={g.member_id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}
+                      <tr key={`${g.member_id}-${i}`} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#EEF1FD')}
                         onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB')}
                       >
@@ -719,7 +720,7 @@ export function ReportsPage() {
                   </thead>
                   <tbody>
                     {atRisk.map((m, i) => (
-                      <tr key={m.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}
+                      <tr key={`${m.id}-${i}`} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#FEF3C7')}
                         onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB')}
                       >
@@ -855,7 +856,7 @@ export function ReportsPage() {
                   </thead>
                   <tbody>
                     {newMembers.map((m, i) => (
-                      <tr key={m.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}
+                      <tr key={`${m.id}-${i}`} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#EEF1FD')}
                         onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB')}
                       >
@@ -904,7 +905,7 @@ export function ReportsPage() {
                   </thead>
                   <tbody>
                     {birthdays.map((m, i) => (
-                      <tr key={m.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}
+                      <tr key={`${m.id}-${i}`} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#FEF3C7')}
                         onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB')}
                       >
@@ -987,7 +988,7 @@ export function ReportsPage() {
                   </thead>
                   <tbody>
                     {filteredGroups.map((g, i) => (
-                      <tr key={g.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer' }}
+                      <tr key={`${g.id}-${i}`} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#EEF1FD')}
                         onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB')}
                       >

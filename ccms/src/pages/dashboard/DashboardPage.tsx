@@ -320,8 +320,10 @@ export function DashboardPage() {
       // Members at risk
       const atRisk = await supabase.rpc('get_members_at_risk', { p_org_id: orgId, p_branch_id: bId, p_days: 30, p_limit: 5 })
       const atRiskFull = await supabase.rpc('get_members_at_risk', { p_org_id: orgId, p_branch_id: bId, p_days: 30, p_limit: 200 })
-      setAtRiskMembers(((atRisk.data ?? []) as AtRisk[]).slice(0, 5))
-      setAtRiskCount((atRiskFull.data ?? []).length)
+      const uniqueAtRisk = Array.from(new Map(((atRisk.data ?? []) as AtRisk[]).map(m => [m.id, m])).values())
+      const uniqueAtRiskFull = Array.from(new Map(((atRiskFull.data ?? []) as AtRisk[]).map(m => [m.id, m])).values())
+      setAtRiskMembers(uniqueAtRisk.slice(0, 5))
+      setAtRiskCount(uniqueAtRiskFull.length)
 
       // New members
       const newMQ = supabase.from('members').select('id, group_memberships!inner(id)', { count: 'exact', head: false })
@@ -627,10 +629,10 @@ export function DashboardPage() {
             <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 24, color: '#EF4444' }}>{loadingQuick ? '—' : atRiskCount}</div>
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
-            {atRiskMembers.map(m => {
+            {atRiskMembers.map((m, i) => {
               const { bg, color } = avatarPalette(m.first_name + m.last_name)
               return (
-                <div key={m.id} title={`${m.first_name} ${m.last_name}`} style={{ width: 30, height: 30, borderRadius: '50%', background: bg, color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>
+                <div key={`${m.id}-${i}`} title={`${m.first_name} ${m.last_name}`} style={{ width: 30, height: 30, borderRadius: '50%', background: bg, color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>
                   {m.first_name[0]}{m.last_name[0]}
                 </div>
               )
