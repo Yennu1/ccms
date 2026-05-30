@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import {
   LineChart, Line, BarChart, Bar, ComposedChart,
@@ -63,9 +63,12 @@ interface GroupRow {
 const DONUT_COLORS = ['#C8964A', '#4F6BED', '#7B93F5', '#22C55E', '#9CA3AF']
 const GENDER_COLORS = ['#4F6BED', '#EC4899']
 const AP = [
-  { bg: '#E8ECF9', color: '#4F6BED' }, { bg: '#DCFCE7', color: '#15803D' },
-  { bg: '#FEF3C7', color: '#B45309' }, { bg: '#FCE7F3', color: '#BE185D' },
-  { bg: '#EEF2FF', color: '#4338CA' }, { bg: '#FFF7ED', color: '#C2410C' },
+  { bg: 'var(--avatar-1-bg)', color: 'var(--avatar-1-fg)' },
+  { bg: 'var(--avatar-2-bg)', color: 'var(--avatar-2-fg)' },
+  { bg: 'var(--avatar-3-bg)', color: 'var(--avatar-3-fg)' },
+  { bg: 'var(--avatar-4-bg)', color: 'var(--avatar-4-fg)' },
+  { bg: 'var(--avatar-5-bg)', color: 'var(--avatar-5-fg)' },
+  { bg: 'var(--avatar-6-bg)', color: 'var(--avatar-6-fg)' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -112,17 +115,17 @@ function Skeleton({ h = 160, r = 8 }: { h?: number; r?: number }) {
   return (
     <>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
-      <div style={{ height: h, borderRadius: r, background: '#F3F4F6', animation: 'pulse 1.5s ease-in-out infinite' }} />
+      <div style={{ height: h, borderRadius: r, background: 'var(--dm-bg-muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
     </>
   )
 }
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent: string }) {
   return (
-    <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: '#111827', lineHeight: 1.1 }}>{value}</div>
-      {sub && <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 4 }}>{sub}</div>}
+    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 6 }}>{label}</div>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{value}</div>
+      {sub && <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: 'var(--dm-text-muted)', marginTop: 4 }}>{sub}</div>}
       <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: accent }} />
     </div>
   )
@@ -140,13 +143,13 @@ function Avatar({ firstName, lastName, size = 32 }: { firstName: string; lastNam
 function SectionHeader({ title, onExport }: { title: string; onExport?: () => void }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827' }}>{title}</div>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>{title}</div>
       {onExport && (
         <button
           onClick={onExport}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, color: '#374151' }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.borderColor = '#D1D5DB' }}
-          onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#E5E7EB' }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 8, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, color: 'var(--dm-text-body)' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--dm-bg-surface)'; e.currentTarget.style.borderColor = 'var(--dm-border-strong)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'var(--dm-bg-card)'; e.currentTarget.style.borderColor = 'var(--dm-border-soft)' }}
         >
           <DownloadIcon /> Export
         </button>
@@ -157,7 +160,7 @@ function SectionHeader({ title, onExport }: { title: string; onExport?: () => vo
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 120, color: '#9CA3AF', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13 }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 120, color: 'var(--dm-text-muted)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13 }}>
       {message}
     </div>
   )
@@ -181,15 +184,15 @@ function GivingTooltip({ active, payload, label }: { active?: boolean; payload?:
   if (!active || !payload?.length) return null
   const total = payload.reduce((s, p) => s + (p.value ?? 0), 0)
   return (
-    <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#6B7280', marginBottom: 6 }}>{monthLabel(label ?? '')}</div>
+    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 8, padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-secondary)', marginBottom: 6 }}>{monthLabel(label ?? '')}</div>
       {payload.map(p => (
-        <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: '#374151', marginBottom: 2 }}>
-          <span style={{ color: '#6B7280' }}>{p.name}</span>
+        <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: 'var(--dm-text-body)', marginBottom: 2 }}>
+          <span style={{ color: 'var(--dm-text-secondary)' }}>{p.name}</span>
           <span>{fGHSFull(p.value)}</span>
         </div>
       ))}
-      <div style={{ borderTop: '0.5px solid #F3F4F6', marginTop: 6, paddingTop: 6, display: 'flex', justifyContent: 'space-between', gap: 16, fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: '#111827' }}>
+      <div style={{ borderTop: '0.5px solid var(--dm-border-subtle)', marginTop: 6, paddingTop: 6, display: 'flex', justifyContent: 'space-between', gap: 16, fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: 'var(--dm-text-ink)' }}>
         <span>Total</span><span>{fGHSFull(total)}</span>
       </div>
     </div>
@@ -199,9 +202,9 @@ function GivingTooltip({ active, payload, label }: { active?: boolean; payload?:
 function AttTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#6B7280', marginBottom: 3 }}>Wk of {fShortDate(label)}</div>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: '#111827', fontWeight: 600 }}>{Number(payload[0]?.value ?? 0).toFixed(1)}%</div>
+    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 8, padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-secondary)', marginBottom: 3 }}>Wk of {fShortDate(label)}</div>
+      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: 'var(--dm-text-ink)', fontWeight: 600 }}>{Number(payload[0]?.value ?? 0).toFixed(1)}%</div>
     </div>
   )
 }
@@ -428,30 +431,30 @@ export function ReportsPage() {
   // ── Styles ───────────────────────────────────────────────────────────────────
 
   const card: React.CSSProperties = {
-    background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '20px 20px',
+    background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '20px 20px',
   }
   const periodBtn = (active: boolean): React.CSSProperties => ({
     height: 30, padding: '0 12px', borderRadius: 6,
-    border: `0.5px solid ${active ? '#4F6BED' : '#E5E7EB'}`,
-    background: active ? '#EEF1FD' : '#fff',
-    color: active ? '#4F6BED' : '#6B7280',
+    border: `0.5px solid ${active ? '#4F6BED' : 'var(--dm-border-soft)'}`,
+    background: active ? 'var(--avatar-1-bg)' : 'var(--dm-bg-card)',
+    color: active ? '#4F6BED' : 'var(--dm-text-secondary)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
     fontWeight: 500, fontSize: 12.5, cursor: 'pointer',
   })
   const selectSt: React.CSSProperties = {
-    height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB',
-    fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151',
-    padding: '0 10px', background: '#fff', outline: 'none',
+    height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border-soft)',
+    fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)',
+    padding: '0 10px', background: 'var(--dm-bg-card)', outline: 'none',
   }
   const th: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500,
-    fontSize: 11.5, color: '#6B7280', padding: '9px 12px', textAlign: 'left',
-    borderBottom: '0.5px solid #E5E7EB', whiteSpace: 'nowrap',
+    fontSize: 11.5, color: 'var(--dm-text-secondary)', padding: '9px 12px', textAlign: 'left',
+    borderBottom: '0.5px solid var(--dm-border-soft)', whiteSpace: 'nowrap',
   }
   const td: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#374151', padding: '10px 12px',
-    borderBottom: '0.5px solid #F3F4F6',
+    fontSize: 13, color: 'var(--dm-text-body)', padding: '10px 12px',
+    borderBottom: '0.5px solid var(--dm-border-subtle)',
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -461,10 +464,10 @@ export function ReportsPage() {
       {/* Page header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 20, color: '#111827', letterSpacing: '-0.02em' }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 20, color: 'var(--dm-text-ink)', letterSpacing: '-0.02em' }}>
             Reports
           </div>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF', marginTop: 3 }}>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)', marginTop: 3 }}>
             Giving, attendance, member growth, and group analytics
           </div>
         </div>
@@ -479,7 +482,7 @@ export function ReportsPage() {
       </div>
 
       {/* Tab navigation */}
-      <div style={{ display: 'flex', gap: 2, borderBottom: '0.5px solid #E5E7EB', marginBottom: 28 }}>
+      <div style={{ display: 'flex', gap: 2, borderBottom: '0.5px solid var(--dm-border-soft)', marginBottom: 28 }}>
         {(['giving', 'attendance', 'members', 'groups'] as ReportTab[]).map(t => (
           <button
             key={t}
@@ -492,8 +495,8 @@ export function ReportsPage() {
               marginBottom: -1, transition: 'color 0.1s',
               textTransform: 'capitalize',
             }}
-            onMouseEnter={e => { if (activeTab !== t) e.currentTarget.style.color = '#374151' }}
-            onMouseLeave={e => { if (activeTab !== t) e.currentTarget.style.color = '#6B7280' }}
+            onMouseEnter={e => { if (activeTab !== t) e.currentTarget.style.color = 'var(--dm-text-body)' }}
+            onMouseLeave={e => { if (activeTab !== t) e.currentTarget.style.color = 'var(--dm-text-secondary)' }}
           >
             {t === 'giving' ? 'Giving' : t === 'attendance' ? 'Attendance' : t === 'members' ? 'Members' : 'Groups'}
           </button>
@@ -513,7 +516,7 @@ export function ReportsPage() {
           {/* Period toggle + Stacked bar */}
           <div style={card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827' }}>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>
                 Monthly Giving by Category
               </div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -531,9 +534,9 @@ export function ReportsPage() {
             {loadingGiving ? <Skeleton h={220} /> : givingByCat.length === 0 ? <EmptyState message="No giving data for this period" /> : (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={givingByCat} margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-                  <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={v => fGHS(v)} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={64} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
+                  <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={v => fGHS(v)} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={64} />
                   <Tooltip content={<GivingTooltip />} />
                   <Legend wrapperStyle={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12 }} />
                   <Bar dataKey="tithe" stackId="a" fill="#4F6BED" name="Tithe" radius={[0, 0, 0, 0]} />
@@ -549,7 +552,7 @@ export function ReportsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             {/* Category donut */}
             <div style={card}>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 16 }}>By Category</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 16 }}>By Category</div>
               {loadingGiving ? <Skeleton h={180} /> : catBreakdown.length === 0 ? <EmptyState message="No data" /> : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <ResponsiveContainer width={160} height={160}>
@@ -567,8 +570,8 @@ export function ReportsPage() {
                       return (
                         <div key={c.category} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div style={{ width: 8, height: 8, borderRadius: '50%', background: DONUT_COLORS[i % DONUT_COLORS.length], flexShrink: 0 }} />
-                          <div style={{ flex: 1, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', textTransform: 'capitalize' }}>{c.category}</div>
-                          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: '#6B7280' }}>{pct}%</div>
+                          <div style={{ flex: 1, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-body)', textTransform: 'capitalize' }}>{c.category}</div>
+                          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: 'var(--dm-text-secondary)' }}>{pct}%</div>
                         </div>
                       )
                     })}
@@ -579,15 +582,15 @@ export function ReportsPage() {
 
             {/* By branch — only when org-wide view */}
             <div style={card}>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 16 }}>By Branch</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 16 }}>By Branch</div>
               {loadingGiving ? <Skeleton h={180} /> : givingByBranch.length === 0 ? (
                 <EmptyState message={selectedBranch ? 'Select "All Branches" to see this view' : 'No branch data'} />
               ) : (
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={givingByBranch} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" horizontal={false} />
-                    <XAxis type="number" tickFormatter={v => fGHS(v)} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                    <YAxis type="category" dataKey="branch_name" width={80} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: '#374151' }} axisLine={false} tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" horizontal={false} />
+                    <XAxis type="number" tickFormatter={v => fGHS(v)} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="branch_name" width={80} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-text-body)' }} axisLine={false} tickLine={false} />
                     <Tooltip formatter={(v: number) => fGHSFull(v)} />
                     <Bar dataKey="total" fill="#4F6BED" radius={[0, 4, 4, 0]} />
                   </BarChart>
@@ -614,30 +617,30 @@ export function ReportsPage() {
                   </thead>
                   <tbody>
                     {topGivers.map((g, i) => (
-                      <tr key={`${g.member_id}-${i}`} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#EEF1FD')}
-                        onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB')}
+                      <tr key={`${g.member_id}-${i}`} style={{ background: i % 2 === 0 ? 'var(--dm-bg-card)' : 'var(--dm-bg-surface)' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--avatar-1-bg)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? 'var(--dm-bg-card)' : 'var(--dm-bg-surface)')}
                       >
-                        <td style={{ ...td, color: '#9CA3AF', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, width: 32 }}>{i + 1}</td>
+                        <td style={{ ...td, color: 'var(--dm-text-muted)', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, width: 32 }}>{i + 1}</td>
                         <td style={td}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <Avatar firstName={g.first_name} lastName={g.last_name} size={28} />
                             <div>
                               <div
                                 onClick={() => navigate(`/members/${g.member_id}`)}
-                                role="button" onMouseEnter={e => (e.currentTarget.style.color = '#4F6BED')} onMouseLeave={e => (e.currentTarget.style.color = '#111827')}
-                                style={{ cursor: 'pointer', fontWeight: 500, color: '#111827' }}
+                                role="button" onMouseEnter={e => (e.currentTarget.style.color = '#4F6BED')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--dm-text-ink)')}
+                                style={{ cursor: 'pointer', fontWeight: 500, color: 'var(--dm-text-ink)' }}
                               >
                                 {g.first_name} {g.last_name}
                               </div>
-                              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>{g.member_number}</div>
+                              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)' }}>{g.member_number}</div>
                             </div>
                           </div>
                         </td>
-                        <td style={{ ...td, color: '#6B7280' }}>{g.branch_name || '—'}</td>
-                        <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, color: '#111827' }}>{fGHSFull(g.total_given)}</td>
-                        <td style={{ ...td, textAlign: 'right', color: '#6B7280' }}>{g.gift_count}</td>
-                        <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#6B7280' }}>{fDate(g.last_gift_date)}</td>
+                        <td style={{ ...td, color: 'var(--dm-text-secondary)' }}>{g.branch_name || '—'}</td>
+                        <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, color: 'var(--dm-text-ink)' }}>{fGHSFull(g.total_given)}</td>
+                        <td style={{ ...td, textAlign: 'right', color: 'var(--dm-text-secondary)' }}>{g.gift_count}</td>
+                        <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-secondary)' }}>{fDate(g.last_gift_date)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -661,7 +664,7 @@ export function ReportsPage() {
           {/* Weekly trend */}
           <div style={card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827' }}>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>
                 Weekly Attendance Rate
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
@@ -673,9 +676,9 @@ export function ReportsPage() {
             {loadingAtt ? <Skeleton h={220} /> : weeklyAtt.length === 0 ? <EmptyState message="No attendance data for this period" /> : (
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={weeklyAtt} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-                  <XAxis dataKey="week_start" tickFormatter={fShortDate} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={40} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
+                  <XAxis dataKey="week_start" tickFormatter={fShortDate} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={40} />
                   <Tooltip content={<AttTooltip />} />
                   <Line type="monotone" dataKey="rate" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#4F6BED' }} />
                 </LineChart>
@@ -685,15 +688,15 @@ export function ReportsPage() {
 
           {/* By event type */}
           <div style={card}>
-            <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 16 }}>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 16 }}>
               Attendance by Event Type
             </div>
             {loadingAtt ? <Skeleton h={180} /> : attByType.length === 0 ? <EmptyState message="No event type data" /> : (
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={attByType} margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-                  <XAxis dataKey="event_type" tickFormatter={fEventType} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={v => `${v}%`} domain={[0, 100]} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={40} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
+                  <XAxis dataKey="event_type" tickFormatter={fEventType} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={v => `${v}%`} domain={[0, 100]} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={40} />
                   <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} labelFormatter={fEventType} />
                   <Bar dataKey="avg_rate" fill="#7B93F5" radius={[4, 4, 0, 0]} name="Avg Rate (%)" />
                 </BarChart>
@@ -720,30 +723,30 @@ export function ReportsPage() {
                   </thead>
                   <tbody>
                     {atRisk.map((m, i) => (
-                      <tr key={`${m.id}-${i}`} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#FEF3C7')}
-                        onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB')}
+                      <tr key={`${m.id}-${i}`} style={{ background: i % 2 === 0 ? 'var(--dm-bg-card)' : 'var(--dm-bg-surface)' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--badge-pending-bg)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? 'var(--dm-bg-card)' : 'var(--dm-bg-surface)')}
                       >
                         <td style={td}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <Avatar firstName={m.first_name} lastName={m.last_name} size={28} />
                             <div>
-                              <div style={{ cursor: 'pointer', fontWeight: 500, color: '#111827' }}
+                              <div style={{ cursor: 'pointer', fontWeight: 500, color: 'var(--dm-text-ink)' }}
                                 onClick={() => navigate(`/members/${m.id}`)}
                                 onMouseEnter={e => (e.currentTarget.style.color = '#4F6BED')}
-                                onMouseLeave={e => (e.currentTarget.style.color = '#111827')}
+                                onMouseLeave={e => (e.currentTarget.style.color = 'var(--dm-text-ink)')}
                               >
                                 {m.first_name} {m.last_name}
                               </div>
-                              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>{m.member_number}</div>
+                              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)' }}>{m.member_number}</div>
                             </div>
                           </div>
                         </td>
-                        <td style={{ ...td, color: '#6B7280' }}>{m.branch_name || '—'}</td>
-                        <td style={{ ...td, color: '#6B7280' }}>{m.group_name || '—'}</td>
-                        <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#6B7280' }}>{fDate(m.last_seen)}</td>
+                        <td style={{ ...td, color: 'var(--dm-text-secondary)' }}>{m.branch_name || '—'}</td>
+                        <td style={{ ...td, color: 'var(--dm-text-secondary)' }}>{m.group_name || '—'}</td>
+                        <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-secondary)' }}>{fDate(m.last_seen)}</td>
                         <td style={{ ...td, textAlign: 'right' }}>
-                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: m.days_since > 60 ? '#EF4444' : '#F59E0B', background: m.days_since > 60 ? '#FEF2F2' : '#FFFBEB', padding: '2px 8px', borderRadius: 6 }}>
+                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: m.days_since > 60 ? '#EF4444' : '#F59E0B', background: m.days_since > 60 ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)', padding: '2px 8px', borderRadius: 6 }}>
                             {m.days_since}d
                           </span>
                         </td>
@@ -769,18 +772,18 @@ export function ReportsPage() {
 
           {/* Growth chart */}
           <div style={card}>
-            <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 20 }}>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 20 }}>
               Membership Growth
             </div>
             {loadingMembers ? <Skeleton h={220} /> : memberGrowth.length === 0 ? <EmptyState message="No member growth data" /> : (
               <ResponsiveContainer width="100%" height={220}>
                 <ComposedChart data={memberGrowth} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-                  <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                  <YAxis yAxisId="left" tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={36} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={48} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
+                  <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                  <YAxis yAxisId="left" tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={36} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={48} />
                   <Tooltip />
-                  <Bar yAxisId="left" dataKey="new_members" fill="#E8ECF9" radius={[3, 3, 0, 0]} name="New Members" />
+                  <Bar yAxisId="left" dataKey="new_members" fill="var(--avatar-1-bg)" radius={[3, 3, 0, 0]} name="New Members" />
                   <Line yAxisId="right" type="monotone" dataKey="cumulative" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4 }} name="Cumulative" />
                 </ComposedChart>
               </ResponsiveContainer>
@@ -791,7 +794,7 @@ export function ReportsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 16 }}>
             {/* Gender */}
             <div style={card}>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 16 }}>Gender Breakdown</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 16 }}>Gender Breakdown</div>
               {loadingMembers ? <Skeleton h={160} /> : genderBreakdown.length === 0 ? <EmptyState message="No data" /> : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <ResponsiveContainer width={140} height={140}>
@@ -809,10 +812,10 @@ export function ReportsPage() {
                       return (
                         <div key={g.gender}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', textTransform: 'capitalize' }}>{g.gender}</span>
-                            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: '#6B7280' }}>{pct}%</span>
+                            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-body)', textTransform: 'capitalize' }}>{g.gender}</span>
+                            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: 'var(--dm-text-secondary)' }}>{pct}%</span>
                           </div>
-                          <div style={{ height: 4, borderRadius: 2, background: '#F3F4F6' }}>
+                          <div style={{ height: 4, borderRadius: 2, background: 'var(--dm-bg-muted)' }}>
                             <div style={{ height: 4, borderRadius: 2, width: `${pct}%`, background: GENDER_COLORS[i % GENDER_COLORS.length] }} />
                           </div>
                         </div>
@@ -825,13 +828,13 @@ export function ReportsPage() {
 
             {/* Age breakdown */}
             <div style={card}>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 16 }}>Age Breakdown</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 16 }}>Age Breakdown</div>
               {loadingMembers ? <Skeleton h={160} /> : ageBreakdown.length === 0 ? <EmptyState message="No age data available" /> : (
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={ageBreakdown} margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-                    <XAxis dataKey="age_group" tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={32} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
+                    <XAxis dataKey="age_group" tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={32} />
                     <Tooltip />
                     <Bar dataKey="cnt" fill="#7B93F5" radius={[3, 3, 0, 0]} name="Members" />
                   </BarChart>
@@ -856,29 +859,29 @@ export function ReportsPage() {
                   </thead>
                   <tbody>
                     {newMembers.map((m, i) => (
-                      <tr key={`${m.id}-${i}`} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#EEF1FD')}
-                        onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB')}
+                      <tr key={`${m.id}-${i}`} style={{ background: i % 2 === 0 ? 'var(--dm-bg-card)' : 'var(--dm-bg-surface)' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--avatar-1-bg)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? 'var(--dm-bg-card)' : 'var(--dm-bg-surface)')}
                       >
                         <td style={td}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <Avatar firstName={m.first_name} lastName={m.last_name} size={28} />
                             <div>
-                              <div style={{ cursor: 'pointer', fontWeight: 500, color: '#111827' }}
+                              <div style={{ cursor: 'pointer', fontWeight: 500, color: 'var(--dm-text-ink)' }}
                                 onClick={() => navigate(`/members/${m.id}`)}
                                 onMouseEnter={e => (e.currentTarget.style.color = '#4F6BED')}
-                                onMouseLeave={e => (e.currentTarget.style.color = '#111827')}
+                                onMouseLeave={e => (e.currentTarget.style.color = 'var(--dm-text-ink)')}
                               >
                                 {m.first_name} {m.last_name}
                               </div>
-                              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>{m.member_number}</div>
+                              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)' }}>{m.member_number}</div>
                             </div>
                           </div>
                         </td>
-                        <td style={{ ...td, color: '#6B7280' }}>{m.branch_name || '—'}</td>
-                        <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#6B7280' }}>{fDate(m.created_at)}</td>
+                        <td style={{ ...td, color: 'var(--dm-text-secondary)' }}>{m.branch_name || '—'}</td>
+                        <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-secondary)' }}>{fDate(m.created_at)}</td>
                         <td style={{ ...td, textAlign: 'center' }}>
-                          <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, fontWeight: 500, color: m.in_group ? '#15803D' : '#D97706', background: m.in_group ? '#DCFCE7' : '#FEF3C7', padding: '2px 8px', borderRadius: 6 }}>
+                          <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, fontWeight: 500, color: m.in_group ? 'var(--badge-active-fg)' : 'var(--badge-pending-fg)', background: m.in_group ? 'var(--badge-active-bg)' : 'var(--badge-pending-bg)', padding: '2px 8px', borderRadius: 6 }}>
                             {m.in_group ? 'Yes' : 'No'}
                           </span>
                         </td>
@@ -905,27 +908,27 @@ export function ReportsPage() {
                   </thead>
                   <tbody>
                     {birthdays.map((m, i) => (
-                      <tr key={`${m.id}-${i}`} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#FEF3C7')}
-                        onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB')}
+                      <tr key={`${m.id}-${i}`} style={{ background: i % 2 === 0 ? 'var(--dm-bg-card)' : 'var(--dm-bg-surface)' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--badge-pending-bg)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? 'var(--dm-bg-card)' : 'var(--dm-bg-surface)')}
                       >
                         <td style={td}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <Avatar firstName={m.first_name} lastName={m.last_name} size={28} />
                             <div>
-                              <div style={{ cursor: 'pointer', fontWeight: 500, color: '#111827' }}
+                              <div style={{ cursor: 'pointer', fontWeight: 500, color: 'var(--dm-text-ink)' }}
                                 onClick={() => navigate(`/members/${m.id}`)}
                                 onMouseEnter={e => (e.currentTarget.style.color = '#4F6BED')}
-                                onMouseLeave={e => (e.currentTarget.style.color = '#111827')}
+                                onMouseLeave={e => (e.currentTarget.style.color = 'var(--dm-text-ink)')}
                               >
                                 {m.first_name} {m.last_name}
                               </div>
-                              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>{m.member_number}</div>
+                              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)' }}>{m.member_number}</div>
                             </div>
                           </div>
                         </td>
-                        <td style={{ ...td, color: '#6B7280' }}>{m.branch_name || '—'}</td>
-                        <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#6B7280' }}>
+                        <td style={{ ...td, color: 'var(--dm-text-secondary)' }}>{m.branch_name || '—'}</td>
+                        <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-secondary)' }}>
                           {new Date(m.date_of_birth).toLocaleDateString('en-GH', { day: 'numeric', month: 'long' })}
                         </td>
                       </tr>
@@ -951,22 +954,22 @@ export function ReportsPage() {
           {/* Groups table */}
           <div style={card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827' }}>All Groups</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>All Groups</div>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <div style={{ position: 'relative' }}>
                   <div style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}><SearchIcon /></div>
                   <input
                     type="text" placeholder="Search groups…" value={groupSearch}
                     onChange={e => setGroupSearch(e.target.value)}
-                    style={{ height: 34, paddingLeft: 32, paddingRight: 12, borderRadius: 8, border: '0.5px solid #E5E7EB', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151', outline: 'none', width: 200, background: '#fff' }}
+                    style={{ height: 34, paddingLeft: 32, paddingRight: 12, borderRadius: 8, border: '0.5px solid var(--dm-border-soft)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', outline: 'none', width: 200, background: 'var(--dm-bg-card)' }}
                   />
                 </div>
                 {filteredGroups.length > 0 && (
                   <button
                     onClick={() => setExportGroups(true)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 12px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, color: '#374151' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.borderColor = '#D1D5DB' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#E5E7EB' }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 12px', borderRadius: 8, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, color: 'var(--dm-text-body)' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--dm-bg-surface)'; e.currentTarget.style.borderColor = 'var(--dm-border-strong)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--dm-bg-card)'; e.currentTarget.style.borderColor = 'var(--dm-border-soft)' }}
                   >
                     <DownloadIcon /> Export
                   </button>
@@ -988,17 +991,17 @@ export function ReportsPage() {
                   </thead>
                   <tbody>
                     {filteredGroups.map((g, i) => (
-                      <tr key={`${g.id}-${i}`} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB', cursor: 'pointer' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#EEF1FD')}
-                        onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F9FAFB')}
+                      <tr key={`${g.id}-${i}`} style={{ background: i % 2 === 0 ? 'var(--dm-bg-card)' : 'var(--dm-bg-surface)', cursor: 'pointer' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--avatar-1-bg)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? 'var(--dm-bg-card)' : 'var(--dm-bg-surface)')}
                       >
-                        <td style={{ ...td, fontWeight: 500, color: '#111827' }}>{g.name}</td>
-                        <td style={{ ...td, color: '#6B7280' }}>{g.ministry_name || '—'}</td>
-                        <td style={{ ...td, color: '#6B7280' }}>{g.branch_name || '—'}</td>
-                        <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: '#374151' }}>{g.member_count}</td>
-                        <td style={{ ...td, color: '#6B7280' }}>{g.leader_name || '—'}</td>
+                        <td style={{ ...td, fontWeight: 500, color: 'var(--dm-text-ink)' }}>{g.name}</td>
+                        <td style={{ ...td, color: 'var(--dm-text-secondary)' }}>{g.ministry_name || '—'}</td>
+                        <td style={{ ...td, color: 'var(--dm-text-secondary)' }}>{g.branch_name || '—'}</td>
+                        <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: 'var(--dm-text-body)' }}>{g.member_count}</td>
+                        <td style={{ ...td, color: 'var(--dm-text-secondary)' }}>{g.leader_name || '—'}</td>
                         <td style={{ ...td, textAlign: 'center' }}>
-                          <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, fontWeight: 500, color: g.is_active ? '#15803D' : '#6B7280', background: g.is_active ? '#DCFCE7' : '#F3F4F6', padding: '2px 8px', borderRadius: 6 }}>
+                          <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, fontWeight: 500, color: g.is_active ? 'var(--badge-active-fg)' : 'var(--badge-inactive-fg)', background: g.is_active ? 'var(--badge-active-bg)' : 'var(--badge-inactive-bg)', padding: '2px 8px', borderRadius: 6 }}>
                             {g.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>

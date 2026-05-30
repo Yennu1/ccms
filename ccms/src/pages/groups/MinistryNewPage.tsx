@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
@@ -12,10 +12,14 @@ interface MemberOption { id: string; first_name: string; last_name: string; memb
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const AVATAR_PALETTE = [
-  { bg: '#E8ECF9', color: '#4F6BED' }, { bg: '#DCFCE7', color: '#15803D' },
-  { bg: '#FEF3C7', color: '#B45309' }, { bg: '#FCE7F3', color: '#BE185D' },
-  { bg: '#EEF2FF', color: '#4338CA' }, { bg: '#FFF7ED', color: '#C2410C' },
-  { bg: '#F0FDFA', color: '#0F766E' }, { bg: '#F5F3FF', color: '#7C3AED' },
+  { bg: 'var(--avatar-1-bg)', color: 'var(--avatar-1-fg)' },
+  { bg: 'var(--avatar-2-bg)', color: 'var(--avatar-2-fg)' },
+  { bg: 'var(--avatar-3-bg)', color: 'var(--avatar-3-fg)' },
+  { bg: 'var(--avatar-4-bg)', color: 'var(--avatar-4-fg)' },
+  { bg: 'var(--avatar-5-bg)', color: 'var(--avatar-5-fg)' },
+  { bg: 'var(--avatar-6-bg)', color: 'var(--avatar-6-fg)' },
+  { bg: 'var(--avatar-7-bg)', color: 'var(--avatar-7-fg)' },
+  { bg: 'var(--avatar-8-bg)', color: 'var(--avatar-8-fg)' },
 ]
 function avatarColor(name: string) {
   let h = 0
@@ -141,14 +145,14 @@ export function MinistryNewPage() {
   }
 
   const inputBase: React.CSSProperties = {
-    width: '100%', height: 38, borderRadius: 8, border: '0.5px solid #E5E7EB',
-    fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#111827',
-    background: '#fff', outline: 'none', padding: '0 12px', boxSizing: 'border-box',
+    width: '100%', height: 38, borderRadius: 8, border: '0.5px solid var(--dm-border-soft)',
+    fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)',
+    background: 'var(--dm-bg-card)', outline: 'none', padding: '0 12px', boxSizing: 'border-box',
     transition: 'border-color 0.15s',
   }
   const labelStyle: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12,
-    color: '#374151', display: 'block', marginBottom: 6,
+    color: 'var(--dm-text-body)', display: 'block', marginBottom: 6,
   }
   const errorStyle: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#EF4444', marginTop: 4,
@@ -160,12 +164,12 @@ export function MinistryNewPage() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button onClick={() => navigate('/groups')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', display: 'flex', alignItems: 'center', padding: 4, borderRadius: 6 }} onMouseEnter={e => (e.currentTarget.style.color = '#111827')} onMouseLeave={e => (e.currentTarget.style.color = '#6B7280')}>
+        <button onClick={() => navigate('/groups')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dm-text-secondary)', display: 'flex', alignItems: 'center', padding: 4, borderRadius: 6 }} onMouseEnter={e => (e.currentTarget.style.color = 'var(--dm-text-ink)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--dm-text-secondary)')}>
           <BackIcon />
         </button>
         <div>
-          <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 20, color: '#111827', letterSpacing: '-0.015em', margin: 0, lineHeight: 1.2 }}>Create Ministry</h1>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280', marginTop: 2 }}>
+          <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 20, color: 'var(--dm-text-ink)', letterSpacing: '-0.015em', margin: 0, lineHeight: 1.2 }}>Create Ministry</h1>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', marginTop: 2 }}>
             Draft auto-saved
           </div>
         </div>
@@ -173,8 +177,8 @@ export function MinistryNewPage() {
 
       <div style={{ maxWidth: 640 }}>
         <form onSubmit={handleSubmit} noValidate>
-          <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: 24, marginBottom: 16 }}>
-            <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 20, paddingBottom: 12, borderBottom: '0.5px solid #F3F4F6' }}>Ministry Details</div>
+          <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: 24, marginBottom: 16 }}>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 20, paddingBottom: 12, borderBottom: '0.5px solid var(--dm-border-subtle)' }}>Ministry Details</div>
 
             {/* Name */}
             <div style={{ marginBottom: 18 }}>
@@ -185,7 +189,7 @@ export function MinistryNewPage() {
 
             {/* Description */}
             <div style={{ marginBottom: 18 }}>
-              <label style={labelStyle}>Description <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(optional)</span></label>
+              <label style={labelStyle}>Description <span style={{ color: 'var(--dm-text-muted)', fontWeight: 400 }}>(optional)</span></label>
               <textarea className="mn-input" value={description} onChange={e => setDescription(e.target.value)} placeholder="Brief description of this ministry..." rows={3} style={{ ...inputBase, height: 'auto', padding: '10px 12px', resize: 'vertical', lineHeight: 1.5 }} />
             </div>
 
@@ -198,9 +202,9 @@ export function MinistryNewPage() {
                   { value: false, label: 'Branch-Specific', desc: 'Linked to a branch' },
                 ].map(opt => (
                   <button key={String(opt.value)} type="button" onClick={() => { setIsOrgWide(opt.value); if (opt.value) setBranchId('') }}
-                    style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: `1.5px solid ${isOrgWide === opt.value ? '#4F6BED' : '#E5E7EB'}`, background: isOrgWide === opt.value ? '#EEF1FD' : '#fff', cursor: 'pointer', textAlign: 'left', transition: 'border-color 0.15s, background 0.15s' }}>
-                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: isOrgWide === opt.value ? '#4F6BED' : '#374151' }}>{opt.label}</div>
-                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 2 }}>{opt.desc}</div>
+                    style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: `1.5px solid ${isOrgWide === opt.value ? '#4F6BED' : 'var(--dm-border-soft)'}`, background: isOrgWide === opt.value ? 'var(--avatar-1-bg)' : 'var(--dm-bg-card)', cursor: 'pointer', textAlign: 'left', transition: 'border-color 0.15s, background 0.15s' }}>
+                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: isOrgWide === opt.value ? '#4F6BED' : 'var(--dm-text-body)' }}>{opt.label}</div>
+                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: 'var(--dm-text-muted)', marginTop: 2 }}>{opt.desc}</div>
                   </button>
                 ))}
               </div>
@@ -223,9 +227,9 @@ export function MinistryNewPage() {
 
             {/* Ministry Leader */}
             <div style={{ marginBottom: 4 }}>
-              <label style={labelStyle}>Ministry Leader <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(optional)</span></label>
+              <label style={labelStyle}>Ministry Leader <span style={{ color: 'var(--dm-text-muted)', fontWeight: 400 }}>(optional)</span></label>
               {loadingMembers ? (
-                <div style={{ height: 38, background: '#F3F4F6', borderRadius: 8, animation: 'pulse 1.4s ease-in-out infinite' }} />
+                <div style={{ height: 38, background: 'var(--dm-bg-muted)', borderRadius: 8, animation: 'pulse 1.4s ease-in-out infinite' }} />
               ) : (
                 <div ref={leaderDropRef} style={{ position: 'relative' }}>
                   <input type="text" className="mn-input"
@@ -238,26 +242,26 @@ export function MinistryNewPage() {
                   />
                   <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', display: 'flex' }}><ChevronDownIcon /></span>
                   {leaderDropdownOpen && (
-                    <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 100, maxHeight: 220, overflowY: 'auto', padding: '4px 0' }}>
+                    <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 100, maxHeight: 220, overflowY: 'auto', padding: '4px 0' }}>
                       {leaderId && (
                         <button type="button" onClick={() => { setLeaderId(''); setLeaderDropdownOpen(false) }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#EF4444' }} onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
                           Clear leader
                         </button>
                       )}
                       {filteredMembers.length === 0 ? (
-                        <div style={{ padding: '10px 12px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>No members found</div>
+                        <div style={{ padding: '10px 12px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No members found</div>
                       ) : filteredMembers.map(m => {
                         const { bg, color } = avatarColor(m.first_name + m.last_name)
                         return (
                           <button type="button" key={m.id} onClick={() => { setLeaderId(m.id); setLeaderDropdownOpen(false); setLeaderQuery('') }}
-                            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: m.id === leaderId ? '#F0F2FE' : 'none', border: 'none', cursor: 'pointer', padding: '8px 12px' }}
-                            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')} onMouseLeave={e => (e.currentTarget.style.background = m.id === leaderId ? '#F0F2FE' : 'none')}>
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: m.id === leaderId ? 'var(--avatar-1-bg)' : 'none', border: 'none', cursor: 'pointer', padding: '8px 12px' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')} onMouseLeave={e => (e.currentTarget.style.background = m.id === leaderId ? 'var(--avatar-1-bg)' : 'none')}>
                             <div style={{ width: 26, height: 26, borderRadius: '50%', background: bg, color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                               {m.first_name[0]}{m.last_name[0]}
                             </div>
                             <div>
-                              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#111827' }}>{m.first_name} {m.last_name}</div>
-                              {m.member_number && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>{m.member_number}</div>}
+                              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)' }}>{m.first_name} {m.last_name}</div>
+                              {m.member_number && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)' }}>{m.member_number}</div>}
                             </div>
                           </button>
                         )
@@ -271,7 +275,7 @@ export function MinistryNewPage() {
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button type="button" onClick={() => navigate('/groups')} style={{ height: 38, padding: '0 20px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#374151' }} onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+            <button type="button" onClick={() => navigate('/groups')} style={{ height: 38, padding: '0 20px', borderRadius: 8, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>
               Cancel
             </button>
             <button type="submit" disabled={saving} style={{ height: 38, padding: '0 24px', borderRadius: 8, border: 'none', background: saving ? '#818CF8' : '#4F6BED', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#fff' }}>

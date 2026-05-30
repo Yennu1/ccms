@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
@@ -28,12 +28,12 @@ interface TxDetail {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CAT_STYLE: Record<string, { bg: string; color: string; dot: string; label: string }> = {
-  tithe:        { bg: '#FEF6E5', color: '#8A6418',  dot: '#C8964A', label: 'Tithe' },
-  offering:     { bg: '#DCFCE7', color: '#166534',  dot: '#22C55E', label: 'Offering' },
-  building:     { bg: '#E8ECF9', color: '#3349C7',  dot: '#7B93F5', label: 'Building Fund' },
-  welfare:      { bg: '#EDE9FE', color: '#5B21B6',  dot: '#8B5CF6', label: 'Welfare' },
-  thanksgiving: { bg: '#FFE4E6', color: '#9F1239',  dot: '#EF4444', label: 'Thanksgiving' },
-  special:      { bg: '#FCE7F3', color: '#9D174D',  dot: '#EC4899', label: 'Special Offering' },
+  tithe:        { bg: 'var(--cat-tithe-bg)',        color: 'var(--cat-tithe-fg)',        dot: 'var(--cat-tithe-dot)',        label: 'Tithe' },
+  offering:     { bg: 'var(--cat-offering-bg)',     color: 'var(--cat-offering-fg)',     dot: 'var(--cat-offering-dot)',     label: 'Offering' },
+  building:     { bg: 'var(--cat-building-bg)',     color: 'var(--cat-building-fg)',     dot: 'var(--cat-building-dot)',     label: 'Building Fund' },
+  welfare:      { bg: 'var(--cat-welfare-bg)',      color: 'var(--cat-welfare-fg)',      dot: 'var(--cat-welfare-dot)',      label: 'Welfare' },
+  thanksgiving: { bg: 'var(--cat-thanksgiving-bg)', color: 'var(--cat-thanksgiving-fg)', dot: 'var(--cat-thanksgiving-dot)', label: 'Thanksgiving' },
+  special:      { bg: 'var(--cat-special-bg)',      color: 'var(--cat-special-fg)',      dot: 'var(--cat-special-dot)',      label: 'Special Offering' },
 }
 
 const METHOD_LABELS: Record<string, string> = {
@@ -41,14 +41,14 @@ const METHOD_LABELS: Record<string, string> = {
 }
 
 const AVATAR_PALETTE = [
-  { bg: '#E8ECF9', color: '#4F6BED' },
-  { bg: '#DCFCE7', color: '#15803D' },
-  { bg: '#FEF3C7', color: '#B45309' },
-  { bg: '#FCE7F3', color: '#BE185D' },
-  { bg: '#EEF2FF', color: '#4338CA' },
-  { bg: '#FFF7ED', color: '#C2410C' },
-  { bg: '#F0FDFA', color: '#0F766E' },
-  { bg: '#F5F3FF', color: '#7C3AED' },
+  { bg: 'var(--avatar-1-bg)', color: 'var(--avatar-1-fg)' },
+  { bg: 'var(--avatar-2-bg)', color: 'var(--avatar-2-fg)' },
+  { bg: 'var(--avatar-3-bg)', color: 'var(--avatar-3-fg)' },
+  { bg: 'var(--avatar-4-bg)', color: 'var(--avatar-4-fg)' },
+  { bg: 'var(--avatar-5-bg)', color: 'var(--avatar-5-fg)' },
+  { bg: 'var(--avatar-6-bg)', color: 'var(--avatar-6-fg)' },
+  { bg: 'var(--avatar-7-bg)', color: 'var(--avatar-7-fg)' },
+  { bg: 'var(--avatar-8-bg)', color: 'var(--avatar-8-fg)' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -249,15 +249,15 @@ export function TransactionDetailPage() {
   const rowStyle: React.CSSProperties = {
     display: 'flex', justifyContent: 'space-between',
     alignItems: 'flex-start', gap: 12,
-    padding: '10px 0', borderBottom: '0.5px solid #F3F4F6',
+    padding: '10px 0', borderBottom: '0.5px solid var(--dm-border-subtle)',
   }
   const rowLabel: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 12.5, color: '#9CA3AF', flexShrink: 0,
+    fontSize: 12.5, color: 'var(--dm-text-muted)', flexShrink: 0,
   }
   const rowValue: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 12.5, color: '#374151', fontWeight: 500,
+    fontSize: 12.5, color: 'var(--dm-text-body)', fontWeight: 500,
     textAlign: 'right',
   }
 
@@ -265,7 +265,7 @@ export function TransactionDetailPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
-        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>
           Loading transaction…
         </div>
       </div>
@@ -275,16 +275,16 @@ export function TransactionDetailPage() {
   if (notFound || !tx) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 0' }}>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 18, color: '#111827', marginBottom: 8 }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 18, color: 'var(--dm-text-ink)', marginBottom: 8 }}>
           Transaction not found
         </div>
         <button
           onClick={() => navigate('/donations')}
           style={{
             height: 36, padding: '0 16px', borderRadius: 8,
-            border: '0.5px solid #E5E7EB', background: '#fff',
+            border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)',
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontWeight: 600, fontSize: 13, color: '#374151', cursor: 'pointer',
+            fontWeight: 600, fontSize: 13, color: 'var(--dm-text-body)', cursor: 'pointer',
           }}
         >
           Back to Donations
@@ -305,8 +305,8 @@ export function TransactionDetailPage() {
   return (
     <>
       <style>{`
-        .td-action:hover { background: #FAFBFE !important; border-color: #D1D5DB !important; }
-        .td-del:hover { background: #FEE2E2 !important; border-color: #FCA5A5 !important; color: #DC2626 !important; }
+        .td-action:hover { background: var(--dm-bg-surface) !important; border-color: var(--dm-border-strong) !important; }
+        .td-del:hover { background: var(--badge-deceased-bg) !important; border-color: var(--badge-deceased-dot) !important; color: var(--badge-deceased-fg) !important; }
       `}</style>
       <style>{printStyles}</style>
 
@@ -316,9 +316,9 @@ export function TransactionDetailPage() {
           onClick={() => navigate('/donations')}
           style={{
             width: 32, height: 32, borderRadius: 8,
-            border: '0.5px solid #E5E7EB', background: '#fff',
+            border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)',
             display: 'grid', placeItems: 'center',
-            cursor: 'pointer', color: '#6B7280', flexShrink: 0,
+            cursor: 'pointer', color: 'var(--dm-text-secondary)', flexShrink: 0,
           }}
           aria-label="Back"
         >
@@ -329,12 +329,12 @@ export function TransactionDetailPage() {
         <div style={{ flex: 1 }}>
           <h1 style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            fontWeight: 700, fontSize: 20, color: '#111827',
+            fontWeight: 700, fontSize: 20, color: 'var(--dm-text-ink)',
             letterSpacing: '-0.015em', margin: 0,
           }}>
             Transaction
           </h1>
-          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#6B7280', margin: '2px 0 0' }}>
+          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-secondary)', margin: '2px 0 0' }}>
             {tx.reference_number ?? tx.id}
           </p>
         </div>
@@ -344,9 +344,9 @@ export function TransactionDetailPage() {
             onClick={() => navigate(`/donations/${id}/edit`)}
             style={{
               height: 34, padding: '0 14px', borderRadius: 8,
-              border: '0.5px solid #E5E7EB', background: '#fff',
+              border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 600, fontSize: 13, color: '#374151', cursor: 'pointer',
+              fontWeight: 600, fontSize: 13, color: 'var(--dm-text-body)', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 6,
               transition: 'all 0.12s',
             }}
@@ -361,9 +361,9 @@ export function TransactionDetailPage() {
             onClick={handleEmailReceipt}
             style={{
               height: 34, padding: '0 14px', borderRadius: 8,
-              border: '0.5px solid #E5E7EB', background: '#fff',
+              border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 600, fontSize: 13, color: '#374151', cursor: 'pointer',
+              fontWeight: 600, fontSize: 13, color: 'var(--dm-text-body)', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 6,
               transition: 'all 0.12s',
             }}
@@ -380,9 +380,9 @@ export function TransactionDetailPage() {
             onClick={handleDelete}
             style={{
               height: 34, padding: '0 14px', borderRadius: 8,
-              border: '0.5px solid #E5E7EB', background: '#fff',
+              border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 600, fontSize: 13, color: '#6B7280',
+              fontWeight: 600, fontSize: 13, color: 'var(--dm-text-secondary)',
               cursor: deleting ? 'not-allowed' : 'pointer',
               transition: 'all 0.12s',
             }}
@@ -400,27 +400,27 @@ export function TransactionDetailPage() {
 
           {/* Transaction Details card */}
           <div style={{
-            background: '#fff', border: '0.5px solid #E5E7EB',
+            background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)',
             borderRadius: 12, overflow: 'hidden',
           }}>
             {/* Amount hero */}
             <div style={{
               padding: '24px 24px 20px',
-              background: 'linear-gradient(135deg, #F8F9FF 0%, #F4F5F7 100%)',
-              borderBottom: '0.5px solid #E5E7EB',
+              background: 'var(--dm-bg-surface)',
+              borderBottom: '0.5px solid var(--dm-border-soft)',
               display: 'flex', alignItems: 'center', gap: 20,
             }}>
               <div style={{ flex: 1 }}>
                 <div style={{
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontSize: 10.5, letterSpacing: '0.14em',
-                  textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 6,
+                  textTransform: 'uppercase', color: 'var(--dm-text-muted)', marginBottom: 6,
                 }}>
                   Amount
                 </div>
                 <div style={{
                   fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-                  fontWeight: 700, fontSize: 36, color: '#111827',
+                  fontWeight: 700, fontSize: 36, color: 'var(--dm-text-ink)',
                   letterSpacing: '-0.025em', lineHeight: 1.05,
                   fontVariantNumeric: 'tabular-nums',
                 }}>
@@ -440,7 +440,7 @@ export function TransactionDetailPage() {
                   <span style={{
                     display: 'inline-flex', alignItems: 'center',
                     padding: '3px 9px', borderRadius: 999,
-                    background: '#F3F4F6', color: '#6B7280',
+                    background: 'var(--dm-bg-muted)', color: 'var(--dm-text-secondary)',
                     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                     fontWeight: 600, fontSize: 11.5,
                   }}>
@@ -450,14 +450,14 @@ export function TransactionDetailPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                 <span style={{
-                  background: '#DCFCE7', color: '#166534',
+                  background: 'var(--badge-active-bg)', color: 'var(--badge-active-fg)',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontWeight: 600, fontSize: 11.5,
                   padding: '4px 10px', borderRadius: 999,
                 }}>
                   Confirmed
                 </span>
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)' }}>
                   {tx.reference_number ?? tx.id.slice(0, 8).toUpperCase()}
                 </span>
               </div>
@@ -496,7 +496,7 @@ export function TransactionDetailPage() {
                         {initials}
                       </div>
                       <span style={rowValue}>{firstName} {lastName}</span>
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)' }}>
                         {tx.member.member_number}
                       </span>
                     </>
@@ -515,7 +515,7 @@ export function TransactionDetailPage() {
                 <span style={rowLabel}>Recorded by</span>
                 <div style={{ textAlign: 'right' }}>
                   <div style={rowValue}>{tx.recorder?.full_name ?? '—'}</div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)', marginTop: 1 }}>
                     {formatDateTime(tx.created_at)}
                   </div>
                 </div>
@@ -526,18 +526,18 @@ export function TransactionDetailPage() {
           {/* Giving history card */}
           {history.some(h => h.amount > 0) && (
             <div style={{
-              background: '#fff', border: '0.5px solid #E5E7EB',
+              background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)',
               borderRadius: 12, padding: 20,
             }}>
               <div style={{
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontWeight: 600, fontSize: 13, color: '#111827', marginBottom: 4,
+                fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)', marginBottom: 4,
               }}>
                 Giving History
               </div>
               <div style={{
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontSize: 12, color: '#6B7280', marginBottom: 16,
+                fontSize: 12, color: 'var(--dm-text-secondary)', marginBottom: 16,
               }}>
                 Last 6 months
               </div>
@@ -546,11 +546,11 @@ export function TransactionDetailPage() {
                   <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
                     <div style={{
                       width: '100%',
-                      background: i === history.length - 1 ? '#4F6BED' : '#E8ECF9',
+                      background: i === history.length - 1 ? '#4F6BED' : 'var(--avatar-1-bg)',
                       borderRadius: 4,
                       height: h.amount > 0 ? `${Math.round((h.amount / maxHistory) * 48) + 8}px` : '4px',
                     }} />
-                    <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10, color: '#9CA3AF' }}>
+                    <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10, color: 'var(--dm-text-muted)' }}>
                       {h.month}
                     </span>
                   </div>
@@ -565,18 +565,18 @@ export function TransactionDetailPage() {
 
           {/* Receipt card */}
           <div style={{
-            background: '#fff', border: '0.5px solid #E5E7EB',
+            background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)',
             borderRadius: 12, overflow: 'hidden',
           }}>
             <div style={{
               padding: '16px 20px 14px',
-              borderBottom: '1.5px dashed #E5E7EB',
-              background: '#FAFBFE',
+              borderBottom: '1.5px dashed var(--dm-border-soft)',
+              background: 'var(--dm-bg-surface)',
             }}>
               <div style={{
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontSize: 10, letterSpacing: '0.14em',
-                textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 4,
+                textTransform: 'uppercase', color: 'var(--dm-text-muted)', marginBottom: 4,
                 display: 'flex', justifyContent: 'space-between',
               }}>
                 <span>HILLTOP CHURCH</span>
@@ -587,13 +587,13 @@ export function TransactionDetailPage() {
               <div style={{
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontSize: 9, letterSpacing: '0.12em',
-                textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 12,
+                textTransform: 'uppercase', color: 'var(--dm-text-muted)', marginBottom: 12,
               }}>
                 OFFICIAL GIVING RECEIPT
               </div>
               <div style={{
                 fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-                fontWeight: 700, fontSize: 26, color: '#111827',
+                fontWeight: 700, fontSize: 26, color: 'var(--dm-text-ink)',
                 letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums',
               }}>
                 {formatAmount(tx.amount)}
@@ -602,41 +602,41 @@ export function TransactionDetailPage() {
 
             <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Member</span>
-                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
+                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>Member</span>
+                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-body)', fontWeight: 500 }}>
                   {tx.member ? `${firstName} ${lastName}` : 'Anonymous'}
                 </span>
               </div>
               {tx.member && (
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Member No.</span>
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#374151' }}>
+                  <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>Member No.</span>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-body)' }}>
                     {tx.member.member_number}
                   </span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Category</span>
-                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
+                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>Category</span>
+                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-body)', fontWeight: 500 }}>
                   {catName || '—'}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Payment</span>
-                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
+                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>Payment</span>
+                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-body)', fontWeight: 500 }}>
                   {METHOD_LABELS[tx.payment_method] ?? tx.payment_method}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Date</span>
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#374151' }}>
+                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>Date</span>
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-body)' }}>
                   {formatDate(tx.transaction_date)}
                 </span>
               </div>
-              <div style={{ borderTop: '1px dashed #E5E7EB', paddingTop: 10, marginTop: 2 }}>
+              <div style={{ borderTop: '1px dashed var(--dm-border-soft)', paddingTop: 10, marginTop: 2 }}>
                 <div style={{
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                  fontSize: 10.5, color: '#9CA3AF', textAlign: 'center', lineHeight: 1.5,
+                  fontSize: 10.5, color: 'var(--dm-text-muted)', textAlign: 'center', lineHeight: 1.5,
                 }}>
                   "God loves a cheerful giver." — Thank you for your faithfulness.
                 </div>
@@ -651,12 +651,12 @@ export function TransactionDetailPage() {
               marginTop: 12,
               height: 38,
               borderRadius: 8,
-              border: '0.5px solid #E5E7EB',
-              background: '#fff',
+              border: '0.5px solid var(--dm-border-soft)',
+              background: 'var(--dm-bg-card)',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
               fontSize: 13,
               fontWeight: 500,
-              color: '#374151',
+              color: 'var(--dm-text-body)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -675,13 +675,13 @@ export function TransactionDetailPage() {
           {/* Contributor card */}
           {tx.member && (
             <div style={{
-              background: '#fff', border: '0.5px solid #E5E7EB',
+              background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)',
               borderRadius: 12, padding: 20,
             }}>
               <div style={{
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontWeight: 600, fontSize: 11, textTransform: 'uppercase',
-                letterSpacing: '0.12em', color: '#9CA3AF', marginBottom: 14,
+                letterSpacing: '0.12em', color: 'var(--dm-text-muted)', marginBottom: 14,
               }}>
                 Contributor
               </div>
@@ -700,11 +700,11 @@ export function TransactionDetailPage() {
                 <div>
                   <div style={{
                     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                    fontWeight: 600, fontSize: 14, color: '#111827',
+                    fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)',
                   }}>
                     {firstName} {lastName}
                   </div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)', marginTop: 2 }}>
                     {tx.member.member_number}
                   </div>
                 </div>
@@ -712,25 +712,25 @@ export function TransactionDetailPage() {
 
               {/* Stats */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-                <div style={{ background: '#F4F5F7', borderRadius: 8, padding: '10px 12px' }}>
-                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF', marginBottom: 3 }}>
+                <div style={{ background: 'var(--dm-bg-surface)', borderRadius: 8, padding: '10px 12px' }}>
+                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-muted)', marginBottom: 3 }}>
                     Giving Streak
                   </div>
                   <div style={{
                     fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-                    fontWeight: 700, fontSize: 20, color: '#111827',
+                    fontWeight: 700, fontSize: 20, color: 'var(--dm-text-ink)',
                   }}>
                     {streak}
-                    <span style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', marginLeft: 3 }}>mo</span>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--dm-text-secondary)', marginLeft: 3 }}>mo</span>
                   </div>
                 </div>
-                <div style={{ background: '#F4F5F7', borderRadius: 8, padding: '10px 12px' }}>
-                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF', marginBottom: 3 }}>
+                <div style={{ background: 'var(--dm-bg-surface)', borderRadius: 8, padding: '10px 12px' }}>
+                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-muted)', marginBottom: 3 }}>
                     Total Given YTD
                   </div>
                   <div style={{
                     fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-                    fontWeight: 700, fontSize: 16, color: '#111827',
+                    fontWeight: 700, fontSize: 16, color: 'var(--dm-text-ink)',
                     fontVariantNumeric: 'tabular-nums',
                   }}>
                     {formatAmount(ytdTotal)}
@@ -740,7 +740,7 @@ export function TransactionDetailPage() {
 
               {/* Streak dots */}
               <div>
-                <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#6B7280', marginBottom: 8 }}>
+                <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: 'var(--dm-text-secondary)', marginBottom: 8 }}>
                   Consecutive months
                 </div>
                 <div style={{ display: 'flex', gap: 5 }}>
@@ -749,7 +749,7 @@ export function TransactionDetailPage() {
                       key={i}
                       style={{
                         width: 16, height: 16, borderRadius: 4,
-                        background: i < streak ? '#4F6BED' : '#E5E7EB',
+                        background: i < streak ? '#4F6BED' : 'var(--dm-border-strong)',
                         opacity: i < streak ? (0.4 + (i / Math.max(streak, 1)) * 0.6) : 1,
                       }}
                     />
@@ -783,12 +783,12 @@ export function TransactionDetailPage() {
         <div style={{
           padding: '16px 20px 14px',
           borderBottom: '1.5px dashed #E5E7EB',
-          background: '#FAFBFE',
+          background: 'var(--dm-bg-surface)',
         }}>
           <div style={{
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
             fontSize: 10, letterSpacing: '0.14em',
-            textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 4,
+            textTransform: 'uppercase', color: 'var(--dm-text-muted)', marginBottom: 4,
             display: 'flex', justifyContent: 'space-between',
           }}>
             <span>HILLTOP CHURCH</span>
@@ -799,13 +799,13 @@ export function TransactionDetailPage() {
           <div style={{
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
             fontSize: 9, letterSpacing: '0.12em',
-            textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 12,
+            textTransform: 'uppercase', color: 'var(--dm-text-muted)', marginBottom: 12,
           }}>
             OFFICIAL GIVING RECEIPT
           </div>
           <div style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            fontWeight: 700, fontSize: 26, color: '#111827',
+            fontWeight: 700, fontSize: 26, color: 'var(--dm-text-ink)',
             letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums',
           }}>
             {formatAmount(tx.amount)}
@@ -814,41 +814,41 @@ export function TransactionDetailPage() {
 
         <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Member</span>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>Member</span>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-body)', fontWeight: 500 }}>
               {tx.member ? `${firstName} ${lastName}` : 'Anonymous'}
             </span>
           </div>
           {tx.member && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Member No.</span>
-              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#374151' }}>
+              <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>Member No.</span>
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-body)' }}>
                 {tx.member.member_number}
               </span>
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Category</span>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>Category</span>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-body)', fontWeight: 500 }}>
               {catName || '—'}
             </span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Payment</span>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151', fontWeight: 500 }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>Payment</span>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-body)', fontWeight: 500 }}>
               {METHOD_LABELS[tx.payment_method] ?? tx.payment_method}
             </span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Date</span>
-            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#374151' }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>Date</span>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-body)' }}>
               {formatDate(tx.transaction_date)}
             </span>
           </div>
           <div style={{ borderTop: '1px dashed #E5E7EB', paddingTop: 10, marginTop: 2 }}>
             <div style={{
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontSize: 10.5, color: '#9CA3AF', textAlign: 'center', lineHeight: 1.5,
+              fontSize: 10.5, color: 'var(--dm-text-muted)', textAlign: 'center', lineHeight: 1.5,
             }}>
               "God loves a cheerful giver." — Thank you for your faithfulness.
             </div>
