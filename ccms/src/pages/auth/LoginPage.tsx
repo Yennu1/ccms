@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -69,7 +69,7 @@ export function LoginPage() {
         height: '100vh',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0A0D14',
+        background: 'var(--dm-bg-page)',
       }}>
         <div style={{
           width: 32,
@@ -182,7 +182,7 @@ export function LoginPage() {
         .ccms-right {
           width: 50%;
           height: 100vh;
-          background-color: #FFFFFF;
+          background-color: var(--dm-bg-card);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -191,52 +191,49 @@ export function LoginPage() {
           box-sizing: border-box;
         }
 
-        /* ── Dark mode ───────────────────────────────────── */
-        @media (prefers-color-scheme: dark) {
-          .ccms-right           { background-color: #13161F; }
-          .ccms-form-card       {
-            background: #1A1D27;
-            border: 0.5px solid rgba(255,255,255,0.07);
-            border-radius: 16px;
-            padding: 40px;
-          }
-          .ccms-form-heading    { color: #F0F1F5 !important; }
-          .ccms-form-sub        { color: rgba(240,241,245,0.42) !important; }
-          .ccms-field-label     { color: rgba(240,241,245,0.6) !important; }
-          .ccms-input           {
-            background: #1A1E2E !important;
-            border-color: rgba(255,255,255,0.08) !important;
-            color: #F0F1F5 !important;
-          }
-          .ccms-input::placeholder { color: rgba(240,241,245,0.26) !important; }
-          .ccms-input:hover:not(:focus) { border-color: rgba(255,255,255,0.14) !important; }
-          .ccms-error-banner    {
-            background: rgba(239,68,68,0.09) !important;
-            border-color: rgba(239,68,68,0.22) !important;
-            color: #FCA5A5 !important;
-          }
-          .ccms-divider-line    { background: rgba(255,255,255,0.07) !important; }
-          .ccms-footer-muted    { color: rgba(240,241,245,0.32) !important; }
+        /* ── Dark mode (.dark class toggle) ──────────────── */
+        html.dark .ccms-form-card {
+          background: var(--dm-bg-surface);
+          border: 0.5px solid var(--dm-border);
+          border-radius: 16px;
+          padding: 40px;
         }
+        html.dark .ccms-form-heading    { color: var(--dm-text-ink) !important; }
+        html.dark .ccms-form-sub        { color: var(--dm-text-muted) !important; }
+        html.dark .ccms-field-label     { color: var(--dm-text-secondary) !important; }
+        html.dark .ccms-input {
+          background: var(--dm-bg-muted) !important;
+          border-color: var(--dm-border) !important;
+          color: var(--dm-text-ink) !important;
+        }
+        html.dark .ccms-input::placeholder { color: var(--dm-text-muted) !important; }
+        html.dark .ccms-input:hover:not(:focus) { border-color: var(--dm-border-strong) !important; }
+        html.dark .ccms-error-banner {
+          background: var(--badge-deceased-bg) !important;
+          border-color: var(--badge-deceased-dot) !important;
+          color: var(--badge-deceased-fg) !important;
+        }
+        html.dark .ccms-divider-line    { background: var(--dm-border) !important; }
+        html.dark .ccms-footer-muted    { color: var(--dm-text-muted) !important; }
 
         /* ── Inputs ──────────────────────────────────────── */
         .ccms-input {
           width: 100%;
           height: 38px;
           padding: 0 12px;
-          border: 0.5px solid #D1D5DB;
+          border: 0.5px solid var(--dm-border-soft);
           border-radius: 8px;
           font-family: 'IBM Plex Sans', system-ui, sans-serif;
           font-size: 13px;
-          color: #111827;
-          background: #FFFFFF;
+          color: var(--dm-text-ink);
+          background: var(--dm-bg-card);
           outline: none;
           transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
         }
 
         .ccms-input:hover:not(:focus) {
-          border-color: #B0B9CC;
-          background: #FAFBFF;
+          border-color: var(--dm-border-strong);
+          background: var(--dm-bg-subtle);
         }
 
         .ccms-input:focus {
@@ -246,7 +243,7 @@ export function LoginPage() {
 
         .ccms-input.ccms-input--error              { border-color: #EF4444; }
         .ccms-input.ccms-input--error:focus        { box-shadow: 0 0 0 3px rgba(239,68,68,0.12); }
-        .ccms-input::placeholder                   { color: #9CA3AF; }
+        .ccms-input::placeholder                   { color: var(--dm-text-muted); }
         .ccms-input--pw                            { padding-right: 40px; }
 
         /* ── Password toggle ─────────────────────────────── */
@@ -259,7 +256,7 @@ export function LoginPage() {
           border: none;
           cursor: pointer;
           padding: 0;
-          color: #9CA3AF;
+          color: var(--dm-text-muted);
           display: flex;
           align-items: center;
           line-height: 1;
@@ -531,7 +528,7 @@ export function LoginPage() {
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
                 fontWeight: 600,
                 fontSize: '22px',
-                color: '#111827',
+                color: 'var(--dm-text-ink)',
                 letterSpacing: '-0.02em',
                 margin: '0 0 4px 0',
                 animationDelay: '160ms',
@@ -544,7 +541,7 @@ export function LoginPage() {
               style={{
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontSize: '13px',
-                color: '#6B7280',
+                color: 'var(--dm-text-secondary)',
                 margin: '0 0 28px 0',
                 animationDelay: '230ms',
               }}
@@ -562,7 +559,7 @@ export function LoginPage() {
                 <label
                   htmlFor="email"
                   className="ccms-field-label"
-                  style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: '12px', fontWeight: 500, color: '#374151' }}
+                  style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: '12px', fontWeight: 500, color: 'var(--dm-text-body)' }}
                 >
                   Email
                 </label>
@@ -589,7 +586,7 @@ export function LoginPage() {
                   <label
                     htmlFor="password"
                     className="ccms-field-label"
-                    style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: '12px', fontWeight: 500, color: '#374151' }}
+                    style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: '12px', fontWeight: 500, color: 'var(--dm-text-body)' }}
                   >
                     Password
                   </label>
@@ -627,11 +624,11 @@ export function LoginPage() {
                   className="ccms-error-banner ccms-reveal"
                   style={{
                     borderRadius: 8,
-                    background: '#FEF2F2',
-                    border: '0.5px solid #FECACA',
+                    background: 'var(--badge-deceased-bg)',
+                    border: '0.5px solid var(--badge-deceased-dot)',
                     padding: '10px 12px',
                     fontSize: '13px',
-                    color: '#DC2626',
+                    color: 'var(--badge-deceased-fg)',
                     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                     animationDelay: '0ms',
                   }}
@@ -657,11 +654,11 @@ export function LoginPage() {
                 animationDelay: '540ms',
               }}
             >
-              <div className="ccms-divider-line" style={{ flex: 1, height: '0.5px', background: '#E5E7EB' }} />
-              <span className="ccms-footer-muted" style={{ fontSize: '12px', color: '#9CA3AF', fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+              <div className="ccms-divider-line" style={{ flex: 1, height: '0.5px', background: 'var(--dm-border-soft)' }} />
+              <span className="ccms-footer-muted" style={{ fontSize: '12px', color: 'var(--dm-text-muted)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
                 or
               </span>
-              <div className="ccms-divider-line" style={{ flex: 1, height: '0.5px', background: '#E5E7EB' }} />
+              <div className="ccms-divider-line" style={{ flex: 1, height: '0.5px', background: 'var(--dm-border-soft)' }} />
             </div>
 
             {/* Footer */}
@@ -670,7 +667,7 @@ export function LoginPage() {
               style={{
                 textAlign: 'center',
                 fontSize: '12px',
-                color: '#9CA3AF',
+                color: 'var(--dm-text-muted)',
                 margin: 0,
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 animationDelay: '600ms',

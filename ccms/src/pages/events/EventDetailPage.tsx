@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
@@ -58,31 +58,35 @@ interface TxRow {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const EVENT_TYPE_STYLES: Record<string, { bg: string; color: string; dot: string; label: string }> = {
-  sunday_service:          { bg: '#E8ECF9', color: '#3349C7', dot: '#4F6BED', label: 'Sunday Service' },
-  midweek_service:         { bg: '#EDE9FE', color: '#5B21B6', dot: '#8B5CF6', label: 'Midweek Service' },
-  prayer_meeting:          { bg: '#F0FDFA', color: '#0F766E', dot: '#0D9488', label: 'Prayer Meeting' },
-  youth_service:           { bg: '#FFF7ED', color: '#C2410C', dot: '#F97316', label: 'Youth Service' },
-  special_programme:       { bg: '#FEF6E5', color: '#8A6418', dot: '#C8964A', label: 'Special Programme' },
-  outreach:                { bg: '#DCFCE7', color: '#166534', dot: '#22C55E', label: 'Outreach' },
-  conference:              { bg: '#DBEAFE', color: '#1E40AF', dot: '#3B82F6', label: 'Conference' },
-  funeral_burial_service:  { bg: '#F3F4F6', color: '#6B7280', dot: '#9CA3AF', label: 'Funeral/Burial' },
-  custom:                  { bg: '#FCE7F3', color: '#9D174D', dot: '#EC4899', label: 'Custom' },
+  sunday_service:          { bg: 'var(--etype-sunday-bg)',     color: 'var(--etype-sunday-fg)',     dot: 'var(--etype-sunday-dot)',     label: 'Sunday Service' },
+  midweek_service:         { bg: 'var(--etype-midweek-bg)',    color: 'var(--etype-midweek-fg)',    dot: 'var(--etype-midweek-dot)',    label: 'Midweek Service' },
+  prayer_meeting:          { bg: 'var(--etype-prayer-bg)',     color: 'var(--etype-prayer-fg)',     dot: 'var(--etype-prayer-dot)',     label: 'Prayer Meeting' },
+  youth_service:           { bg: 'var(--etype-youth-bg)',      color: 'var(--etype-youth-fg)',      dot: 'var(--etype-youth-dot)',      label: 'Youth Service' },
+  special_programme:       { bg: 'var(--etype-special-bg)',    color: 'var(--etype-special-fg)',    dot: 'var(--etype-special-dot)',    label: 'Special Programme' },
+  outreach:                { bg: 'var(--etype-outreach-bg)',   color: 'var(--etype-outreach-fg)',   dot: 'var(--etype-outreach-dot)',   label: 'Outreach' },
+  conference:              { bg: 'var(--etype-conference-bg)', color: 'var(--etype-conference-fg)', dot: 'var(--etype-conference-dot)', label: 'Conference' },
+  funeral_burial_service:  { bg: 'var(--etype-funeral-bg)',    color: 'var(--etype-funeral-fg)',    dot: 'var(--etype-funeral-dot)',    label: 'Funeral/Burial' },
+  custom:                  { bg: 'var(--etype-custom-bg)',     color: 'var(--etype-custom-fg)',     dot: 'var(--etype-custom-dot)',     label: 'Custom' },
 }
 
 const CATEGORY_STYLES: Record<string, { bg: string; color: string; dot: string }> = {
-  tithe:        { bg: '#FEF6E5', color: '#8A6418', dot: '#C8964A' },
-  offering:     { bg: '#DCFCE7', color: '#166534', dot: '#22C55E' },
-  building:     { bg: '#E8ECF9', color: '#3349C7', dot: '#7B93F5' },
-  welfare:      { bg: '#EDE9FE', color: '#5B21B6', dot: '#8B5CF6' },
-  thanksgiving: { bg: '#FFE4E6', color: '#9F1239', dot: '#EF4444' },
-  special:      { bg: '#FCE7F3', color: '#9D174D', dot: '#EC4899' },
+  tithe:        { bg: 'var(--cat-tithe-bg)',        color: 'var(--cat-tithe-fg)',        dot: 'var(--cat-tithe-dot)' },
+  offering:     { bg: 'var(--cat-offering-bg)',     color: 'var(--cat-offering-fg)',     dot: 'var(--cat-offering-dot)' },
+  building:     { bg: 'var(--cat-building-bg)',     color: 'var(--cat-building-fg)',     dot: 'var(--cat-building-dot)' },
+  welfare:      { bg: 'var(--cat-welfare-bg)',      color: 'var(--cat-welfare-fg)',      dot: 'var(--cat-welfare-dot)' },
+  thanksgiving: { bg: 'var(--cat-thanksgiving-bg)', color: 'var(--cat-thanksgiving-fg)', dot: 'var(--cat-thanksgiving-dot)' },
+  special:      { bg: 'var(--cat-special-bg)',      color: 'var(--cat-special-fg)',      dot: 'var(--cat-special-dot)' },
 }
 
 const AVATAR_PALETTE = [
-  { bg: '#E8ECF9', color: '#4F6BED' }, { bg: '#DCFCE7', color: '#15803D' },
-  { bg: '#FEF3C7', color: '#B45309' }, { bg: '#FCE7F3', color: '#BE185D' },
-  { bg: '#EEF2FF', color: '#4338CA' }, { bg: '#FFF7ED', color: '#C2410C' },
-  { bg: '#F0FDFA', color: '#0F766E' }, { bg: '#F5F3FF', color: '#7C3AED' },
+  { bg: 'var(--avatar-1-bg)', color: 'var(--avatar-1-fg)' },
+  { bg: 'var(--avatar-2-bg)', color: 'var(--avatar-2-fg)' },
+  { bg: 'var(--avatar-3-bg)', color: 'var(--avatar-3-fg)' },
+  { bg: 'var(--avatar-4-bg)', color: 'var(--avatar-4-fg)' },
+  { bg: 'var(--avatar-5-bg)', color: 'var(--avatar-5-fg)' },
+  { bg: 'var(--avatar-6-bg)', color: 'var(--avatar-6-fg)' },
+  { bg: 'var(--avatar-7-bg)', color: 'var(--avatar-7-fg)' },
+  { bg: 'var(--avatar-8-bg)', color: 'var(--avatar-8-fg)' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -94,7 +98,7 @@ function getAvatarColor(first: string, last: string) {
 }
 
 function getEventTypeStyle(type: string | null) {
-  return EVENT_TYPE_STYLES[type ?? ''] ?? { bg: '#F3F4F6', color: '#6B7280', dot: '#9CA3AF', label: type ?? 'Event' }
+  return EVENT_TYPE_STYLES[type ?? ''] ?? { bg: 'var(--etype-funeral-bg)', color: 'var(--etype-funeral-fg)', dot: 'var(--etype-funeral-dot)', label: type ?? 'Event' }
 }
 
 function getCatStyle(name: string) {
@@ -146,7 +150,7 @@ function ArrowRightIcon() {
 
 function CollectiveAvatar({ size = 28 }: { size?: number }) {
   return (
-    <div style={{ width: size, height: size, borderRadius: '50%', background: '#EDE9FE', color: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <div style={{ width: size, height: size, borderRadius: '50%', background: 'var(--cat-welfare-bg)', color: 'var(--cat-welfare-fg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
       <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 16 16" fill="none">
         <circle cx="9.5" cy="6" r="3.5" stroke="currentColor" strokeWidth="1.3" />
         <path d="M9.5 4.5v1.5l1 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -170,9 +174,9 @@ function MemberAvatar({ first, last, size = 32 }: { first: string; last: string;
 
 function StatCard({ label, value, accent }: { label: string; value: string | number; accent: string }) {
   return (
-    <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 10, padding: '14px 16px', position: 'relative', overflow: 'hidden', flex: 1 }}>
-      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: '#111827', lineHeight: 1.1 }}>{value}</div>
+    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 10, padding: '14px 16px', position: 'relative', overflow: 'hidden', flex: 1 }}>
+      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{value}</div>
       <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: accent }} />
     </div>
   )
@@ -313,9 +317,9 @@ function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
     return false
   })()
 
-  const inputStyle: React.CSSProperties = { height: 34, borderRadius: 7, border: '0.5px solid #E5E7EB', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#111827', background: '#fff', outline: 'none', padding: '0 10px' }
+  const inputStyle: React.CSSProperties = { height: 34, borderRadius: 7, border: '0.5px solid var(--dm-border-soft)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)', outline: 'none', padding: '0 10px' }
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>Loading roster…</div>
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>Loading roster…</div>
 
   return (
     <div>
@@ -341,18 +345,18 @@ function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
 
         <div style={{ display: 'flex', gap: 4 }}>
           {(['all', 'present', 'absent'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{ height: 34, padding: '0 12px', borderRadius: 7, border: '0.5px solid #E5E7EB', background: filter === f ? '#4F6BED' : '#fff', color: filter === f ? '#fff' : '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, cursor: 'pointer', textTransform: 'capitalize' }}>
+            <button key={f} onClick={() => setFilter(f)} style={{ height: 34, padding: '0 12px', borderRadius: 7, border: '0.5px solid var(--dm-border-soft)', background: filter === f ? '#4F6BED' : 'var(--dm-bg-card)', color: filter === f ? '#fff' : 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, cursor: 'pointer', textTransform: 'capitalize' }}>
               {f}
             </button>
           ))}
         </div>
 
-        <button onClick={markAll} style={{ height: 34, padding: '0 12px', borderRadius: 7, border: '0.5px solid #E5E7EB', background: '#fff', color: '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, cursor: 'pointer' }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+        <button onClick={markAll} style={{ height: 34, padding: '0 12px', borderRadius: 7, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, cursor: 'pointer' }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>
           Mark All Present
         </button>
-        <button onClick={clearAll} style={{ height: 34, padding: '0 12px', borderRadius: 7, border: '0.5px solid #E5E7EB', background: '#fff', color: '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, cursor: 'pointer' }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+        <button onClick={clearAll} style={{ height: 34, padding: '0 12px', borderRadius: 7, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, cursor: 'pointer' }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>
           Clear All
         </button>
 
@@ -361,16 +365,16 @@ function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
         <div ref={exportRef} style={{ position: 'relative' }}>
           <button
             onClick={() => setExportOpen(o => !o)}
-            style={{ height: 34, padding: '0 12px', borderRadius: 7, border: '0.5px solid #E5E7EB', background: '#fff', color: '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+            style={{ height: 34, padding: '0 12px', borderRadius: 7, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
           >
             Export
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
           {exportOpen && (
-            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 50, minWidth: 190, overflow: 'hidden' }}>
-              <button onClick={exportCSV} style={{ display: 'block', width: '100%', padding: '9px 14px', background: 'none', border: 'none', textAlign: 'left', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>Export as CSV</button>
-              <button onClick={exportExcel} style={{ display: 'block', width: '100%', padding: '9px 14px', background: 'none', border: 'none', textAlign: 'left', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>Export as Excel (.xlsx)</button>
+            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 50, minWidth: 190, overflow: 'hidden' }}>
+              <button onClick={exportCSV} style={{ display: 'block', width: '100%', padding: '9px 14px', background: 'none', border: 'none', textAlign: 'left', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>Export as CSV</button>
+              <button onClick={exportExcel} style={{ display: 'block', width: '100%', padding: '9px 14px', background: 'none', border: 'none', textAlign: 'left', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>Export as Excel (.xlsx)</button>
             </div>
           )}
         </div>
@@ -384,9 +388,9 @@ function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
       </div>
 
       {/* Roster */}
-      <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 10, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 10, overflow: 'hidden' }}>
         {paginated.length === 0 ? (
-          <div style={{ padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+          <div style={{ padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>
             No members match your filters
           </div>
         ) : paginated.map((m, i) => {
@@ -397,27 +401,27 @@ function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
               onClick={() => toggle(m.id)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px',
-                borderBottom: i < paginated.length - 1 ? '0.5px solid #F3F4F6' : 'none',
-                background: present ? '#F0FDF4' : '#fff',
+                borderBottom: i < paginated.length - 1 ? '0.5px solid var(--dm-border-subtle)' : 'none',
+                background: present ? 'rgba(34,197,94,0.08)' : 'var(--dm-bg-card)',
                 cursor: 'pointer', transition: 'background 0.1s',
               }}
-              onMouseEnter={e => { if (!present) e.currentTarget.style.background = '#F9FAFB' }}
-              onMouseLeave={e => { e.currentTarget.style.background = present ? '#F0FDF4' : '#fff' }}
+              onMouseEnter={e => { if (!present) e.currentTarget.style.background = 'var(--dm-bg-surface)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = present ? 'rgba(34,197,94,0.08)' : 'var(--dm-bg-card)' }}
             >
               <MemberAvatar first={m.first_name} last={m.last_name} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#111827' }}>
+                <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)' }}>
                   {m.first_name} {m.last_name}
                 </div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)' }}>
                   {m.member_number ?? '—'}
                 </div>
               </div>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: 5,
                 padding: '3px 10px', borderRadius: 999,
-                background: present ? '#DCFCE7' : '#F3F4F6',
-                color: present ? '#166534' : '#6B7280',
+                background: present ? 'var(--badge-active-bg)' : 'var(--badge-inactive-bg)',
+                color: present ? 'var(--badge-active-fg)' : 'var(--badge-inactive-fg)',
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontWeight: 600, fontSize: 11.5,
               }}>
@@ -425,8 +429,8 @@ function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
               </span>
               <div style={{
                 width: 20, height: 20, borderRadius: 4,
-                border: present ? '1.5px solid #22C55E' : '1.5px solid #D1D5DB',
-                background: present ? '#22C55E' : '#fff',
+                border: present ? '1.5px solid #22C55E' : '1.5px solid var(--dm-border-strong)',
+                background: present ? '#22C55E' : 'var(--dm-bg-card)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}>
                 {present && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
@@ -439,18 +443,18 @@ function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
       {/* Pagination + last saved */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
         <div style={{ display: 'flex', gap: 4 }}>
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ height: 30, padding: '0 10px', borderRadius: 7, border: '0.5px solid #E5E7EB', background: '#fff', cursor: page === 1 ? 'not-allowed' : 'pointer', color: page === 1 ? '#D1D5DB' : '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ height: 30, padding: '0 10px', borderRadius: 7, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', cursor: page === 1 ? 'not-allowed' : 'pointer', color: page === 1 ? 'var(--dm-text-muted)' : 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
             <ChevronIcon dir="left" /> Prev
           </button>
-          <span style={{ height: 30, display: 'flex', alignItems: 'center', padding: '0 10px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280' }}>
+          <span style={{ height: 30, display: 'flex', alignItems: 'center', padding: '0 10px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-secondary)' }}>
             {page} / {totalPages}
           </span>
-          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ height: 30, padding: '0 10px', borderRadius: 7, border: '0.5px solid #E5E7EB', background: '#fff', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: page === totalPages ? '#D1D5DB' : '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ height: 30, padding: '0 10px', borderRadius: 7, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: page === totalPages ? 'var(--dm-text-muted)' : 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
             Next <ChevronIcon dir="right" />
           </button>
         </div>
         {lastSaved && (
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)' }}>
             Last saved: {formatTs(lastSaved.toISOString())}
           </div>
         )}
@@ -476,14 +480,14 @@ function DonationsTab({ eventId }: { eventId: string }) {
 
   const total = transactions.reduce((s, t) => s + t.amount, 0)
 
-  const th: React.CSSProperties = { padding: '10px 16px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 10.5, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left', borderBottom: '0.5px solid #EFF1F7', background: '#FAFBFE' }
+  const th: React.CSSProperties = { padding: '10px 16px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 10.5, color: 'var(--dm-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left', borderBottom: '0.5px solid var(--dm-border-subtle)', background: 'var(--dm-bg-surface)' }
 
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 10, padding: '12px 18px' }}>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 2 }}>Total Collected</div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, fontSize: 22, color: '#111827' }}>{loading ? '—' : formatAmount(total)}</div>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 10, padding: '12px 18px' }}>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 2 }}>Total Collected</div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, fontSize: 22, color: 'var(--dm-text-ink)' }}>{loading ? '—' : formatAmount(total)}</div>
         </div>
         <button
           onClick={() => navigate(`/donations/new?event_id=${eventId}`)}
@@ -493,7 +497,7 @@ function DonationsTab({ eventId }: { eventId: string }) {
         </button>
       </div>
 
-      <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 10, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 10, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr>
@@ -507,10 +511,10 @@ function DonationsTab({ eventId }: { eventId: string }) {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} style={{ padding: '30px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>Loading…</td></tr>
+              <tr><td colSpan={6} style={{ padding: '30px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>Loading…</td></tr>
             ) : transactions.length === 0 ? (
               <tr><td colSpan={6} style={{ padding: '40px 0', textAlign: 'center' }}>
-                <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>No giving records for this event yet.</div>
+                <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No giving records for this event yet.</div>
               </td></tr>
             ) : transactions.map(tx => {
               const isCol = tx.is_collective === true
@@ -519,16 +523,16 @@ function DonationsTab({ eventId }: { eventId: string }) {
               const catName = tx.transaction_categories?.name ?? ''
               const catS = getCatStyle(catName)
               return (
-                <tr key={tx.id} onClick={() => navigate(`/donations/${tx.id}`)} style={{ borderBottom: '0.5px solid #EFF1F7', height: 52, background: '#fff', cursor: 'pointer', transition: 'background 0.1s' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#FAFBFE')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+                <tr key={tx.id} onClick={() => navigate(`/donations/${tx.id}`)} style={{ borderBottom: '0.5px solid var(--dm-border-subtle)', height: 52, background: 'var(--dm-bg-card)', cursor: 'pointer', transition: 'background 0.1s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>
                   <td style={{ padding: '0 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                       {isCol ? <CollectiveAvatar size={28} /> : <MemberAvatar first={firstName} last={lastName || 'A'} size={28} />}
                       <div>
-                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>
+                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)' }}>
                           {isCol ? 'Collective Offering' : tx.member ? `${firstName} ${lastName}` : 'Anonymous'}
                         </div>
-                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: '#9CA3AF' }}>
+                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: 'var(--dm-text-muted)' }}>
                           {isCol ? '—' : tx.member?.member_number ?? '—'}
                         </div>
                       </div>
@@ -536,7 +540,7 @@ function DonationsTab({ eventId }: { eventId: string }) {
                   </td>
                   <td style={{ padding: '0 16px' }}>
                     {isCol ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999, background: '#FEF6E5', color: '#8A6418', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11.5 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999, background: 'var(--cat-tithe-bg)', color: 'var(--cat-tithe-fg)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11.5 }}>
                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#C8964A' }} />
                         Collective
                       </span>
@@ -548,16 +552,16 @@ function DonationsTab({ eventId }: { eventId: string }) {
                     )}
                   </td>
                   <td style={{ padding: '0 16px', textAlign: 'right' }}>
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: '#111827', fontWeight: 600 }}>{formatAmount(tx.amount)}</span>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: 'var(--dm-text-ink)', fontWeight: 600 }}>{formatAmount(tx.amount)}</span>
                   </td>
                   <td style={{ padding: '0 16px' }}>
-                    <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12.5, color: '#374151' }}>{tx.payment_method}</span>
+                    <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12.5, color: 'var(--dm-text-body)' }}>{tx.payment_method}</span>
                   </td>
                   <td style={{ padding: '0 16px' }}>
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: '#6B7280' }}>{tx.transaction_date}</span>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: 'var(--dm-text-secondary)' }}>{tx.transaction_date}</span>
                   </td>
                   <td style={{ padding: '0 12px' }}>
-                    <button onClick={e => { e.stopPropagation(); navigate(`/donations/${tx.id}`) }} style={{ width: 26, height: 26, borderRadius: 5, border: '0.5px solid #E5E7EB', background: '#fff', display: 'grid', placeItems: 'center', color: '#6B7280', cursor: 'pointer' }}>
+                    <button onClick={e => { e.stopPropagation(); navigate(`/donations/${tx.id}`) }} style={{ width: 26, height: 26, borderRadius: 5, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', display: 'grid', placeItems: 'center', color: 'var(--dm-text-secondary)', cursor: 'pointer' }}>
                       <ArrowRightIcon />
                     </button>
                   </td>
@@ -578,7 +582,7 @@ function QRTab({ eventId }: { eventId: string }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 0', gap: 20 }}>
-      <div style={{ width: 180, height: 180, borderRadius: 12, border: '0.5px solid #E5E7EB', background: '#F9FAFB', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, position: 'relative' }}>
+      <div style={{ width: 180, height: 180, borderRadius: 12, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-surface)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, position: 'relative' }}>
         <svg width="80" height="80" viewBox="0 0 80 80" fill="none" opacity="0.2">
           <rect x="4" y="4" width="30" height="30" rx="3" stroke="#6B7280" strokeWidth="3" />
           <rect x="10" y="10" width="18" height="18" rx="1" fill="#6B7280" />
@@ -593,16 +597,16 @@ function QRTab({ eventId }: { eventId: string }) {
         </svg>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-            <rect width="36" height="36" rx="18" fill="#F3F4F6" />
+            <rect width="36" height="36" rx="18" fill="var(--dm-bg-muted)" />
             <path d="M18 10v8M14 14l4-4 4 4M12 24h12" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
       </div>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: '#111827', marginBottom: 6 }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 6 }}>
           QR Check-in
         </div>
-        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF', marginBottom: 4 }}>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)', marginBottom: 4 }}>
           QR check-in coming in Sprint 7
         </div>
         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#D1D5DB' }}>
@@ -611,9 +615,9 @@ function QRTab({ eventId }: { eventId: string }) {
       </div>
       <button
         onClick={() => { navigator.clipboard.writeText(checkInUrl); toast.success('Check-in link copied!') }}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', color: '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, cursor: 'pointer' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, cursor: 'pointer' }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
       >
         Copy Check-in Link
       </button>
@@ -693,14 +697,14 @@ export function EventDetailPage() {
   const printRate = printExpected > 0 ? Math.round((printPresentIds.size / printExpected) * 100) : 0
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>
       Loading event…
     </div>
   )
 
   if (notFound || !event) return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0', gap: 8 }}>
-      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 18, color: '#111827' }}>Event not found</div>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 18, color: 'var(--dm-text-ink)' }}>Event not found</div>
       <button onClick={() => navigate('/events')} style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#4F6BED' }}>Back to Events</button>
     </div>
   )
@@ -789,13 +793,13 @@ export function EventDetailPage() {
       <div id="ccms-screen-content">
         {showDeleteModal && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={e => { if (e.target === e.currentTarget) setShowDeleteModal(false) }}>
-            <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #E5E7EB', padding: 24, width: 420, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: '#111827', marginBottom: 8 }}>Delete Event</div>
-              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280', marginBottom: 20, lineHeight: 1.6 }}>
-                Delete <strong style={{ color: '#111827' }}>{event.name}</strong>? All attendance records will be removed. This cannot be undone.
+            <div style={{ background: 'var(--dm-bg-card)', borderRadius: 12, border: '0.5px solid var(--dm-border-soft)', padding: 24, width: 420, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 8 }}>Delete Event</div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 20, lineHeight: 1.6 }}>
+                Delete <strong style={{ color: 'var(--dm-text-ink)' }}>{event.name}</strong>? All attendance records will be removed. This cannot be undone.
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                <button onClick={() => setShowDeleteModal(false)} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#374151' }}>Cancel</button>
+                <button onClick={() => setShowDeleteModal(false)} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)' }}>Cancel</button>
                 <button onClick={handleDelete} disabled={deleting} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: '#EF4444', cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#fff' }}>{deleting ? 'Deleting…' : 'Delete'}</button>
               </div>
             </div>
@@ -805,18 +809,18 @@ export function EventDetailPage() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button onClick={() => navigate('/events')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', display: 'flex', alignItems: 'center', padding: 4, borderRadius: 6 }} onMouseEnter={e => (e.currentTarget.style.color = '#111827')} onMouseLeave={e => (e.currentTarget.style.color = '#6B7280')}>
+            <button onClick={() => navigate('/events')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dm-text-secondary)', display: 'flex', alignItems: 'center', padding: 4, borderRadius: 6 }} onMouseEnter={e => (e.currentTarget.style.color = 'var(--dm-text-ink)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--dm-text-secondary)')}>
               <BackArrowIcon />
             </button>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 20, color: '#111827', letterSpacing: '-0.02em', margin: 0 }}>{event.name}</h1>
+                <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 20, color: 'var(--dm-text-ink)', letterSpacing: '-0.02em', margin: 0 }}>{event.name}</h1>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999, background: typeStyle.bg, color: typeStyle.color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11.5 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: typeStyle.dot }} />
                   {typeStyle.label}
                 </span>
               </div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-muted)', marginTop: 4 }}>
                 {formatDate(event.starts_at)} · {formatTime(event.starts_at)}
                 {event.location && <span> · {event.location}</span>}
                 {event.branches?.name && <span> · {event.branches.name}</span>}
@@ -825,15 +829,15 @@ export function EventDetailPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => navigate(`/events/${event.id}/edit`)} style={{ height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#374151' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}>Edit Event</button>
-            <button onClick={() => window.print()} style={{ height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#374151' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}>Print Sheet</button>
-            <button onClick={() => setShowDeleteModal(true)} style={{ height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid #FCA5A5', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#EF4444' }} onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>Delete Event</button>
+            <button onClick={() => navigate(`/events/${event.id}/edit`)} style={{ height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}>Edit Event</button>
+            <button onClick={() => window.print()} style={{ height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}>Print Sheet</button>
+            <button onClick={() => setShowDeleteModal(true)} style={{ height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid #FCA5A5', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#EF4444' }} onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>Delete Event</button>
           </div>
         </div>
 
         {/* Part of series banner */}
         {event.parent_event_id && parentEvent && (
-          <div style={{ background: '#F0F2FE', border: '0.5px solid #C4CEEB', borderRadius: 8, padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ background: 'var(--dm-bg-tint)', border: '0.5px solid #C4CEEB', borderRadius: 8, padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M5 5l3-3 3 3M5 11l3 3 3-3" stroke="#4F6BED" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#3349C7' }}>
               Part of series{event.occurrence_number ? ` · Occurrence #${event.occurrence_number}` : ''} —{' '}
@@ -845,11 +849,11 @@ export function EventDetailPage() {
         )}
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 4, borderBottom: '0.5px solid #E5E7EB', marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 4, borderBottom: '0.5px solid var(--dm-border-soft)', marginBottom: 20 }}>
           {tabs.map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ padding: '10px 14px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: activeTab === tab.key ? '#4F6BED' : '#6B7280', borderBottom: activeTab === tab.key ? '2px solid #4F6BED' : '2px solid transparent', marginBottom: -1, background: 'none', cursor: 'pointer' }}
-              onMouseEnter={e => { if (activeTab !== tab.key) e.currentTarget.style.color = '#374151' }}
-              onMouseLeave={e => { if (activeTab !== tab.key) e.currentTarget.style.color = '#6B7280' }}>
+              onMouseEnter={e => { if (activeTab !== tab.key) e.currentTarget.style.color = 'var(--dm-text-body)' }}
+              onMouseLeave={e => { if (activeTab !== tab.key) e.currentTarget.style.color = 'var(--dm-text-secondary)' }}>
               {tab.label}
             </button>
           ))}
