@@ -67,7 +67,7 @@ function OrgWideIcon() {
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent: string }) {
   return (
-    <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 6 }}>{label}</div>
       <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, letterSpacing: '-0.02em', color: '#111827', lineHeight: 1.1 }}>{value}</div>
       {sub && <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>{sub}</div>}
@@ -88,13 +88,13 @@ function Avatar({ firstName, lastName, size = 36 }: { firstName: string; lastNam
 function DeleteModal({ name, onConfirm, onCancel, deleting }: { name: string; onConfirm: () => void; onCancel: () => void; deleting: boolean }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={e => { if (e.target === e.currentTarget) onCancel() }}>
-      <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #E5E7EB', padding: 24, width: 420, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: '#111827', marginBottom: 8 }}>Delete Ministry</div>
-        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280', marginBottom: 20, lineHeight: 1.6 }}>
-          Are you sure you want to delete <strong style={{ color: '#111827' }}>{name}</strong>? This will also remove all associated groups and memberships. This action cannot be undone.
+      <div style={{ background: 'var(--dm-bg-card)', borderRadius: 12, border: '0.5px solid var(--dm-border)', padding: 24, width: 420, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 8 }}>Delete Ministry</div>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 20, lineHeight: 1.6 }}>
+          Are you sure you want to delete <strong style={{ color: 'var(--dm-text-ink)' }}>{name}</strong>? This will also remove all associated groups and memberships. This action cannot be undone.
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={onCancel} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#374151' }} onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>Cancel</button>
+          <button onClick={onCancel} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>Cancel</button>
           <button onClick={onConfirm} disabled={deleting} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: deleting ? '#FCA5A5' : '#EF4444', cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
             <TrashIcon /> {deleting ? 'Deleting…' : 'Delete Ministry'}
           </button>
@@ -204,9 +204,9 @@ export function MinistriesPage() {
   ]
 
   const inputStyle: React.CSSProperties = {
-    height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB',
+    height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827', background: '#fff', outline: 'none',
+    fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)', outline: 'none',
   }
 
   return (
@@ -255,7 +255,7 @@ export function MinistriesPage() {
       </div>
 
       {/* Filter Bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10, padding: 14, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10, padding: 14, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, marginBottom: 20 }}>
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
           <span style={{ position: 'absolute', left: 11, pointerEvents: 'none', display: 'inline-flex' }}><SearchIcon /></span>
           <input className="min-filter-input" type="text" placeholder="Search ministries or leader..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputStyle, width: '100%', paddingLeft: 34, paddingRight: 12 }} />
@@ -271,7 +271,7 @@ export function MinistriesPage() {
       {loading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
           {[1,2,3].map(i => (
-            <div key={i} style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: 20 }}>
+            <div key={i} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: 20 }}>
               <div style={{ height: 14, width: '60%', borderRadius: 4, background: '#F3F4F6', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: 12 }} />
               <div style={{ height: 12, width: '40%', borderRadius: 4, background: '#F3F4F6', animation: 'pulse 1.5s ease-in-out infinite' }} />
             </div>
@@ -299,7 +299,7 @@ export function MinistriesPage() {
                 key={ministry.id}
                 className="min-card"
                 onClick={() => navigate(`/groups/${ministry.id}`)}
-                style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: 20, cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s', position: 'relative' }}
+                style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: 20, cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s', position: 'relative' }}
               >
                 {/* Header */}
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -321,7 +321,7 @@ export function MinistriesPage() {
                       <button
                         onClick={e => { e.stopPropagation(); setDeleteTarget(ministry) }}
                         title="Delete ministry"
-                        style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', display: 'grid', placeItems: 'center', color: '#9CA3AF', cursor: 'pointer' }}
+                        style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', display: 'grid', placeItems: 'center', color: 'var(--dm-text-muted)', cursor: 'pointer' }}
                         onMouseEnter={e => { e.currentTarget.style.borderColor = '#FCA5A5'; e.currentTarget.style.color = '#EF4444' }}
                         onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.color = '#9CA3AF' }}
                       >

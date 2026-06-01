@@ -73,7 +73,7 @@ function Avatar({ firstName, lastName, size = 32 }: { firstName: string; lastNam
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent: string }) {
   return (
-    <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 6 }}>{label}</div>
       <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, letterSpacing: '-0.02em', color: '#111827', lineHeight: 1.1 }}>{value}</div>
       {sub && <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>{sub}</div>}
@@ -123,13 +123,13 @@ function AddMemberModal({ group, existingMemberIds, orgId, onAdd, onClose }: {
     onAdd()
   }
 
-  const inputBase: React.CSSProperties = { width: '100%', height: 38, borderRadius: 8, border: '0.5px solid #E5E7EB', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#111827', background: '#fff', outline: 'none', padding: '0 12px', boxSizing: 'border-box' }
+  const inputBase: React.CSSProperties = { width: '100%', height: 38, borderRadius: 8, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)', outline: 'none', padding: '0 12px', boxSizing: 'border-box' }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #E5E7EB', padding: 24, width: 480, maxWidth: '90vw', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: '#111827', marginBottom: 6 }}>Add Member to Group</div>
-        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280', marginBottom: 18 }}>Search for an org member not already in <strong style={{ color: '#111827' }}>{group.name}</strong>.</div>
+      <div style={{ background: 'var(--dm-bg-card)', borderRadius: 12, border: '0.5px solid var(--dm-border)', padding: 24, width: 480, maxWidth: '90vw', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 6 }}>Add Member to Group</div>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 18 }}>Search for an org member not already in <strong style={{ color: 'var(--dm-text-ink)' }}>{group.name}</strong>.</div>
 
         {/* Search */}
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginBottom: 12 }}>
@@ -138,7 +138,7 @@ function AddMemberModal({ group, existingMemberIds, orgId, onAdd, onClose }: {
         </div>
 
         {/* Member List */}
-        <div style={{ flex: 1, overflowY: 'auto', border: '0.5px solid #E5E7EB', borderRadius: 8, marginBottom: 16, minHeight: 0 }}>
+        <div style={{ flex: 1, overflowY: 'auto', border: '0.5px solid var(--dm-border)', borderRadius: 8, marginBottom: 16, minHeight: 0 }}>
           {loading ? (
             <div style={{ padding: '24px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>Loading…</div>
           ) : available.length === 0 ? (
@@ -163,7 +163,7 @@ function AddMemberModal({ group, existingMemberIds, orgId, onAdd, onClose }: {
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#374151', marginBottom: 8 }}>Role</div>
           <div style={{ display: 'flex', gap: 8 }}>
             {(['member', 'leader'] as const).map(r => (
-              <button key={r} type="button" onClick={() => setRole(r)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: `1.5px solid ${role === r ? '#4F6BED' : '#E5E7EB'}`, background: role === r ? '#EEF1FD' : '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: role === r ? '#4F6BED' : '#374151', textTransform: 'capitalize' }}>
+              <button key={r} type="button" onClick={() => setRole(r)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: `1.5px solid ${role === r ? '#4F6BED' : 'var(--dm-border)'}`, background: role === r ? '#EEF1FD' : 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: role === r ? '#4F6BED' : 'var(--dm-text-body)', textTransform: 'capitalize' }}>
                 {r}
               </button>
             ))}
@@ -171,7 +171,7 @@ function AddMemberModal({ group, existingMemberIds, orgId, onAdd, onClose }: {
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#374151' }} onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>Cancel</button>
+          <button onClick={onClose} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>Cancel</button>
           <button onClick={handleAdd} disabled={!selectedId || saving} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: !selectedId || saving ? '#818CF8' : '#4F6BED', cursor: !selectedId || saving ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#fff' }}>
             {saving ? 'Adding…' : `Add ${selected ? selected.first_name : 'Member'}`}
           </button>
@@ -189,9 +189,9 @@ function ScheduleBuilder({ entries, onChange, disabled = false }: {
   disabled?: boolean
 }) {
   const inputSt: React.CSSProperties = {
-    width: '100%', height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB',
-    fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#111827',
-    background: '#fff', outline: 'none', padding: '0 10px', boxSizing: 'border-box',
+    width: '100%', height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border)',
+    fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)',
+    background: 'var(--dm-bg-card)', outline: 'none', padding: '0 10px', boxSizing: 'border-box',
     opacity: disabled ? 0.6 : 1,
   }
 
@@ -208,7 +208,7 @@ function ScheduleBuilder({ entries, onChange, disabled = false }: {
   return (
     <div>
       {entries.map((entry, i) => (
-        <div key={entry.localId} style={{ background: '#F9FAFB', border: '0.5px solid #E5E7EB', borderRadius: 8, padding: '12px 14px', marginBottom: 10 }}>
+        <div key={entry.localId} style={{ background: 'var(--dm-bg-muted)', border: '0.5px solid var(--dm-border)', borderRadius: 8, padding: '12px 14px', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{entries.length > 1 ? `Schedule ${i + 1}` : 'Schedule'}</span>
             {entries.length > 1 && !disabled && (
@@ -221,7 +221,7 @@ function ScheduleBuilder({ entries, onChange, disabled = false }: {
               {DAYS.map(day => {
                 const active = entry.day === day
                 return (
-                  <button key={day} type="button" disabled={disabled} onClick={() => update(entry.localId, 'day', active ? '' : day)} style={{ height: 28, padding: '0 10px', borderRadius: 999, border: `1.5px solid ${active ? '#4F6BED' : '#E5E7EB'}`, background: active ? '#EEF1FD' : '#fff', cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: active ? 600 : 500, fontSize: 12, color: active ? '#4F6BED' : '#374151', opacity: disabled ? 0.6 : 1 }}>{day.slice(0, 3)}</button>
+                  <button key={day} type="button" disabled={disabled} onClick={() => update(entry.localId, 'day', active ? '' : day)} style={{ height: 28, padding: '0 10px', borderRadius: 999, border: `1.5px solid ${active ? '#4F6BED' : 'var(--dm-border)'}`, background: active ? '#EEF1FD' : 'var(--dm-bg-card)', cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: active ? 600 : 500, fontSize: 12, color: active ? '#4F6BED' : 'var(--dm-text-body)', opacity: disabled ? 0.6 : 1 }}>{day.slice(0, 3)}</button>
                 )
               })}
             </div>
@@ -239,7 +239,7 @@ function ScheduleBuilder({ entries, onChange, disabled = false }: {
         </div>
       ))}
       {!disabled && (
-        <button type="button" onClick={add} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, color: '#4F6BED', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = '#EEF1FD')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+        <button type="button" onClick={add} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, color: '#4F6BED', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = '#EEF1FD')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>
           + Add Another Meeting Time
         </button>
       )}
@@ -312,13 +312,13 @@ function GroupSettingsTab({ group, ministries, members, canManage, onSaved, init
     navigate(`/groups/${group.ministry_id ?? ''}`)
   }
 
-  const inputBase: React.CSSProperties = { width: '100%', height: 38, borderRadius: 8, border: '0.5px solid #E5E7EB', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#111827', background: '#fff', outline: 'none', padding: '0 12px', boxSizing: 'border-box' }
-  const labelSt: React.CSSProperties = { fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#374151', display: 'block', marginBottom: 6 }
+  const inputBase: React.CSSProperties = { width: '100%', height: 38, borderRadius: 8, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)', outline: 'none', padding: '0 12px', boxSizing: 'border-box' }
+  const labelSt: React.CSSProperties = { fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: 'var(--dm-text-body)', display: 'block', marginBottom: 6 }
 
   return (
     <div style={{ maxWidth: 600 }}>
-      <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: 24, marginBottom: 16 }}>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 20, paddingBottom: 12, borderBottom: '0.5px solid #F3F4F6' }}>Edit Group</div>
+      <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: 24, marginBottom: 16 }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 20, paddingBottom: 12, borderBottom: '0.5px solid var(--dm-border-subtle)' }}>Edit Group</div>
         <div style={{ marginBottom: 16 }}><label style={labelSt}>Group Name</label><input type="text" value={name} onChange={e => setName(e.target.value)} disabled={!canManage} style={{ ...inputBase, opacity: canManage ? 1 : 0.6 }} /></div>
         <div style={{ marginBottom: 16 }}><label style={labelSt}>Description</label><textarea value={description} onChange={e => setDescription(e.target.value)} disabled={!canManage} rows={3} style={{ ...inputBase, height: 'auto', padding: '10px 12px', resize: 'vertical', lineHeight: 1.5, opacity: canManage ? 1 : 0.6 }} /></div>
 
@@ -329,7 +329,7 @@ function GroupSettingsTab({ group, ministries, members, canManage, onSaved, init
             <input type="text" value={leaderOpen ? leaderQuery : leaderText} onChange={e => { setLeaderQuery(e.target.value); setLeaderOpen(true) }} onFocus={() => { setLeaderQuery(''); setLeaderOpen(true) }} placeholder="Search members…" disabled={!canManage} style={{ ...inputBase, paddingRight: 32, cursor: 'pointer', opacity: canManage ? 1 : 0.6 }} readOnly={!leaderOpen} />
             <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}><ChevronDownIcon /></span>
             {leaderOpen && canManage && (
-              <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 100, maxHeight: 200, overflowY: 'auto', padding: '4px 0' }}>
+              <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 100, maxHeight: 200, overflowY: 'auto', padding: '4px 0' }}>
                 {leaderId && <button type="button" onClick={() => { setLeaderId(''); setLeaderOpen(false) }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#EF4444' }} onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>Clear leader</button>}
                 {filteredMembers.map(m => {
                   const { bg, color } = avatarColor(m.first_name + m.last_name)
@@ -370,7 +370,7 @@ function GroupSettingsTab({ group, ministries, members, canManage, onSaved, init
           <label style={labelSt}>Status</label>
           <div style={{ display: 'flex', gap: 8 }}>
             {[{ v: true, l: 'Active' }, { v: false, l: 'Inactive' }].map(opt => (
-              <button key={String(opt.v)} type="button" disabled={!canManage} onClick={() => setIsActive(opt.v)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${isActive === opt.v ? '#4F6BED' : '#E5E7EB'}`, background: isActive === opt.v ? '#EEF1FD' : '#fff', cursor: canManage ? 'pointer' : 'not-allowed', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: isActive === opt.v ? '#4F6BED' : '#374151', opacity: canManage ? 1 : 0.6 }}>{opt.l}</button>
+              <button key={String(opt.v)} type="button" disabled={!canManage} onClick={() => setIsActive(opt.v)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${isActive === opt.v ? '#4F6BED' : 'var(--dm-border)'}`, background: isActive === opt.v ? '#EEF1FD' : 'var(--dm-bg-card)', cursor: canManage ? 'pointer' : 'not-allowed', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: isActive === opt.v ? '#4F6BED' : 'var(--dm-text-body)', opacity: canManage ? 1 : 0.6 }}>{opt.l}</button>
             ))}
           </div>
         </div>
@@ -383,14 +383,14 @@ function GroupSettingsTab({ group, ministries, members, canManage, onSaved, init
       </div>
 
       {canManage && (
-        <div style={{ background: '#fff', border: '0.5px solid #FCA5A5', borderRadius: 12, padding: 20 }}>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid #FCA5A5', borderRadius: 12, padding: 20 }}>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#EF4444', marginBottom: 8 }}>Danger Zone</div>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280', marginBottom: 14 }}>Deleting this group will remove all member records from the group.</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 14 }}>Deleting this group will remove all member records from the group.</div>
           {!showDeleteConfirm
-            ? <button onClick={() => setShowDeleteConfirm(true)} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid #FCA5A5', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#EF4444' }} onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>Delete Group</button>
+            ? <button onClick={() => setShowDeleteConfirm(true)} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid #FCA5A5', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#EF4444' }} onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>Delete Group</button>
             : <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151' }}>Are you sure?</span>
-              <button onClick={() => setShowDeleteConfirm(false)} style={{ height: 32, padding: '0 12px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151' }}>Cancel</button>
+              <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)' }}>Are you sure?</span>
+              <button onClick={() => setShowDeleteConfirm(false)} style={{ height: 32, padding: '0 12px', borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)' }}>Cancel</button>
               <button onClick={handleDelete} disabled={deleting} style={{ height: 32, padding: '0 12px', borderRadius: 6, border: 'none', background: '#EF4444', cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#fff' }}>{deleting ? 'Deleting…' : 'Yes, Delete'}</button>
             </div>
           }
@@ -535,7 +535,7 @@ export function GroupDetailPage() {
         <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }`}</style>
         <div style={{ height: 24, width: 200, borderRadius: 4, background: '#F3F4F6', animation: 'pulse 1.4s infinite', marginBottom: 24 }} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 22 }}>
-          {[1,2,3].map(i => <div key={i} style={{ height: 90, borderRadius: 12, background: '#F9FAFB', border: '0.5px solid #E5E7EB' }} />)}
+          {[1,2,3].map(i => <div key={i} style={{ height: 90, borderRadius: 12, background: 'var(--dm-bg-muted)', border: '0.5px solid var(--dm-border)' }} />)}
         </div>
       </>
     )
@@ -566,13 +566,13 @@ export function GroupDetailPage() {
     { key: 'members', label: `Members (${members.length})` },
   ]
 
-  const inputStyle: React.CSSProperties = { height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#111827', background: '#fff', outline: 'none' }
+  const inputStyle: React.CSSProperties = { height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)', outline: 'none' }
 
   return (
     <>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-        .gd-row:hover { background: #FAFBFE !important; }
+        .gd-row:hover { background: var(--dm-bg-muted) !important; }
         .gd-input:focus { border-color: #4F6BED !important; }
       `}</style>
 
@@ -628,26 +628,26 @@ export function GroupDetailPage() {
           <div ref={exportRef} style={{ position: 'relative' }}>
             <button
               onClick={() => setExportOpen(o => !o)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', color: '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, cursor: 'pointer' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--dm-border-strong)')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--dm-border)')}
             >
               <DownloadIcon /> Export
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
             {exportOpen && (
-              <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 50, minWidth: 190, overflow: 'hidden' }}>
-                <button onClick={exportCSV} style={{ display: 'block', width: '100%', padding: '9px 14px', background: 'none', border: 'none', textAlign: 'left', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>Export as CSV</button>
-                <button onClick={exportExcel} style={{ display: 'block', width: '100%', padding: '9px 14px', background: 'none', border: 'none', textAlign: 'left', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>Export as Excel (.xlsx)</button>
+              <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 4, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 50, minWidth: 190, overflow: 'hidden' }}>
+                <button onClick={exportCSV} style={{ display: 'block', width: '100%', padding: '9px 14px', background: 'none', border: 'none', textAlign: 'left', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>Export as CSV</button>
+                <button onClick={exportExcel} style={{ display: 'block', width: '100%', padding: '9px 14px', background: 'none', border: 'none', textAlign: 'left', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>Export as Excel (.xlsx)</button>
               </div>
             )}
           </div>
           {canManage && (
             <button
               onClick={() => setActiveTab('settings')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', color: '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, cursor: 'pointer' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--dm-border-strong)')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--dm-border)')}
             >
               <PencilIcon /> Edit Group
             </button>
@@ -679,7 +679,7 @@ export function GroupDetailPage() {
       {/* ── Members Tab ─────────────────────────────────────────────────────────── */}
       {activeTab === 'members' && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10, padding: 12, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10, padding: 12, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, marginBottom: 16 }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: 11, pointerEvents: 'none', display: 'inline-flex' }}><SearchIcon /></span>
               <input className="gd-input" type="text" placeholder="Search by name or number…" value={memberSearch} onChange={e => setMemberSearch(e.target.value)} style={{ ...inputStyle, width: '100%', paddingLeft: 34, paddingRight: 12 }} />
@@ -692,7 +692,7 @@ export function GroupDetailPage() {
             <button onClick={() => { setMemberSearch(''); setRoleFilter('') }} style={{ ...inputStyle, padding: '0 12px', cursor: 'pointer', color: '#6B7280', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500 }}>Clear</button>
           </div>
 
-          <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
@@ -707,7 +707,7 @@ export function GroupDetailPage() {
                     {members.length === 0 ? 'No members yet — click Add Member to get started' : 'No members match your filters'}
                   </td></tr>
                 ) : filteredMembers.map(gm => (
-                  <tr key={gm.id} className="gd-row" style={{ borderBottom: '0.5px solid #EFF1F7', height: 56, background: '#fff', transition: 'background 0.1s' }}>
+                  <tr key={gm.id} className="gd-row" style={{ borderBottom: '0.5px solid #EFF1F7', height: 56, background: 'var(--dm-bg-card)', transition: 'background 0.1s' }}>
                     <td style={{ padding: '0 18px' }}>
                       {gm.member && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -729,7 +729,7 @@ export function GroupDetailPage() {
                     </td>
                     <td style={{ padding: '0 12px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
-                        <button onClick={() => gm.member && navigate(`/members/${gm.member.id}`)} style={{ width: 26, height: 26, borderRadius: 5, border: '0.5px solid #E5E7EB', background: '#fff', display: 'grid', placeItems: 'center', color: '#6B7280', cursor: 'pointer' }}>
+                        <button onClick={() => gm.member && navigate(`/members/${gm.member.id}`)} style={{ width: 26, height: 26, borderRadius: 5, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', display: 'grid', placeItems: 'center', color: 'var(--dm-text-secondary)', cursor: 'pointer' }}>
                           <ArrowRightIcon />
                         </button>
                         {(canManage || isGroupLeader) && (
@@ -737,7 +737,7 @@ export function GroupDetailPage() {
                             onClick={() => handleRemoveMember(gm.id)}
                             disabled={removingId === gm.id}
                             title="Remove from group"
-                            style={{ width: 26, height: 26, borderRadius: 5, border: '0.5px solid #E5E7EB', background: '#fff', display: 'grid', placeItems: 'center', cursor: removingId === gm.id ? 'not-allowed' : 'pointer', color: '#9CA3AF', fontSize: 16, lineHeight: 1, fontFamily: 'monospace' }}
+                            style={{ width: 26, height: 26, borderRadius: 5, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', display: 'grid', placeItems: 'center', cursor: removingId === gm.id ? 'not-allowed' : 'pointer', color: 'var(--dm-text-muted)', fontSize: 16, lineHeight: 1, fontFamily: 'monospace' }}
                             onMouseEnter={e => { e.currentTarget.style.borderColor = '#FCA5A5'; e.currentTarget.style.color = '#EF4444' }}
                             onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.color = '#9CA3AF' }}
                           >

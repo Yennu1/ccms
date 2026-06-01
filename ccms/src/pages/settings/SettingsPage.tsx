@@ -23,9 +23,9 @@ export function SettingsPage() {
         </p>
       </div>
       <div style={{
-        background: '#fff',
+        background: 'var(--dm-bg-card)',
         borderRadius: 12,
-        border: '0.5px solid #E5E7EB',
+        border: '0.5px solid var(--dm-border)',
         padding: '48px 24px',
         textAlign: 'center',
       }}>

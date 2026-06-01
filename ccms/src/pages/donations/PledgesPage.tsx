@@ -170,9 +170,9 @@ export function PledgesPage() {
   const fulfilledPledges = pledges.filter(p => p.status === 'fulfilled').length
 
   const inputStyle: React.CSSProperties = {
-    height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB',
+    height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827', background: '#fff',
+    fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)',
     outline: 'none', transition: 'border-color 0.15s',
   }
 
@@ -190,11 +190,11 @@ export function PledgesPage() {
     <>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-        .pl-row:hover { background: #FAFBFE !important; }
+        .pl-row:hover { background: var(--dm-bg-muted) !important; }
         .pl-row:hover .pl-actions { opacity: 1 !important; }
         .pl-filter-select:focus { border-color: #4F6BED !important; outline: none; }
         .pl-filter-input:focus { border-color: #4F6BED !important; }
-        .pl-icon:hover { background: #FAFBFE !important; color: #111827 !important; }
+        .pl-icon:hover { background: var(--dm-bg-muted) !important; color: var(--dm-text-ink) !important; }
       `}</style>
 
       {/* Page Header */}
@@ -265,7 +265,7 @@ export function PledgesPage() {
           { label: 'Overdue',        value: loading ? '—' : String(overduePledges),       sub: 'Need follow-up',                                          color: '#EF4444', bgIcon: '#FEE2E2' },
         ].map(c => (
           <div key={c.label} style={{
-            background: '#fff', border: '0.5px solid #E6E8F0',
+            background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
             borderRadius: 12, padding: '16px 18px',
           }}>
             <div style={{
@@ -293,7 +293,7 @@ export function PledgesPage() {
       {/* Filter bar */}
       <div style={{
         display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: 10,
-        padding: 14, background: '#fff', border: '0.5px solid #E5E7EB',
+        padding: 14, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
         borderRadius: 12, marginBottom: 16,
       }}>
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -330,7 +330,7 @@ export function PledgesPage() {
 
       {/* Table */}
       <div style={{
-        background: '#fff', border: '0.5px solid #E5E7EB',
+        background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
         borderRadius: 12, overflow: 'hidden',
       }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -389,7 +389,7 @@ export function PledgesPage() {
                   className="pl-row"
                   style={{
                     borderBottom: '0.5px solid #EFF1F7',
-                    height: 60, background: '#fff',
+                    height: 60, background: 'var(--dm-bg-card)',
                     transition: 'background 0.1s', cursor: 'default',
                   }}
                 >
@@ -451,9 +451,9 @@ export function PledgesPage() {
                         onClick={e => { e.stopPropagation(); navigate(`/donations/pledges/${p.id}/edit`) }}
                         style={{
                           width: 28, height: 28, borderRadius: 6,
-                          border: '0.5px solid #E5E7EB', background: '#fff',
+                          border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
                           display: 'grid', placeItems: 'center',
-                          color: '#6B7280', cursor: 'pointer',
+                          color: 'var(--dm-text-secondary)', cursor: 'pointer',
                           transition: 'all 0.1s',
                         }}
                       >

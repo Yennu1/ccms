@@ -26,6 +26,27 @@
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
+
+    /* ── Dark-mode design tokens (light values) ── */
+    --dm-bg-page: #F4F5F7;          /* Surface — app background */
+    --dm-bg-surface: #FFFFFF;       /* raised surface / table header */
+    --dm-bg-card: #FFFFFF;          /* card */
+    --dm-bg-subtle: #F9FAFB;        /* subtle inset */
+    --dm-bg-muted: #F4F5F7;         /* zebra / hover / muted fill */
+    --dm-bg-tint: #E8ECF9;          /* Mist — brand tint */
+
+    --dm-text-ink: #111827;         /* Ink — headings */
+    --dm-text-body: #374151;        /* body text */
+    --dm-text-secondary: #6B7280;   /* secondary */
+    --dm-text-muted: #9CA3AF;       /* muted / hints */
+
+    --dm-border-subtle: rgba(0,0,0,0.04);
+    --dm-border-soft: rgba(0,0,0,0.08);
+    --dm-border: #E5E7EB;
+    --dm-border-strong: #D1D5DB;
+
+    --dm-chart-tick: #6B7280;       /* axis labels */
+    --dm-chart-grid: #E5E7EB;       /* grid lines */
   }
 
   .dark {
@@ -48,6 +69,27 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
+
+    /* ── Dark-mode design tokens (dark values) ── */
+    --dm-bg-page: #0F1117;          /* deepest — app background */
+    --dm-bg-surface: #1A1F2E;       /* raised surface / table header */
+    --dm-bg-card: #1A1F2E;          /* card */
+    --dm-bg-subtle: #1A1F2E;        /* subtle inset (= surface level) */
+    --dm-bg-muted: #2D3748;         /* zebra / hover / muted fill */
+    --dm-bg-tint: rgba(79,107,237,0.15);  /* Indigo #4F6BED tint */
+
+    --dm-text-ink: #F9FAFB;         /* headings */
+    --dm-text-body: #F9FAFB;        /* body text */
+    --dm-text-secondary: #9CA3AF;   /* secondary */
+    --dm-text-muted: #9CA3AF;       /* muted / hints */
+
+    --dm-border-subtle: rgba(255,255,255,0.05);
+    --dm-border-soft: rgba(255,255,255,0.08);
+    --dm-border: rgba(255,255,255,0.12);
+    --dm-border-strong: rgba(255,255,255,0.18);
+
+    --dm-chart-tick: #9CA3AF;       /* axis labels */
+    --dm-chart-grid: rgba(255,255,255,0.08);  /* grid lines */
   }
 }
 

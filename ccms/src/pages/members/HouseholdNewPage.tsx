@@ -63,13 +63,13 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle: string })
     <div style={{ marginBottom: 20 }}>
       <div style={{
         fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-        fontWeight: 600, fontSize: 14, color: '#111827',
+        fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)',
       }}>
         {title}
       </div>
       <div style={{
         fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-        fontSize: 13, color: '#6B7280', marginTop: 2,
+        fontSize: 13, color: 'var(--dm-text-secondary)', marginTop: 2,
       }}>
         {subtitle}
       </div>
@@ -92,7 +92,7 @@ function FieldWrapper({
     <div>
       <label style={{
         fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-        fontWeight: 500, fontSize: 12, color: '#374151',
+        fontWeight: 500, fontSize: 12, color: 'var(--dm-text-body)',
         display: 'block', marginBottom: 4,
       }}>
         {label}
@@ -154,9 +154,9 @@ function MemberSearchSelect({
 
   const inputBase: React.CSSProperties = {
     width: '100%', height: 38, borderRadius: 8,
-    border: `0.5px solid ${hasError ? '#EF4444' : '#E5E7EB'}`,
+    border: `0.5px solid ${hasError ? '#EF4444' : 'var(--dm-border)'}`,
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827', background: '#fff',
+    fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)',
     outline: 'none', padding: '0 32px 0 10px', boxSizing: 'border-box',
     transition: 'border-color 0.15s, box-shadow 0.15s',
     cursor: 'pointer',
@@ -185,7 +185,7 @@ function MemberSearchSelect({
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
-          background: '#fff', border: '0.5px solid #E5E7EB',
+          background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
           borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
           zIndex: 100, maxHeight: 220, overflowY: 'auto',
           padding: '4px 0',
@@ -198,10 +198,10 @@ function MemberSearchSelect({
               background: 'none', border: 'none', cursor: 'pointer',
               padding: '8px 12px',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontSize: 13, color: '#9CA3AF',
-              borderBottom: '0.5px solid #F3F4F6',
+              fontSize: 13, color: 'var(--dm-text-muted)',
+              borderBottom: '0.5px solid var(--dm-border-subtle)',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
           >
             — None (optional)
@@ -210,7 +210,7 @@ function MemberSearchSelect({
             <div style={{
               padding: '10px 12px',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontSize: 13, color: '#9CA3AF',
+              fontSize: 13, color: 'var(--dm-text-muted)',
             }}>
               No members found
             </div>
@@ -223,16 +223,16 @@ function MemberSearchSelect({
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   width: '100%', textAlign: 'left',
-                  background: m.id === value ? '#F0F2FE' : 'none',
+                  background: m.id === value ? 'var(--dm-bg-tint)' : 'none',
                   border: 'none', cursor: 'pointer',
                   padding: '8px 12px',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
-                onMouseLeave={e => (e.currentTarget.style.background = m.id === value ? '#F0F2FE' : 'none')}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+                onMouseLeave={e => (e.currentTarget.style.background = m.id === value ? 'var(--dm-bg-tint)' : 'none')}
               >
                 <div style={{
                   width: 26, height: 26, borderRadius: '50%',
-                  background: '#E8ECF9', color: '#4F6BED',
+                  background: 'var(--dm-bg-tint)', color: '#4F6BED',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontWeight: 600, fontSize: 10,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -243,14 +243,14 @@ function MemberSearchSelect({
                 <div>
                   <div style={{
                     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                    fontWeight: 500, fontSize: 13, color: '#111827',
+                    fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)',
                   }}>
                     {m.first_name} {m.last_name}
                   </div>
                   {m.member_number && (
                     <div style={{
                       fontFamily: "'IBM Plex Mono', monospace",
-                      fontSize: 11, color: '#9CA3AF',
+                      fontSize: 11, color: 'var(--dm-text-muted)',
                     }}>
                       {m.member_number}
                     </div>
@@ -312,15 +312,15 @@ export function HouseholdNewPage() {
 
   const inputBase = (hasError: boolean): React.CSSProperties => ({
     width: '100%', height: 38, borderRadius: 8,
-    border: `0.5px solid ${hasError ? '#EF4444' : '#E5E7EB'}`,
+    border: `0.5px solid ${hasError ? '#EF4444' : 'var(--dm-border)'}`,
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827', background: '#fff',
+    fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)',
     outline: 'none', padding: '0 10px', boxSizing: 'border-box',
     transition: 'border-color 0.15s, box-shadow 0.15s',
   })
 
   const Divider = () => (
-    <div style={{ height: '0.5px', background: '#F3F4F6', margin: '24px 0' }} />
+    <div style={{ height: '0.5px', background: 'var(--dm-border-subtle)', margin: '24px 0' }} />
   )
 
   const onSubmit = async (data: FormValues) => {
@@ -354,7 +354,7 @@ export function HouseholdNewPage() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         .form-spinner { animation: spin 0.75s linear infinite; }
-        .form-input::placeholder { color: #9CA3AF; }
+        .form-input::placeholder { color: var(--dm-text-muted); }
         .form-input:focus {
           border-color: #4F6BED !important;
           box-shadow: 0 0 0 3px rgba(79,107,237,0.1) !important;
@@ -363,8 +363,8 @@ export function HouseholdNewPage() {
           border-color: #EF4444 !important;
           box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important;
         }
-        .back-btn:hover { background: #F3F4F6 !important; }
-        .cancel-btn:hover { background: #F9FAFB !important; }
+        .back-btn:hover { background: var(--dm-bg-muted) !important; }
+        .cancel-btn:hover { background: var(--dm-bg-muted) !important; }
         @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr !important; } }
       `}</style>
 
@@ -378,7 +378,7 @@ export function HouseholdNewPage() {
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               padding: '4px 6px', borderRadius: 6,
-              color: '#6B7280', display: 'flex', alignItems: 'center',
+              color: 'var(--dm-text-secondary)', display: 'flex', alignItems: 'center',
               transition: 'background 0.1s',
             }}
           >
@@ -386,7 +386,7 @@ export function HouseholdNewPage() {
           </button>
           <h1 style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            fontWeight: 600, fontSize: 20, color: '#111827',
+            fontWeight: 600, fontSize: 20, color: 'var(--dm-text-ink)',
             letterSpacing: '-0.02em', margin: 0,
           }}>
             Add Household
@@ -394,7 +394,7 @@ export function HouseholdNewPage() {
         </div>
         <p style={{
           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-          fontSize: 13, color: '#6B7280', margin: '0 0 0 34px',
+          fontSize: 13, color: 'var(--dm-text-secondary)', margin: '0 0 0 34px',
         }}>
           Create a new family household
         </p>
@@ -403,7 +403,7 @@ export function HouseholdNewPage() {
       {/* Form Card */}
       <form onSubmit={handleSubmit(onSubmit)}>
         <div style={{
-          background: '#fff', border: '0.5px solid #E5E7EB',
+          background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
           borderRadius: 12, padding: 24,
         }}>
 
@@ -510,7 +510,7 @@ export function HouseholdNewPage() {
         {/* ── Sticky Action Bar ── */}
         <div style={{
           position: 'fixed', bottom: 0, left: 220, right: 0,
-          background: '#fff', borderTop: '0.5px solid #E5E7EB',
+          background: 'var(--dm-bg-card)', borderTop: '0.5px solid var(--dm-border)',
           padding: '12px 24px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           zIndex: 10,
@@ -521,10 +521,10 @@ export function HouseholdNewPage() {
             onClick={() => navigate('/households')}
             style={{
               height: 38, padding: '0 16px', borderRadius: 8,
-              border: '0.5px solid #E5E7EB', background: '#fff',
+              border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
               cursor: 'pointer',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 500, fontSize: 13, color: '#374151',
+              fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)',
               transition: 'background 0.1s',
             }}
           >

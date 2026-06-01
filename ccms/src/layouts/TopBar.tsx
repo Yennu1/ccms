@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { ThemeToggle } from '../components/ThemeToggle'
 
 // ─── Breadcrumb logic ─────────────────────────────────────────────────────────
 
@@ -132,8 +133,8 @@ export function TopBar() {
 
       <header style={{
         height: 52,
-        background: '#fff',
-        borderBottom: '0.5px solid rgba(0,0,0,0.08)',
+        background: 'hsl(var(--card))',
+        borderBottom: '0.5px solid hsl(var(--border))',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -147,7 +148,7 @@ export function TopBar() {
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
             fontWeight: 400,
             fontSize: 13,
-            color: '#9CA3AF',
+            color: 'hsl(var(--muted-foreground))',
           }}>
             {orgName}
           </span>
@@ -167,7 +168,7 @@ export function TopBar() {
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontWeight: crumb.isLast ? 600 : 400,
                 fontSize: 13,
-                color: crumb.isLast ? '#111827' : '#9CA3AF',
+                color: crumb.isLast ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))',
               }}>
                 {crumb.label}
               </span>
@@ -182,9 +183,9 @@ export function TopBar() {
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <svg
               width="15" height="15" viewBox="0 0 16 16" fill="none"
-              style={{ position: 'absolute', left: 10, pointerEvents: 'none', flexShrink: 0 }}
+              style={{ position: 'absolute', left: 10, pointerEvents: 'none', flexShrink: 0, color: 'hsl(var(--muted-foreground))' }}
             >
-              <path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10ZM14 14l-2.9-2.9" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10ZM14 14l-2.9-2.9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             <input
               className="topbar-search"
@@ -194,11 +195,11 @@ export function TopBar() {
                 width: 280,
                 height: 34,
                 borderRadius: 8,
-                border: '0.5px solid #E5E7EB',
-                background: '#F9FAFB',
+                border: '0.5px solid hsl(var(--border))',
+                background: 'hsl(var(--muted))',
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontSize: 13,
-                color: '#111827',
+                color: 'hsl(var(--foreground))',
                 paddingLeft: 32,
                 paddingRight: 40,
                 boxSizing: 'border-box',
@@ -212,12 +213,15 @@ export function TopBar() {
               pointerEvents: 'none',
               fontFamily: "'IBM Plex Mono', monospace",
               fontSize: 11,
-              color: '#9CA3AF',
+              color: 'hsl(var(--muted-foreground))',
               letterSpacing: '0.02em',
             }}>
               ⌘K
             </span>
           </div>
+
+          {/* Theme toggle */}
+          <ThemeToggle />
 
           {/* Help icon */}
           <button

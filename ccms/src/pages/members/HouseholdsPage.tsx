@@ -87,7 +87,7 @@ function Avatar({ firstName, lastName }: { firstName: string; lastName: string }
   return (
     <div style={{
       width: 30, height: 30, borderRadius: '50%',
-      background: '#E8ECF9', color: '#4F6BED',
+      background: 'var(--dm-bg-tint)', color: '#4F6BED',
       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
       fontWeight: 600, fontSize: 11,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -100,7 +100,7 @@ function Avatar({ firstName, lastName }: { firstName: string; lastName: string }
 
 function SkeletonRow() {
   const pulse: React.CSSProperties = {
-    background: 'linear-gradient(90deg, #F3F4F6 25%, #E9EAEC 50%, #F3F4F6 75%)',
+    background: 'linear-gradient(90deg, var(--dm-bg-muted) 25%, var(--dm-bg-surface) 50%, var(--dm-bg-muted) 75%)',
     backgroundSize: '200% 100%',
     animation: 'skeleton-pulse 1.4s ease infinite',
     borderRadius: 4,
@@ -137,18 +137,18 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           justifyContent: 'center', padding: 80, gap: 12,
         }}>
-          <div style={{ color: '#E5E7EB' }}>
+          <div style={{ color: 'var(--dm-border)' }}>
             <HouseIcon size={48} />
           </div>
           <div style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            fontWeight: 600, fontSize: 16, color: '#111827',
+            fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)',
           }}>
             No households yet
           </div>
           <div style={{
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontSize: 13, color: '#9CA3AF',
+            fontSize: 13, color: 'var(--dm-text-muted)',
           }}>
             Group your members into family units
           </div>
@@ -264,17 +264,17 @@ export function HouseholdsPage() {
     padding: '12px 16px',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
     fontWeight: 500, fontSize: 11,
-    color: '#9CA3AF', textTransform: 'uppercase',
+    color: 'var(--dm-text-muted)', textTransform: 'uppercase',
     letterSpacing: '0.06em', textAlign: 'left',
-    borderBottom: '0.5px solid #E5E7EB',
-    background: '#F9FAFB', whiteSpace: 'nowrap',
+    borderBottom: '0.5px solid var(--dm-border)',
+    background: 'var(--dm-bg-muted)', whiteSpace: 'nowrap',
   }
 
   const inputStyle: React.CSSProperties = {
-    height: 38, borderRadius: 8, border: '0.5px solid #E5E7EB',
+    height: 38, borderRadius: 8, border: '0.5px solid var(--dm-border)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827',
-    background: '#fff', outline: 'none',
+    fontSize: 13, color: 'var(--dm-text-ink)',
+    background: 'var(--dm-bg-card)', outline: 'none',
     transition: 'border-color 0.15s',
   }
 
@@ -293,7 +293,7 @@ export function HouseholdsPage() {
           0%   { background-position: 200% 0; }
           100% { background-position: -200% 0; }
         }
-        .hh-row:hover { background: #F9FAFB !important; }
+        .hh-row:hover { background: var(--dm-bg-muted) !important; }
         .hh-row:hover .row-arrow { opacity: 1 !important; }
         .filter-input:focus { border-color: #4F6BED !important; }
         .filter-select:focus { border-color: #4F6BED !important; outline: none; }
@@ -304,14 +304,14 @@ export function HouseholdsPage() {
         <div>
           <h1 style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            fontWeight: 600, fontSize: 20, color: '#111827',
+            fontWeight: 600, fontSize: 20, color: 'var(--dm-text-ink)',
             letterSpacing: '-0.02em', margin: 0,
           }}>
             Households
           </h1>
           <p style={{
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontSize: 13, color: '#6B7280', marginTop: 4, marginBottom: 0,
+            fontSize: 13, color: 'var(--dm-text-secondary)', marginTop: 4, marginBottom: 0,
           }}>
             {loading
               ? 'Loading…'
@@ -336,18 +336,18 @@ export function HouseholdsPage() {
       {/* Tab Navigation */}
       <div style={{
         display: 'flex', alignItems: 'center',
-        borderBottom: '0.5px solid #E5E7EB',
+        borderBottom: '0.5px solid var(--dm-border)',
         marginBottom: 16,
       }}>
         <button
           onClick={() => navigate('/members')}
           style={{
             ...tabBase,
-            color: '#6B7280',
+            color: 'var(--dm-text-secondary)',
             borderBottom: '2px solid transparent',
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#374151')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#6B7280')}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--dm-text-body)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--dm-text-secondary)')}
         >
           All Members
         </button>
@@ -364,7 +364,7 @@ export function HouseholdsPage() {
 
       {/* Filter Bar */}
       <div style={{
-        background: '#fff', border: '0.5px solid #E5E7EB',
+        background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
         borderRadius: 12, padding: '12px 16px', marginBottom: 16,
         display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
       }}>
@@ -421,7 +421,7 @@ export function HouseholdsPage() {
 
       {/* Table Card */}
       <div style={{
-        background: '#fff', border: '0.5px solid #E5E7EB',
+        background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
         borderRadius: 12, overflow: 'hidden',
       }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -446,8 +446,8 @@ export function HouseholdsPage() {
                   className="hh-row"
                   onClick={() => navigate(`/members/households/${household.id}`)}
                   style={{
-                    borderBottom: '0.5px solid #F3F4F6',
-                    height: 60, background: '#fff',
+                    borderBottom: '0.5px solid var(--dm-border-subtle)',
+                    height: 60, background: 'var(--dm-bg-card)',
                     transition: 'background 0.1s',
                     cursor: 'pointer',
                   }}
@@ -457,7 +457,7 @@ export function HouseholdsPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{
                         width: 32, height: 32, borderRadius: 8,
-                        background: '#F0F1F7', color: '#4F6BED',
+                        background: 'var(--dm-bg-tint)', color: '#4F6BED',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         flexShrink: 0,
                       }}>
@@ -466,7 +466,7 @@ export function HouseholdsPage() {
                       <div>
                         <div style={{
                           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontWeight: 500, fontSize: 14, color: '#111827',
+                          fontWeight: 500, fontSize: 14, color: 'var(--dm-text-ink)',
                           lineHeight: 1.3,
                         }}>
                           {household.name}
@@ -474,7 +474,7 @@ export function HouseholdsPage() {
                         {(household.address || household.city) && (
                           <div style={{
                             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                            fontSize: 12, color: '#9CA3AF', marginTop: 2,
+                            fontSize: 12, color: 'var(--dm-text-muted)', marginTop: 2,
                           }}>
                             {[household.address, household.city].filter(Boolean).join(' · ')}
                           </div>
@@ -493,7 +493,7 @@ export function HouseholdsPage() {
                         />
                         <span style={{
                           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontSize: 13, color: '#374151',
+                          fontSize: 13, color: 'var(--dm-text-body)',
                         }}>
                           {household.head_member.first_name} {household.head_member.last_name}
                         </span>
@@ -501,7 +501,7 @@ export function HouseholdsPage() {
                     ) : (
                       <span style={{
                         fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                        fontSize: 13, color: '#9CA3AF',
+                        fontSize: 13, color: 'var(--dm-text-muted)',
                       }}>
                         —
                       </span>
@@ -511,7 +511,7 @@ export function HouseholdsPage() {
                   {/* Members count */}
                   <td style={{ padding: '0 16px' }}>
                     <span style={{
-                      background: '#E8ECF9', color: '#4F6BED',
+                      background: 'var(--dm-bg-tint)', color: '#4F6BED',
                       borderRadius: 5, padding: '2px 8px',
                       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                       fontWeight: 500, fontSize: 12,
@@ -525,7 +525,7 @@ export function HouseholdsPage() {
                   <td style={{ padding: '0 16px' }}>
                     <span style={{
                       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                      fontSize: 13, color: '#374151',
+                      fontSize: 13, color: 'var(--dm-text-body)',
                     }}>
                       {household.branches?.name ?? '—'}
                     </span>
@@ -536,7 +536,7 @@ export function HouseholdsPage() {
                     <span
                       className="row-arrow"
                       style={{
-                        color: '#9CA3AF',
+                        color: 'var(--dm-text-muted)',
                         opacity: 0,
                         transition: 'opacity 0.1s',
                         display: 'flex',
@@ -556,11 +556,11 @@ export function HouseholdsPage() {
         {!loading && sorted.length > 0 && (
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '12px 16px', borderTop: '0.5px solid #E5E7EB',
+            padding: '12px 16px', borderTop: '0.5px solid var(--dm-border)',
           }}>
             <span style={{
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontSize: 13, color: '#6B7280',
+              fontSize: 13, color: 'var(--dm-text-secondary)',
             }}>
               Showing {Math.min((page - 1) * PAGE_SIZE + 1, sorted.length)}–{Math.min(page * PAGE_SIZE, sorted.length)} of {sorted.length} households
             </span>
@@ -570,9 +570,9 @@ export function HouseholdsPage() {
                 disabled={page === 1}
                 style={{
                   height: 38, padding: '0 14px', borderRadius: 8,
-                  border: '0.5px solid #E5E7EB', background: '#fff',
+                  border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
                   cursor: page === 1 ? 'not-allowed' : 'pointer',
-                  color: page === 1 ? '#D1D5DB' : '#374151',
+                  color: page === 1 ? 'var(--dm-text-muted)' : 'var(--dm-text-body)',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontSize: 13, display: 'flex', alignItems: 'center', gap: 4,
                 }}
@@ -584,9 +584,9 @@ export function HouseholdsPage() {
                 disabled={page === totalPages}
                 style={{
                   height: 38, padding: '0 14px', borderRadius: 8,
-                  border: '0.5px solid #E5E7EB', background: '#fff',
+                  border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
                   cursor: page === totalPages ? 'not-allowed' : 'pointer',
-                  color: page === totalPages ? '#D1D5DB' : '#374151',
+                  color: page === totalPages ? 'var(--dm-text-muted)' : 'var(--dm-text-body)',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontSize: 13, display: 'flex', alignItems: 'center', gap: 4,
                 }}

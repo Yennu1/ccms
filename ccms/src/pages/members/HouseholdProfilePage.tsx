@@ -46,8 +46,8 @@ const STATUS_STYLES: Record<MemberStatus, { bg: string; color: string; label: st
 }
 
 const cardStyle: React.CSSProperties = {
-  background: '#fff',
-  border: '0.5px solid #E5E7EB',
+  background: 'var(--dm-bg-card)',
+  border: '0.5px solid var(--dm-border)',
   borderRadius: 12,
   padding: 24,
 }
@@ -56,10 +56,10 @@ const cardHeaderStyle: React.CSSProperties = {
   fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
   fontWeight: 600,
   fontSize: 14,
-  color: '#111827',
+  color: 'var(--dm-text-ink)',
   marginBottom: 16,
   paddingBottom: 12,
-  borderBottom: '0.5px solid #F3F4F6',
+  borderBottom: '0.5px solid var(--dm-border-subtle)',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@ function Avatar({ firstName, lastName, size = 36 }: { firstName: string; lastNam
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
-      background: '#E8ECF9', color: '#4F6BED',
+      background: 'var(--dm-bg-tint)', color: '#4F6BED',
       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
       fontWeight: 600, fontSize: Math.floor(size * 0.34),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -144,7 +144,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div style={{ marginBottom: 16 }}>
       <div style={{
         fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-        fontWeight: 500, fontSize: 11, color: '#9CA3AF',
+        fontWeight: 500, fontSize: 11, color: 'var(--dm-text-muted)',
         textTransform: 'uppercase', letterSpacing: '0.06em',
         marginBottom: 4,
       }}>
@@ -152,7 +152,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       </div>
       <div style={{
         fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-        fontWeight: 400, fontSize: 14, color: '#111827',
+        fontWeight: 400, fontSize: 14, color: 'var(--dm-text-ink)',
       }}>
         {children}
       </div>
@@ -164,7 +164,7 @@ function SkeletonBar({ width, height = 14 }: { width: number | string; height?: 
   return (
     <div style={{
       width, height, borderRadius: 4,
-      background: '#E5E7EB',
+      background: 'var(--dm-bg-muted)',
       animation: 'pulse 1.4s ease-in-out infinite',
     }} />
   )
@@ -201,7 +201,7 @@ function LoadingSkeleton() {
           <div style={cardStyle}>
             <SkeletonBar width={140} height={14} />
             <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#E5E7EB' }} />
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--dm-bg-muted)' }} />
               <div>
                 <SkeletonBar width={120} height={14} />
                 <div style={{ marginTop: 6 }}><SkeletonBar width={80} height={11} /></div>
@@ -232,13 +232,13 @@ function NotFound() {
       <div style={{ color: '#E5E7EB' }}><HouseIcon /></div>
       <div style={{
         fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-        fontWeight: 600, fontSize: 18, color: '#111827',
+        fontWeight: 600, fontSize: 18, color: 'var(--dm-text-ink)',
       }}>
         Household not found
       </div>
       <div style={{
         fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-        fontSize: 13, color: '#6B7280',
+        fontSize: 13, color: 'var(--dm-text-secondary)',
       }}>
         This household may have been removed.
       </div>
@@ -302,9 +302,9 @@ function MemberSearchSelect({
 
   const inputStyle: React.CSSProperties = {
     width: '100%', height: 38, borderRadius: 8,
-    border: '0.5px solid #E5E7EB',
+    border: '0.5px solid var(--dm-border)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827', background: '#fff',
+    fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)',
     outline: 'none', padding: '0 32px 0 10px', boxSizing: 'border-box',
     transition: 'border-color 0.15s',
     cursor: 'pointer',
@@ -332,7 +332,7 @@ function MemberSearchSelect({
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
-          background: '#fff', border: '0.5px solid #E5E7EB',
+          background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
           borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
           zIndex: 200, maxHeight: 200, overflowY: 'auto',
           padding: '4px 0',
@@ -341,7 +341,7 @@ function MemberSearchSelect({
             <div style={{
               padding: '10px 12px',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontSize: 13, color: '#9CA3AF',
+              fontSize: 13, color: 'var(--dm-text-muted)',
             }}>
               No members found
             </div>
@@ -354,16 +354,16 @@ function MemberSearchSelect({
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   width: '100%', textAlign: 'left',
-                  background: m.id === value ? '#F0F2FE' : 'none',
+                  background: m.id === value ? 'var(--dm-bg-tint)' : 'none',
                   border: 'none', cursor: 'pointer',
                   padding: '8px 12px',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
-                onMouseLeave={e => (e.currentTarget.style.background = m.id === value ? '#F0F2FE' : 'none')}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+                onMouseLeave={e => (e.currentTarget.style.background = m.id === value ? 'var(--dm-bg-tint)' : 'none')}
               >
                 <div style={{
                   width: 26, height: 26, borderRadius: '50%',
-                  background: '#E8ECF9', color: '#4F6BED',
+                  background: 'var(--dm-bg-tint)', color: '#4F6BED',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontWeight: 600, fontSize: 10,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -374,14 +374,14 @@ function MemberSearchSelect({
                 <div>
                   <div style={{
                     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                    fontWeight: 500, fontSize: 13, color: '#111827',
+                    fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)',
                   }}>
                     {m.first_name} {m.last_name}
                   </div>
                   {m.member_number && (
                     <div style={{
                       fontFamily: "'IBM Plex Mono', monospace",
-                      fontSize: 11, color: '#9CA3AF',
+                      fontSize: 11, color: 'var(--dm-text-muted)',
                     }}>
                       {m.member_number}
                     </div>
@@ -460,35 +460,35 @@ function AddMemberModal({
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div style={{
-        background: '#fff', borderRadius: 12,
-        border: '0.5px solid #E5E7EB',
+        background: 'var(--dm-bg-card)', borderRadius: 12,
+        border: '0.5px solid var(--dm-border)',
         padding: 24, width: 460, maxWidth: '90vw',
         boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
       }}>
         <div style={{
           fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-          fontWeight: 600, fontSize: 16, color: '#111827',
+          fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)',
           marginBottom: 6,
         }}>
           Add Member to Household
         </div>
         <div style={{
           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-          fontSize: 13, color: '#6B7280', marginBottom: 20,
+          fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 20,
         }}>
           Select an active member without an existing household assignment.
         </div>
 
         {loading ? (
           <div style={{
-            height: 38, background: '#F3F4F6', borderRadius: 8,
+            height: 38, background: 'var(--dm-bg-muted)', borderRadius: 8,
             animation: 'pulse 1.4s ease-in-out infinite',
           }} />
         ) : availableMembers.length === 0 ? (
           <div style={{
             height: 38, display: 'flex', alignItems: 'center',
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontSize: 13, color: '#9CA3AF',
+            fontSize: 13, color: 'var(--dm-text-muted)',
           }}>
             No available members to add.
           </div>
@@ -509,13 +509,13 @@ function AddMemberModal({
             onClick={onClose}
             style={{
               height: 36, padding: '0 16px', borderRadius: 8,
-              border: '0.5px solid #E5E7EB', background: '#fff',
+              border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
               cursor: 'pointer',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 500, fontSize: 13, color: '#374151',
+              fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
           >
             Cancel
           </button>
@@ -585,21 +585,21 @@ function AssignHeadModal({
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div style={{
-        background: '#fff', borderRadius: 12,
-        border: '0.5px solid #E5E7EB',
+        background: 'var(--dm-bg-card)', borderRadius: 12,
+        border: '0.5px solid var(--dm-border)',
         padding: 24, width: 460, maxWidth: '90vw',
         boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
       }}>
         <div style={{
           fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-          fontWeight: 600, fontSize: 16, color: '#111827',
+          fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)',
           marginBottom: 6,
         }}>
           {household.head_member ? 'Change Head of Household' : 'Assign Head of Household'}
         </div>
         <div style={{
           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-          fontSize: 13, color: '#6B7280', marginBottom: 20,
+          fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 20,
         }}>
           Select a member from this household to be the head.
         </div>
@@ -607,7 +607,7 @@ function AssignHeadModal({
         {householdMembers.length === 0 ? (
           <div style={{
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontSize: 13, color: '#9CA3AF',
+            fontSize: 13, color: 'var(--dm-text-muted)',
           }}>
             Add members to this household first.
           </div>
@@ -628,13 +628,13 @@ function AssignHeadModal({
             onClick={onClose}
             style={{
               height: 36, padding: '0 16px', borderRadius: 8,
-              border: '0.5px solid #E5E7EB', background: '#fff',
+              border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
               cursor: 'pointer',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 500, fontSize: 13, color: '#374151',
+              fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
           >
             Cancel
           </button>
@@ -786,17 +786,17 @@ export function HouseholdProfilePage() {
             onClick={() => navigate('/households')}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              color: '#6B7280', display: 'flex', alignItems: 'center',
+              color: 'var(--dm-text-secondary)', display: 'flex', alignItems: 'center',
               padding: 4, borderRadius: 6, transition: 'color 0.15s',
             }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#111827')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#6B7280')}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--dm-text-ink)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--dm-text-secondary)')}
           >
             <BackArrowIcon />
           </button>
           <h1 style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            fontWeight: 600, fontSize: 20, color: '#111827',
+            fontWeight: 600, fontSize: 20, color: 'var(--dm-text-ink)',
             letterSpacing: '-0.02em', margin: 0,
           }}>
             {household.name}
@@ -808,14 +808,14 @@ export function HouseholdProfilePage() {
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             height: 38, padding: '0 14px', borderRadius: 8,
-            border: '0.5px solid #E5E7EB', background: '#fff',
-            cursor: 'pointer', color: '#374151',
+            border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
+            cursor: 'pointer', color: 'var(--dm-text-body)',
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
             fontWeight: 500, fontSize: 13,
             transition: 'border-color 0.15s',
           }}
           onMouseEnter={e => (e.currentTarget.style.borderColor = '#4F6BED')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--dm-border)')}
         >
           Edit
         </button>
@@ -842,17 +842,17 @@ export function HouseholdProfilePage() {
           <div style={cardStyle}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              marginBottom: 16, paddingBottom: 12, borderBottom: '0.5px solid #F3F4F6',
+              marginBottom: 16, paddingBottom: 12, borderBottom: '0.5px solid var(--dm-border-subtle)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{
                   fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-                  fontWeight: 600, fontSize: 14, color: '#111827',
+                  fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)',
                 }}>
                   Members
                 </span>
                 <span style={{
-                  background: '#E8ECF9', color: '#4F6BED',
+                  background: 'var(--dm-bg-tint)', color: '#4F6BED',
                   borderRadius: 5, padding: '2px 8px',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontWeight: 500, fontSize: 12,
@@ -865,7 +865,7 @@ export function HouseholdProfilePage() {
             {(!household.members || household.members.length === 0) ? (
               <div style={{
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontSize: 13, color: '#9CA3AF',
+                fontSize: 13, color: 'var(--dm-text-muted)',
                 textAlign: 'center', padding: '24px 0',
               }}>
                 No members assigned yet
@@ -878,7 +878,7 @@ export function HouseholdProfilePage() {
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '10px 0',
-                      borderBottom: i < (household.members!.length - 1) ? '0.5px solid #F3F4F6' : 'none',
+                      borderBottom: i < (household.members!.length - 1) ? '0.5px solid var(--dm-border-subtle)' : 'none',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -886,7 +886,7 @@ export function HouseholdProfilePage() {
                       <div>
                         <div style={{
                           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontWeight: 500, fontSize: 14, color: '#111827',
+                          fontWeight: 500, fontSize: 14, color: 'var(--dm-text-ink)',
                           display: 'flex', alignItems: 'center', gap: 8,
                         }}>
                           {member.first_name} {member.last_name}
@@ -905,7 +905,7 @@ export function HouseholdProfilePage() {
                           {member.member_number && (
                             <span style={{
                               fontFamily: "'IBM Plex Mono', monospace",
-                              fontSize: 11, color: '#9CA3AF',
+                              fontSize: 11, color: 'var(--dm-text-muted)',
                             }}>
                               {member.member_number}
                             </span>
@@ -925,7 +925,7 @@ export function HouseholdProfilePage() {
                         transition: 'background 0.1s',
                         flexShrink: 0,
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                     >
                       {removingId === member.id ? 'Removing…' : 'Remove'}
@@ -940,11 +940,11 @@ export function HouseholdProfilePage() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 marginTop: 16, background: 'none',
-                border: '0.5px dashed #D1D5DB', borderRadius: 8,
+                border: '0.5px dashed var(--dm-border-strong)', borderRadius: 8,
                 cursor: 'pointer', width: '100%',
                 height: 38, justifyContent: 'center',
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontWeight: 500, fontSize: 13, color: '#6B7280',
+                fontWeight: 500, fontSize: 13, color: 'var(--dm-text-secondary)',
                 transition: 'border-color 0.15s, color 0.15s',
               }}
               onMouseEnter={e => {
@@ -952,8 +952,8 @@ export function HouseholdProfilePage() {
                 e.currentTarget.style.color = '#4F6BED'
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.borderColor = '#D1D5DB'
-                e.currentTarget.style.color = '#6B7280'
+                e.currentTarget.style.borderColor = 'var(--dm-border-strong)'
+                e.currentTarget.style.color = 'var(--dm-text-secondary)'
               }}
             >
               <PlusIcon /> Add Member to Household
@@ -968,7 +968,7 @@ export function HouseholdProfilePage() {
           <div style={cardStyle}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              marginBottom: 16, paddingBottom: 12, borderBottom: '0.5px solid #F3F4F6',
+              marginBottom: 16, paddingBottom: 12, borderBottom: '0.5px solid var(--dm-border-subtle)',
             }}>
               <div style={{ ...cardHeaderStyle, marginBottom: 0, paddingBottom: 0, borderBottom: 'none' }}>
                 Head of Household
@@ -999,14 +999,14 @@ export function HouseholdProfilePage() {
                 <div>
                   <div style={{
                     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                    fontWeight: 500, fontSize: 14, color: '#111827',
+                    fontWeight: 500, fontSize: 14, color: 'var(--dm-text-ink)',
                   }}>
                     {household.head_member.first_name} {household.head_member.last_name}
                   </div>
                   {household.head_member.member_number && (
                     <div style={{
                       fontFamily: "'IBM Plex Mono', monospace",
-                      fontSize: 12, color: '#9CA3AF', marginTop: 2,
+                      fontSize: 12, color: 'var(--dm-text-muted)', marginTop: 2,
                     }}>
                       {household.head_member.member_number}
                     </div>
@@ -1017,7 +1017,7 @@ export function HouseholdProfilePage() {
               <div>
                 <div style={{
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                  fontSize: 13, color: '#9CA3AF', marginBottom: 12,
+                  fontSize: 13, color: 'var(--dm-text-muted)', marginBottom: 12,
                 }}>
                   No head assigned
                 </div>
@@ -1026,13 +1026,13 @@ export function HouseholdProfilePage() {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
                     height: 34, padding: '0 12px', borderRadius: 8,
-                    border: '0.5px solid #E5E7EB', background: '#fff',
+                    border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
                     cursor: 'pointer',
                     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                    fontWeight: 500, fontSize: 13, color: '#374151',
+                    fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)',
                   }}
                   onMouseEnter={e => (e.currentTarget.style.borderColor = '#4F6BED')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--dm-border)')}
                 >
                   <PlusIcon /> Assign Head
                 </button>
@@ -1048,19 +1048,19 @@ export function HouseholdProfilePage() {
               onClick={() => navigate(`/households/${household.id}/edit`)}
               style={{
                 display: 'block', width: '100%', height: 38,
-                borderRadius: 8, border: '0.5px solid #E5E7EB',
-                background: '#fff', cursor: 'pointer',
+                borderRadius: 8, border: '0.5px solid var(--dm-border)',
+                background: 'var(--dm-bg-card)', cursor: 'pointer',
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontWeight: 500, fontSize: 13, color: '#374151',
+                fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)',
                 marginBottom: 8, transition: 'border-color 0.15s',
               }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--dm-border-strong)')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--dm-border)')}
             >
               Edit Household
             </button>
 
-            <div style={{ height: '0.5px', background: '#F3F4F6', margin: '8px 0' }} />
+            <div style={{ height: '0.5px', background: 'var(--dm-border-subtle)', margin: '8px 0' }} />
 
             {showDeleteConfirm ? (
               <div style={{
@@ -1092,10 +1092,10 @@ export function HouseholdProfilePage() {
                     onClick={() => setShowDeleteConfirm(false)}
                     style={{
                       flex: 1, height: 34, borderRadius: 8,
-                      border: '0.5px solid #E5E7EB', background: '#fff',
+                      border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
                       cursor: 'pointer',
                       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                      fontWeight: 500, fontSize: 13, color: '#374151',
+                      fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)',
                     }}
                   >
                     Cancel
@@ -1108,13 +1108,13 @@ export function HouseholdProfilePage() {
                 style={{
                   display: 'block', width: '100%', height: 38,
                   borderRadius: 8, border: '0.5px solid #FCA5A5',
-                  background: '#fff', cursor: 'pointer',
+                  background: 'var(--dm-bg-card)', cursor: 'pointer',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontWeight: 500, fontSize: 13, color: '#EF4444',
                   transition: 'background 0.15s',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F5')}
-                onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
               >
                 Delete Household
               </button>

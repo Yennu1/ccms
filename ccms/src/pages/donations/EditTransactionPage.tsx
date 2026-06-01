@@ -193,27 +193,27 @@ export function EditTransactionPage() {
   // ─── Styles ────────────────────────────────────────────────────────────────
 
   const card: React.CSSProperties = {
-    background: '#fff', border: '0.5px solid #E5E7EB',
+    background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
     borderRadius: 12, padding: 20, marginBottom: 16,
   }
 
   const sectionLabel: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
     fontWeight: 600, fontSize: 11, textTransform: 'uppercase',
-    letterSpacing: '0.12em', color: '#9CA3AF', marginBottom: 14,
+    letterSpacing: '0.12em', color: 'var(--dm-text-muted)', marginBottom: 14,
   }
 
   const fieldLabel: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 12, fontWeight: 500, color: '#374151',
+    fontSize: 12, fontWeight: 500, color: 'var(--dm-text-body)',
     display: 'block', marginBottom: 6,
   }
 
   const inputBase: React.CSSProperties = {
     width: '100%', height: 38, borderRadius: 8,
-    border: '0.5px solid #E5E7EB', background: '#fff',
+    border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827', padding: '0 12px',
+    fontSize: 13, color: 'var(--dm-text-ink)', padding: '0 12px',
     boxSizing: 'border-box', outline: 'none',
     transition: 'border-color 0.15s',
   }
@@ -242,8 +242,8 @@ export function EditTransactionPage() {
         .et-select:focus { border-color: #4F6BED !important; outline: none; }
         .cat-pill:hover { opacity: 0.8; }
         .method-pill:hover { opacity: 0.85; }
-        .member-result:hover { background: #F4F5F7 !important; }
-        .et-action-btn:hover { background: #F4F5F7 !important; }
+        .member-result:hover { background: var(--dm-bg-muted) !important; }
+        .et-action-btn:hover { background: var(--dm-bg-muted) !important; }
       `}</style>
 
       {/* Page Header */}
@@ -252,9 +252,9 @@ export function EditTransactionPage() {
           onClick={() => navigate(`/donations/${id}`)}
           style={{
             width: 32, height: 32, borderRadius: 8,
-            border: '0.5px solid #E5E7EB', background: '#fff',
+            border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
             display: 'grid', placeItems: 'center',
-            cursor: 'pointer', color: '#6B7280', flexShrink: 0,
+            cursor: 'pointer', color: 'var(--dm-text-secondary)', flexShrink: 0,
           }}
           aria-label="Back"
         >
@@ -391,7 +391,7 @@ export function EditTransactionPage() {
                       {memberDropdownOpen && filteredMembers.length > 0 && (
                         <div style={{
                           position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-                          background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8,
+                          background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 8,
                           boxShadow: '0 4px 16px rgba(0,0,0,0.08)', marginTop: 4, overflow: 'hidden',
                           maxHeight: 240, overflowY: 'auto',
                         }}>
@@ -406,7 +406,7 @@ export function EditTransactionPage() {
                               }}
                               style={{
                                 display: 'flex', alignItems: 'center', gap: 10,
-                                padding: '10px 12px', cursor: 'pointer', background: '#fff',
+                                padding: '10px 12px', cursor: 'pointer', background: 'var(--dm-bg-card)',
                               }}
                             >
                               <div style={{
@@ -504,7 +504,7 @@ export function EditTransactionPage() {
                     style={{
                       height: 38, borderRadius: 8, cursor: 'pointer',
                       border: selectedMethod === m ? '1.5px solid #4F6BED' : '1.5px solid #E5E7EB',
-                      background: selectedMethod === m ? '#EEF1FE' : '#fff',
+                      background: selectedMethod === m ? '#EEF1FE' : 'var(--dm-bg-card)',
                       color: selectedMethod === m ? '#4F6BED' : '#6B7280',
                       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                       fontWeight: 600, fontSize: 12.5, transition: 'all 0.12s',
@@ -594,7 +594,7 @@ export function EditTransactionPage() {
             }}>
               <div style={sectionLabel}>Preview</div>
               <div style={{
-                background: '#fff', border: '0.5px solid #E5E7EB',
+                background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
                 borderRadius: 10, overflow: 'hidden',
               }}>
                 <div style={{ padding: '14px 16px', borderBottom: '1px dashed #E5E7EB' }}>
@@ -660,7 +660,7 @@ export function EditTransactionPage() {
         {/* Sticky Save Bar */}
         <div style={{
           position: 'fixed', bottom: 0, left: 220, right: 0,
-          background: '#fff', borderTop: '0.5px solid #E5E7EB',
+          background: 'var(--dm-bg-card)', borderTop: '0.5px solid var(--dm-border)',
           padding: '12px 32px',
           display: 'flex', alignItems: 'center', gap: 12,
           zIndex: 100,
@@ -677,9 +677,9 @@ export function EditTransactionPage() {
             onClick={() => navigate(`/donations/${id}`)}
             style={{
               height: 36, padding: '0 16px', borderRadius: 8,
-              border: '0.5px solid #E5E7EB', background: '#fff',
+              border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 600, fontSize: 13, color: '#374151', cursor: 'pointer',
+              fontWeight: 600, fontSize: 13, color: 'var(--dm-text-body)', cursor: 'pointer',
               transition: 'background 0.12s',
             }}
           >

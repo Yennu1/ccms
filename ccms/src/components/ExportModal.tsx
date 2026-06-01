@@ -73,13 +73,13 @@ function ExportOption({ icon, label, sub, loading, onClick }: {
       disabled={loading}
       style={{
         display: 'flex', alignItems: 'center', gap: 12, width: '100%',
-        padding: '11px 14px', borderRadius: 8, border: '0.5px solid #E5E7EB',
-        background: '#fff', cursor: loading ? 'not-allowed' : 'pointer',
+        padding: '11px 14px', borderRadius: 8, border: '0.5px solid var(--dm-border)',
+        background: 'var(--dm-bg-card)', cursor: loading ? 'not-allowed' : 'pointer',
         textAlign: 'left', transition: 'background 0.1s, border-color 0.1s',
         opacity: loading ? 0.7 : 1,
       }}
-      onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.borderColor = '#D1D5DB' } }}
-      onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#E5E7EB' }}
+      onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = 'var(--dm-bg-muted)'; e.currentTarget.style.borderColor = 'var(--dm-border-strong)' } }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'var(--dm-bg-card)'; e.currentTarget.style.borderColor = 'var(--dm-border)' }}
     >
       <div style={{ flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -151,11 +151,11 @@ export function ExportModal({ title, columns, rows, filename, onClose }: ExportM
         onClick={onClose}
       >
         <div
-          style={{ background: '#fff', borderRadius: 12, padding: 24, width: 380, border: '0.5px solid #E5E7EB', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
+          style={{ background: 'var(--dm-bg-card)', borderRadius: 12, padding: 24, width: 380, border: '0.5px solid var(--dm-border)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
           onClick={e => e.stopPropagation()}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <span style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 15, color: '#111827' }}>
+            <span style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 15, color: 'var(--dm-text-ink)' }}>
               Export: {title}
             </span>
             <button

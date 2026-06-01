@@ -92,13 +92,13 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle: string })
     <div style={{ marginBottom: 20 }}>
       <div style={{
         fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-        fontWeight: 600, fontSize: 14, color: '#111827',
+        fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)',
       }}>
         {title}
       </div>
       <div style={{
         fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-        fontSize: 13, color: '#6B7280', marginTop: 2,
+        fontSize: 13, color: 'var(--dm-text-secondary)', marginTop: 2,
       }}>
         {subtitle}
       </div>
@@ -123,7 +123,7 @@ function FieldWrapper({
     <div>
       <label style={{
         fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-        fontWeight: 500, fontSize: 12, color: '#374151',
+        fontWeight: 500, fontSize: 12, color: 'var(--dm-text-body)',
         display: 'block', marginBottom: 4,
       }}>
         {label}
@@ -133,7 +133,7 @@ function FieldWrapper({
       {hint && !error && (
         <div style={{
           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-          fontSize: 12, color: '#9CA3AF', marginTop: 4,
+          fontSize: 12, color: 'var(--dm-text-muted)', marginTop: 4,
         }}>
           {hint}
         </div>
@@ -156,7 +156,7 @@ function SkeletonBar({ width, height = 14 }: { width: number | string; height?: 
   return (
     <div style={{
       width, height, borderRadius: 4,
-      background: '#E5E7EB',
+      background: 'var(--dm-bg-muted)',
       animation: 'sk-pulse 1.4s ease-in-out infinite',
     }} />
   )
@@ -184,7 +184,7 @@ function FormSkeleton() {
           <SkeletonBar width={160} height={13} />
         </div>
       </div>
-      <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: 24 }}>
+      <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: 24 }}>
         <div style={{ marginBottom: 20 }}>
           <SkeletonBar width={150} height={14} />
           <div style={{ marginTop: 4 }}><SkeletonBar width={200} height={12} /></div>
@@ -192,7 +192,7 @@ function FormSkeleton() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           {[...Array(6)].map((_, i) => <SkeletonField key={i} />)}
         </div>
-        <div style={{ height: '0.5px', background: '#F3F4F6', margin: '24px 0' }} />
+        <div style={{ height: '0.5px', background: 'var(--dm-border-subtle)', margin: '24px 0' }} />
         <div style={{ marginBottom: 20 }}>
           <SkeletonBar width={120} height={14} />
           <div style={{ marginTop: 4 }}><SkeletonBar width={160} height={12} /></div>
@@ -200,7 +200,7 @@ function FormSkeleton() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           {[...Array(5)].map((_, i) => <SkeletonField key={i} />)}
         </div>
-        <div style={{ height: '0.5px', background: '#F3F4F6', margin: '24px 0' }} />
+        <div style={{ height: '0.5px', background: 'var(--dm-border-subtle)', margin: '24px 0' }} />
         <div style={{ marginBottom: 20 }}>
           <SkeletonBar width={130} height={14} />
           <div style={{ marginTop: 4 }}><SkeletonBar width={180} height={12} /></div>
@@ -208,7 +208,7 @@ function FormSkeleton() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           {[...Array(5)].map((_, i) => <SkeletonField key={i} />)}
         </div>
-        <div style={{ height: '0.5px', background: '#F3F4F6', margin: '24px 0' }} />
+        <div style={{ height: '0.5px', background: 'var(--dm-border-subtle)', margin: '24px 0' }} />
         <div style={{ marginBottom: 20 }}>
           <SkeletonBar width={120} height={14} />
           <div style={{ marginTop: 4 }}><SkeletonBar width={150} height={12} /></div>
@@ -231,13 +231,13 @@ function NotFound() {
     }}>
       <div style={{
         fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-        fontWeight: 600, fontSize: 18, color: '#111827',
+        fontWeight: 600, fontSize: 18, color: 'var(--dm-text-ink)',
       }}>
         Member not found
       </div>
       <div style={{
         fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-        fontSize: 13, color: '#6B7280',
+        fontSize: 13, color: 'var(--dm-text-secondary)',
       }}>
         This member may have been removed.
       </div>
@@ -380,15 +380,15 @@ export function MemberEditPage() {
 
   const inputBase = (hasError: boolean): React.CSSProperties => ({
     width: '100%', height: 38, borderRadius: 8,
-    border: `0.5px solid ${hasError ? '#EF4444' : '#E5E7EB'}`,
+    border: `0.5px solid ${hasError ? '#EF4444' : 'var(--dm-border)'}`,
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827', background: '#fff',
+    fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)',
     outline: 'none', padding: '0 10px', boxSizing: 'border-box',
     transition: 'border-color 0.15s, box-shadow 0.15s',
   })
 
   const Divider = () => (
-    <div style={{ height: '0.5px', background: '#F3F4F6', margin: '24px 0' }} />
+    <div style={{ height: '0.5px', background: 'var(--dm-border-subtle)', margin: '24px 0' }} />
   )
 
   if (loading) return <FormSkeleton />
@@ -399,7 +399,7 @@ export function MemberEditPage() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         .edit-spinner { animation: spin 0.75s linear infinite; }
-        .form-input::placeholder { color: #9CA3AF; }
+        .form-input::placeholder { color: var(--dm-text-muted); }
         .form-input:focus {
           border-color: #4F6BED !important;
           box-shadow: 0 0 0 3px rgba(79,107,237,0.1) !important;
@@ -408,8 +408,8 @@ export function MemberEditPage() {
           border-color: #EF4444 !important;
           box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important;
         }
-        .back-btn:hover { background: #F3F4F6 !important; }
-        .discard-btn:hover { background: #F9FAFB !important; }
+        .back-btn:hover { background: var(--dm-bg-muted) !important; }
+        .discard-btn:hover { background: var(--dm-bg-muted) !important; }
         @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr !important; } }
       `}</style>
 
@@ -423,7 +423,7 @@ export function MemberEditPage() {
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               padding: '4px 6px', borderRadius: 6,
-              color: '#6B7280', display: 'flex', alignItems: 'center',
+              color: 'var(--dm-text-secondary)', display: 'flex', alignItems: 'center',
               transition: 'background 0.1s',
             }}
           >
@@ -431,7 +431,7 @@ export function MemberEditPage() {
           </button>
           <h1 style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            fontWeight: 600, fontSize: 20, color: '#111827',
+            fontWeight: 600, fontSize: 20, color: 'var(--dm-text-ink)',
             letterSpacing: '-0.02em', margin: 0,
           }}>
             Edit Member
@@ -439,7 +439,7 @@ export function MemberEditPage() {
         </div>
         <p style={{
           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-          fontSize: 13, color: '#6B7280', margin: '0 0 0 34px',
+          fontSize: 13, color: 'var(--dm-text-secondary)', margin: '0 0 0 34px',
         }}>
           {member.first_name} {member.last_name}
         </p>
@@ -448,7 +448,7 @@ export function MemberEditPage() {
       {/* Form Card */}
       <form onSubmit={handleSubmit(onSubmit)}>
         <div style={{
-          background: '#fff', border: '0.5px solid #E5E7EB',
+          background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
           borderRadius: 12, padding: 24,
         }}>
 
@@ -691,14 +691,14 @@ export function MemberEditPage() {
         {/* ── Sticky Action Bar ── */}
         <div style={{
           position: 'fixed', bottom: 0, left: 220, right: 0,
-          background: '#fff', borderTop: '0.5px solid #E5E7EB',
+          background: 'var(--dm-bg-card)', borderTop: '0.5px solid var(--dm-border)',
           padding: '12px 24px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           zIndex: 10,
         }}>
           <span style={{
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontSize: 12, color: '#9CA3AF',
+            fontSize: 12, color: 'var(--dm-text-muted)',
           }}>
             Auto-saved as draft · {autoSaveText}
           </span>
@@ -710,10 +710,10 @@ export function MemberEditPage() {
               onClick={() => navigate(`/members/${id}`)}
               style={{
                 height: 38, padding: '0 16px', borderRadius: 8,
-                border: '0.5px solid #E5E7EB', background: '#fff',
+                border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
                 cursor: 'pointer',
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontWeight: 500, fontSize: 13, color: '#374151',
+                fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)',
                 transition: 'background 0.1s',
               }}
             >

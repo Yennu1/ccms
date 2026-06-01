@@ -66,15 +66,15 @@ function BackArrowIcon() {
 
 const labelStyle: React.CSSProperties = {
   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-  fontWeight: 500, fontSize: 12, color: '#374151',
+  fontWeight: 500, fontSize: 12, color: 'var(--dm-text-body)',
   display: 'block', marginBottom: 6,
 }
 
 const inputBase: React.CSSProperties = {
   width: '100%', height: 38, borderRadius: 8,
-  border: '0.5px solid #E5E7EB',
+  border: '0.5px solid var(--dm-border)',
   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-  fontSize: 13, color: '#111827', background: '#fff',
+  fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)',
   outline: 'none', padding: '0 10px', boxSizing: 'border-box',
   transition: 'border-color 0.15s',
 }
@@ -86,9 +86,9 @@ const errorStyle: React.CSSProperties = {
 
 const sectionHeader: React.CSSProperties = {
   fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-  fontWeight: 600, fontSize: 13, color: '#111827',
+  fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)',
   marginBottom: 14, paddingBottom: 10,
-  borderBottom: '0.5px solid #F3F4F6',
+  borderBottom: '0.5px solid var(--dm-border-subtle)',
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -189,7 +189,7 @@ export function EditEventPage() {
   }
 
   const cardStyle: React.CSSProperties = {
-    background: '#fff', border: '0.5px solid #E5E7EB',
+    background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
     borderRadius: 12, padding: 24,
   }
 
@@ -363,13 +363,13 @@ export function EditEventPage() {
               onClick={() => navigate(`/events/${id}`)}
               style={{
                 display: 'block', width: '100%', height: 38,
-                borderRadius: 8, border: '0.5px solid #E5E7EB',
-                background: '#fff', cursor: 'pointer',
+                borderRadius: 8, border: '0.5px solid var(--dm-border)',
+                background: 'var(--dm-bg-card)', cursor: 'pointer',
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontWeight: 500, fontSize: 13, color: '#374151',
+                fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)',
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
             >
               Cancel
             </button>

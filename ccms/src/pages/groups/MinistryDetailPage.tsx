@@ -76,7 +76,7 @@ function Avatar({ firstName, lastName, size = 32 }: { firstName: string; lastNam
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent: string }) {
   return (
-    <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 6 }}>{label}</div>
       <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, letterSpacing: '-0.02em', color: '#111827', lineHeight: 1.1 }}>{value}</div>
       {sub && <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>{sub}</div>}
@@ -141,13 +141,13 @@ function SettingsTab({ ministry, branches, members, onSaved, canManage }: {
     toast.success('Ministry deleted'); navigate('/groups')
   }
 
-  const inputBase: React.CSSProperties = { width: '100%', height: 38, borderRadius: 8, border: '0.5px solid #E5E7EB', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#111827', background: '#fff', outline: 'none', padding: '0 12px', boxSizing: 'border-box' }
-  const labelSt: React.CSSProperties = { fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#374151', display: 'block', marginBottom: 6 }
+  const inputBase: React.CSSProperties = { width: '100%', height: 38, borderRadius: 8, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)', outline: 'none', padding: '0 12px', boxSizing: 'border-box' }
+  const labelSt: React.CSSProperties = { fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: 'var(--dm-text-body)', display: 'block', marginBottom: 6 }
 
   return (
     <div style={{ maxWidth: 600 }}>
-      <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: 24, marginBottom: 16 }}>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 20, paddingBottom: 12, borderBottom: '0.5px solid #F3F4F6' }}>Edit Ministry</div>
+      <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: 24, marginBottom: 16 }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 20, paddingBottom: 12, borderBottom: '0.5px solid var(--dm-border-subtle)' }}>Edit Ministry</div>
         <div style={{ marginBottom: 16 }}>
           <label style={labelSt}>Ministry Name</label>
           <input type="text" value={name} onChange={e => setName(e.target.value)} disabled={!canManage} style={{ ...inputBase, borderColor: '#E5E7EB', opacity: canManage ? 1 : 0.6 }} />
@@ -160,7 +160,7 @@ function SettingsTab({ ministry, branches, members, onSaved, canManage }: {
           <label style={labelSt}>Type</label>
           <div style={{ display: 'flex', gap: 8 }}>
             {[{ v: true, l: 'Org-Wide' }, { v: false, l: 'Branch-Specific' }].map(opt => (
-              <button key={String(opt.v)} type="button" disabled={!canManage} onClick={() => { setIsOrgWide(opt.v); if (opt.v) setBranchId('') }} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${isOrgWide === opt.v ? '#4F6BED' : '#E5E7EB'}`, background: isOrgWide === opt.v ? '#EEF1FD' : '#fff', cursor: canManage ? 'pointer' : 'not-allowed', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: isOrgWide === opt.v ? '#4F6BED' : '#374151', opacity: canManage ? 1 : 0.6 }}>
+              <button key={String(opt.v)} type="button" disabled={!canManage} onClick={() => { setIsOrgWide(opt.v); if (opt.v) setBranchId('') }} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${isOrgWide === opt.v ? '#4F6BED' : 'var(--dm-border)'}`, background: isOrgWide === opt.v ? '#EEF1FD' : 'var(--dm-bg-card)', cursor: canManage ? 'pointer' : 'not-allowed', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: isOrgWide === opt.v ? '#4F6BED' : 'var(--dm-text-body)', opacity: canManage ? 1 : 0.6 }}>
                 {opt.l}
               </button>
             ))}
@@ -184,7 +184,7 @@ function SettingsTab({ ministry, branches, members, onSaved, canManage }: {
             <input type="text" value={leaderOpen ? leaderQuery : leaderText} onChange={e => { setLeaderQuery(e.target.value); setLeaderOpen(true) }} onFocus={() => { setLeaderQuery(''); setLeaderOpen(true) }} placeholder="Search members…" disabled={!canManage} style={{ ...inputBase, paddingRight: 32, cursor: 'pointer', opacity: canManage ? 1 : 0.6 }} readOnly={!leaderOpen} />
             <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}><ChevronDownIcon /></span>
             {leaderOpen && canManage && (
-              <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 100, maxHeight: 200, overflowY: 'auto', padding: '4px 0' }}>
+              <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 100, maxHeight: 200, overflowY: 'auto', padding: '4px 0' }}>
                 {leaderId && <button type="button" onClick={() => { setLeaderId(''); setLeaderOpen(false) }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#EF4444' }} onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>Clear leader</button>}
                 {filteredMembers.map(m => {
                   const { bg, color } = avatarColor(m.first_name + m.last_name)
@@ -203,7 +203,7 @@ function SettingsTab({ ministry, branches, members, onSaved, canManage }: {
           <label style={labelSt}>Status</label>
           <div style={{ display: 'flex', gap: 8 }}>
             {[{ v: true, l: 'Active' }, { v: false, l: 'Inactive' }].map(opt => (
-              <button key={String(opt.v)} type="button" disabled={!canManage} onClick={() => setIsActive(opt.v)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${isActive === opt.v ? '#4F6BED' : '#E5E7EB'}`, background: isActive === opt.v ? '#EEF1FD' : '#fff', cursor: canManage ? 'pointer' : 'not-allowed', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: isActive === opt.v ? '#4F6BED' : '#374151', opacity: canManage ? 1 : 0.6 }}>
+              <button key={String(opt.v)} type="button" disabled={!canManage} onClick={() => setIsActive(opt.v)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${isActive === opt.v ? '#4F6BED' : 'var(--dm-border)'}`, background: isActive === opt.v ? '#EEF1FD' : 'var(--dm-bg-card)', cursor: canManage ? 'pointer' : 'not-allowed', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: isActive === opt.v ? '#4F6BED' : 'var(--dm-text-body)', opacity: canManage ? 1 : 0.6 }}>
                 {opt.l}
               </button>
             ))}
@@ -220,15 +220,15 @@ function SettingsTab({ ministry, branches, members, onSaved, canManage }: {
 
       {/* Danger zone */}
       {canManage && (
-        <div style={{ background: '#fff', border: '0.5px solid #FCA5A5', borderRadius: 12, padding: 20 }}>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid #FCA5A5', borderRadius: 12, padding: 20 }}>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#EF4444', marginBottom: 8 }}>Danger Zone</div>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280', marginBottom: 14 }}>Deleting this ministry will also remove all associated groups and memberships.</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 14 }}>Deleting this ministry will also remove all associated groups and memberships.</div>
           {!showDeleteConfirm ? (
-            <button onClick={() => setShowDeleteConfirm(true)} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid #FCA5A5', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#EF4444' }} onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>Delete Ministry</button>
+            <button onClick={() => setShowDeleteConfirm(true)} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid #FCA5A5', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#EF4444' }} onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>Delete Ministry</button>
           ) : (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151' }}>Are you sure?</span>
-              <button onClick={() => setShowDeleteConfirm(false)} style={{ height: 32, padding: '0 12px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151' }}>Cancel</button>
+              <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)' }}>Are you sure?</span>
+              <button onClick={() => setShowDeleteConfirm(false)} style={{ height: 32, padding: '0 12px', borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)' }}>Cancel</button>
               <button onClick={handleDelete} disabled={deleting} style={{ height: 32, padding: '0 12px', borderRadius: 6, border: 'none', background: '#EF4444', cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#fff' }}>{deleting ? 'Deleting…' : 'Yes, Delete'}</button>
             </div>
           )}
@@ -345,7 +345,7 @@ export function MinistryDetailPage() {
         <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }`}</style>
         <div style={{ height: 24, width: 200, borderRadius: 4, background: '#F3F4F6', animation: 'pulse 1.4s infinite', marginBottom: 24 }} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 22 }}>
-          {[1,2,3].map(i => <div key={i} style={{ height: 90, borderRadius: 12, background: '#F9FAFB', border: '0.5px solid #E5E7EB' }} />)}
+          {[1,2,3].map(i => <div key={i} style={{ height: 90, borderRadius: 12, background: 'var(--dm-bg-muted)', border: '0.5px solid var(--dm-border)' }} />)}
         </div>
       </>
     )
@@ -377,13 +377,13 @@ export function MinistryDetailPage() {
     { key: 'settings', label: 'Settings' },
   ]
 
-  const inputStyle: React.CSSProperties = { height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#111827', background: '#fff', outline: 'none' }
+  const inputStyle: React.CSSProperties = { height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)', outline: 'none' }
 
   return (
     <>
       <style>{`
         .md-group-card:hover { border-color: #C7D0F8 !important; }
-        .md-member-row:hover { background: #FAFBFE !important; }
+        .md-member-row:hover { background: var(--dm-bg-muted) !important; }
         .md-input:focus { border-color: #4F6BED !important; }
       `}</style>
 
@@ -403,7 +403,7 @@ export function MinistryDetailPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={handleExportMembers} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', color: '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}>
+          <button onClick={handleExportMembers} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--dm-border-strong)')} onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--dm-border)')}>
             <DownloadIcon /> Export Members
           </button>
           {canManage && (
@@ -433,7 +433,7 @@ export function MinistryDetailPage() {
       {/* ── Groups Tab ─────────────────────────────────────────────────────────── */}
       {activeTab === 'groups' && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10, padding: 12, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, marginBottom: 18 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10, padding: 12, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, marginBottom: 18 }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: 11, pointerEvents: 'none', display: 'inline-flex' }}><SearchIcon /></span>
               <input className="md-input" type="text" placeholder="Search groups…" value={groupSearch} onChange={e => setGroupSearch(e.target.value)} style={{ ...inputStyle, width: '100%', paddingLeft: 34, paddingRight: 12 }} />
@@ -456,7 +456,7 @@ export function MinistryDetailPage() {
                 const first = scheds[0]
                 const extra = scheds.length - 1
                 return (
-                  <div key={group.id} className="md-group-card" onClick={() => navigate(`/groups/${ministry.id}/${group.id}`)} style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: 18, cursor: 'pointer', transition: 'border-color 0.15s' }}>
+                  <div key={group.id} className="md-group-card" onClick={() => navigate(`/groups/${ministry.id}/${group.id}`)} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: 18, cursor: 'pointer', transition: 'border-color 0.15s' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
                       <div>
                         <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827' }}>{group.name}</div>
@@ -490,13 +490,13 @@ export function MinistryDetailPage() {
       {/* ── Members Tab ────────────────────────────────────────────────────────── */}
       {activeTab === 'members' && (
         <>
-          <div style={{ padding: '10px 14px', background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, marginBottom: 16 }}>
+          <div style={{ padding: '10px 14px', background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, marginBottom: 16 }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: 11, pointerEvents: 'none', display: 'inline-flex' }}><SearchIcon /></span>
               <input className="md-input" type="text" placeholder="Search members by name or number…" value={memberSearch} onChange={e => setMemberSearch(e.target.value)} style={{ ...inputStyle, width: '100%', paddingLeft: 34, paddingRight: 12 }} />
             </div>
           </div>
-          <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
@@ -510,7 +510,7 @@ export function MinistryDetailPage() {
                 {filteredMembers.length === 0 ? (
                   <tr><td colSpan={5} style={{ padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>No members found</td></tr>
                 ) : filteredMembers.map(m => (
-                  <tr key={m.id} className="md-member-row" onClick={() => m.member && navigate(`/members/${m.member.id}`)} style={{ borderBottom: '0.5px solid #EFF1F7', height: 56, background: '#fff', transition: 'background 0.1s', cursor: 'pointer' }}>
+                  <tr key={m.id} className="md-member-row" onClick={() => m.member && navigate(`/members/${m.member.id}`)} style={{ borderBottom: '0.5px solid #EFF1F7', height: 56, background: 'var(--dm-bg-card)', transition: 'background 0.1s', cursor: 'pointer' }}>
                     <td style={{ padding: '0 18px' }}>
                       {m.member && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

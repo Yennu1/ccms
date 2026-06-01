@@ -19,7 +19,7 @@ export function AppLayout() {
         <main style={{
           flex: 1,
           overflowY: 'auto',
-          background: '#F4F5F7',
+          background: 'var(--dm-bg-page)',
           padding: 24,
         }}>
           <Outlet />

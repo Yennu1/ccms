@@ -235,24 +235,24 @@ export function RecordGivingPage() {
   // ─── Style shorthands ──────────────────────────────────────────────────────
 
   const card: React.CSSProperties = {
-    background: '#fff', border: '0.5px solid #E5E7EB',
+    background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
     borderRadius: 12, padding: 20, marginBottom: 16,
   }
   const sectionLabel: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
     fontWeight: 600, fontSize: 11, textTransform: 'uppercase',
-    letterSpacing: '0.12em', color: '#9CA3AF', marginBottom: 14,
+    letterSpacing: '0.12em', color: 'var(--dm-text-muted)', marginBottom: 14,
   }
   const fieldLabel: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 12, fontWeight: 500, color: '#374151',
+    fontSize: 12, fontWeight: 500, color: 'var(--dm-text-body)',
     display: 'block', marginBottom: 6,
   }
   const inputBase: React.CSSProperties = {
     width: '100%', height: 38, borderRadius: 8,
-    border: '0.5px solid #E5E7EB', background: '#fff',
+    border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827', padding: '0 12px',
+    fontSize: 13, color: 'var(--dm-text-ink)', padding: '0 12px',
     boxSizing: 'border-box', outline: 'none',
     transition: 'border-color 0.15s',
   }
@@ -271,8 +271,8 @@ export function RecordGivingPage() {
         .cat-pill:hover { opacity: 0.8; }
         .method-pill:hover { opacity: 0.85; }
         .network-pill:hover { opacity: 0.85; }
-        .member-result:hover { background: #F4F5F7 !important; }
-        .rg-action-btn:hover { background: #F4F5F7 !important; }
+        .member-result:hover { background: var(--dm-bg-muted) !important; }
+        .rg-action-btn:hover { background: var(--dm-bg-muted) !important; }
         .mode-tab:hover { color: #374151 !important; }
       `}</style>
 
@@ -280,7 +280,7 @@ export function RecordGivingPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
         <button
           onClick={() => navigate('/donations')}
-          style={{ width: 32, height: 32, borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer', color: '#6B7280', flexShrink: 0 }}
+          style={{ width: 32, height: 32, borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', display: 'grid', placeItems: 'center', cursor: 'pointer', color: 'var(--dm-text-secondary)', flexShrink: 0 }}
           aria-label="Back"
         >
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -298,7 +298,7 @@ export function RecordGivingPage() {
       </div>
 
       {/* Mode Toggle */}
-      <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12.5, color: '#6B7280', fontWeight: 500, flexShrink: 0 }}>
           Recording for:
         </span>
@@ -316,7 +316,7 @@ export function RecordGivingPage() {
                 onClick={() => setValue('is_collective', value)}
                 style={{
                   height: 30, padding: '0 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                  background: active ? '#fff' : 'transparent',
+                  background: active ? 'var(--dm-bg-card)' : 'transparent',
                   boxShadow: active ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontWeight: 600, fontSize: 12.5,
@@ -416,13 +416,13 @@ export function RecordGivingPage() {
                           style={inputBase}
                         />
                         {memberDropdownOpen && filteredMembers.length > 0 && (
-                          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', marginTop: 4, maxHeight: 240, overflowY: 'auto' }}>
+                          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', marginTop: 4, maxHeight: 240, overflowY: 'auto' }}>
                             {filteredMembers.map(m => (
                               <div
                                 key={m.id}
                                 className="member-result"
                                 onMouseDown={() => { setValue('member_id', m.id); setMemberSearch(''); setMemberDropdownOpen(false) }}
-                                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', cursor: 'pointer', background: '#fff' }}
+                                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', cursor: 'pointer', background: 'var(--dm-bg-card)' }}
                               >
                                 <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#E8ECF9', color: '#4F6BED', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                   {m.first_name[0]}{m.last_name[0]}
@@ -524,7 +524,7 @@ export function RecordGivingPage() {
                         style={{
                           height: 38, borderRadius: 8, cursor: 'pointer',
                           border: selectedMethod === m ? '1.5px solid #4F6BED' : '1.5px solid #E5E7EB',
-                          background: selectedMethod === m ? '#EEF1FE' : '#fff',
+                          background: selectedMethod === m ? '#EEF1FE' : 'var(--dm-bg-card)',
                           color: selectedMethod === m ? '#4F6BED' : '#6B7280',
                           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                           fontWeight: 600, fontSize: 12.5, transition: 'all 0.12s',
@@ -548,7 +548,7 @@ export function RecordGivingPage() {
                             style={{
                               flex: 1, height: 34, borderRadius: 8, cursor: 'pointer',
                               border: momoNetwork === n.key ? `1.5px solid ${n.color}` : '1.5px solid #E5E7EB',
-                              background: momoNetwork === n.key ? `${n.color}18` : '#fff',
+                              background: momoNetwork === n.key ? `${n.color}18` : 'var(--dm-bg-card)',
                               color: momoNetwork === n.key ? n.color : '#6B7280',
                               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                               fontWeight: 600, fontSize: 12.5, transition: 'all 0.12s',
@@ -633,7 +633,7 @@ export function RecordGivingPage() {
             <div style={{ background: '#FAFBFE', border: '0.5px solid #E8ECF9', borderRadius: 12, padding: 20 }}>
               <div style={sectionLabel}>Preview</div>
 
-              <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 10, overflow: 'hidden' }}>
+              <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 10, overflow: 'hidden' }}>
                 <div style={{ padding: '14px 16px', borderBottom: '1px dashed #E5E7EB' }}>
                   <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 10 }}>
                     {isCollective ? 'Collective Offering Receipt' : 'Contribution Receipt'}
@@ -704,7 +704,7 @@ export function RecordGivingPage() {
         </div>
 
         {/* Sticky Save Bar */}
-        <div style={{ position: 'fixed', bottom: 0, left: 220, right: 0, background: '#fff', borderTop: '0.5px solid #E5E7EB', padding: '12px 32px', display: 'flex', alignItems: 'center', gap: 12, zIndex: 100 }}>
+        <div style={{ position: 'fixed', bottom: 0, left: 220, right: 0, background: 'var(--dm-bg-card)', borderTop: '0.5px solid var(--dm-border)', padding: '12px 32px', display: 'flex', alignItems: 'center', gap: 12, zIndex: 100 }}>
           <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF', flex: 1 }}>
             {Object.keys(errors).length > 0 ? 'Please fix errors before saving' : 'Ready to save'}
           </span>
@@ -712,7 +712,7 @@ export function RecordGivingPage() {
             type="button"
             className="rg-action-btn"
             onClick={() => navigate('/donations')}
-            style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#374151', cursor: 'pointer', transition: 'background 0.12s' }}
+            style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-body)', cursor: 'pointer', transition: 'background 0.12s' }}
           >
             Discard
           </button>

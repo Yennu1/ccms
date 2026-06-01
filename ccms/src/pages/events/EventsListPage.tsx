@@ -190,19 +190,19 @@ function DeleteConfirmModal({
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}
       onClick={e => { if (e.target === e.currentTarget) onCancel() }}
     >
-      <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #E5E7EB', padding: 24, width: 420, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: '#111827', marginBottom: 8 }}>
+      <div style={{ background: 'var(--dm-bg-card)', borderRadius: 12, border: '0.5px solid var(--dm-border)', padding: 24, width: 420, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 8 }}>
           Delete Event
         </div>
-        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280', marginBottom: 20, lineHeight: 1.6 }}>
-          Are you sure you want to delete <strong style={{ color: '#111827' }}>{eventName}</strong>? This will also remove all attendance records for this event. This action cannot be undone.
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 20, lineHeight: 1.6 }}>
+          Are you sure you want to delete <strong style={{ color: 'var(--dm-text-ink)' }}>{eventName}</strong>? This will also remove all attendance records for this event. This action cannot be undone.
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button
             onClick={onCancel}
-            style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#374151' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+            style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
           >
             Cancel
           </button>
@@ -223,7 +223,7 @@ function DeleteConfirmModal({
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent: string }) {
   return (
-    <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 6 }}>
         {label}
       </div>
@@ -410,9 +410,9 @@ export function EventsListPage() {
   }
 
   const inputStyle: React.CSSProperties = {
-    height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB',
+    height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827', background: '#fff', outline: 'none',
+    fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)', outline: 'none',
   }
 
   const tabs: { key: EventTab; label: string }[] = [
@@ -425,7 +425,7 @@ export function EventsListPage() {
     <>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-        .ev-row:hover { background: #FAFBFE !important; }
+        .ev-row:hover { background: var(--dm-bg-muted) !important; }
         .ev-filter-select:focus { border-color: #4F6BED !important; outline: none; }
         .ev-filter-input:focus { border-color: #4F6BED !important; }
       `}</style>
@@ -442,7 +442,7 @@ export function EventsListPage() {
       {menuPos && (
         <div
           onClick={e => e.stopPropagation()}
-          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 200, minWidth: 160, padding: '4px 0' }}
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 200, minWidth: 160, padding: '4px 0' }}
         >
           {[
             { label: 'View Event', action: () => { navigate(`/events/${menuPos.eventId}`); setMenuPos(null) } },
@@ -452,7 +452,7 @@ export function EventsListPage() {
               key={item.label}
               onClick={item.action}
               style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '9px 14px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: (item as { danger?: boolean }).danger ? '#EF4444' : '#374151', textAlign: 'left', transition: 'background 0.1s' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'none')}
             >
               {item.label}
@@ -474,7 +474,7 @@ export function EventsListPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             onClick={() => navigate('/events/calendar')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', color: '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
             onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
           >
@@ -526,7 +526,7 @@ export function EventsListPage() {
       </div>
 
       {/* Filter Bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 10, padding: 14, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 10, padding: 14, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, marginBottom: 16 }}>
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
           <span style={{ position: 'absolute', left: 11, pointerEvents: 'none', display: 'inline-flex' }}><SearchIcon /></span>
           <input
@@ -557,7 +557,7 @@ export function EventsListPage() {
       </div>
 
       {/* Table */}
-      <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5 }}>
           <thead>
             <tr>
@@ -596,7 +596,7 @@ export function EventsListPage() {
                 key={ev.id}
                 className="ev-row"
                 onClick={() => navigate(`/events/${ev.id}`)}
-                style={{ borderBottom: '0.5px solid #EFF1F7', height: 60, background: '#fff', transition: 'background 0.1s', cursor: 'pointer' }}
+                style={{ borderBottom: '0.5px solid #EFF1F7', height: 60, background: 'var(--dm-bg-card)', transition: 'background 0.1s', cursor: 'pointer' }}
               >
                 <td style={{ padding: '0 18px' }}>
                   <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13.5, color: '#111827' }}>
@@ -636,7 +636,7 @@ export function EventsListPage() {
                   <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                     <button
                       onClick={e => { e.stopPropagation(); navigate(`/events/${ev.id}`) }}
-                      style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', display: 'grid', placeItems: 'center', color: '#6B7280', cursor: 'pointer' }}
+                      style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', display: 'grid', placeItems: 'center', color: 'var(--dm-text-secondary)', cursor: 'pointer' }}
                     >
                       <ArrowRightIcon />
                     </button>
@@ -646,7 +646,7 @@ export function EventsListPage() {
                         const rect = e.currentTarget.getBoundingClientRect()
                         setMenuPos(menuPos?.eventId === ev.id ? null : { eventId: ev.id, top: rect.bottom + 4, left: rect.right - 160 })
                       }}
-                      style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', display: 'grid', placeItems: 'center', color: '#6B7280', cursor: 'pointer' }}
+                      style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', display: 'grid', placeItems: 'center', color: 'var(--dm-text-secondary)', cursor: 'pointer' }}
                     >
                       <DotsIcon />
                     </button>
@@ -664,10 +664,10 @@ export function EventsListPage() {
           </span>
           <div style={{ flex: 1 }} />
           <div style={{ display: 'flex', gap: 4 }}>
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ height: 32, padding: '0 10px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: page === 1 ? 'not-allowed' : 'pointer', color: page === 1 ? '#D1D5DB' : '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ height: 32, padding: '0 10px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: page === 1 ? 'not-allowed' : 'pointer', color: page === 1 ? 'var(--dm-text-muted)' : 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
               <ChevronIcon dir="left" /> Previous
             </button>
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ height: 32, padding: '0 10px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: page === totalPages ? '#D1D5DB' : '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ height: 32, padding: '0 10px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: page === totalPages ? 'var(--dm-text-muted)' : 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
               Next <ChevronIcon dir="right" />
             </button>
           </div>

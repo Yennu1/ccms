@@ -409,9 +409,9 @@ export function Sidebar() {
               bottom: 'calc(100% + 6px)',
               left: 0,
               right: 0,
-              background: '#fff',
+              background: 'var(--dm-bg-card)',
               borderRadius: 8,
-              border: '0.5px solid #E5E7EB',
+              border: '0.5px solid var(--dm-border-soft)',
               boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
               overflow: 'hidden',
             }}>
@@ -432,7 +432,7 @@ export function Sidebar() {
                   textAlign: 'left',
                   transition: 'background 0.1s',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'none')}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

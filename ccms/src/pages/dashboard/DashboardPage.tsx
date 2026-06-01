@@ -96,23 +96,23 @@ function now() { return new Date() }
 // ─── Subcomponents ────────────────────────────────────────────────────────────
 
 function Skeleton({ h = 160, r = 8 }: { h?: number; r?: number }) {
-  return <div style={{ height: h, borderRadius: r, background: '#F3F4F6', animation: 'pulse 1.5s ease-in-out infinite' }} />
+  return <div style={{ height: h, borderRadius: r, background: 'var(--dm-bg-muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
 }
 
 function KpiCard({ label, value, sub, delta: d, accent }: {
   label: string; value: string; sub?: string; delta?: number | null; accent: string
 }) {
   return (
-    <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: '#111827', lineHeight: 1.1 }}>{value}</div>
+    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 6 }}>{label}</div>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{value}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5, minHeight: 20 }}>
         {d !== null && d !== undefined && (
           <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, fontWeight: 600, color: d >= 0 ? '#22C55E' : '#EF4444', background: d >= 0 ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)', padding: '1px 6px', borderRadius: 999 }}>
             {d >= 0 ? '+' : ''}{d.toFixed(1)}%
           </span>
         )}
-        {sub && <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF' }}>{sub}</span>}
+        {sub && <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: 'var(--dm-text-muted)' }}>{sub}</span>}
       </div>
       <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: accent }} />
     </div>
@@ -122,9 +122,9 @@ function KpiCard({ label, value, sub, delta: d, accent }: {
 function GivingTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#6B7280', marginBottom: 3 }}>{monthLabel(label ?? '')}</div>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: '#111827', fontWeight: 600 }}>{fGHSFull(payload[0]?.value ?? 0)}</div>
+    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 8, padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-secondary)', marginBottom: 3 }}>{monthLabel(label ?? '')}</div>
+      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: 'var(--dm-text-ink)', fontWeight: 600 }}>{fGHSFull(payload[0]?.value ?? 0)}</div>
     </div>
   )
 }
@@ -132,9 +132,9 @@ function GivingTooltip({ active, payload, label }: { active?: boolean; payload?:
 function AttTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#6B7280', marginBottom: 3 }}>Wk of {label}</div>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: '#111827', fontWeight: 600 }}>{payload[0]?.value ?? 0}%</div>
+    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 8, padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-secondary)', marginBottom: 3 }}>Wk of {label}</div>
+      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: 'var(--dm-text-ink)', fontWeight: 600 }}>{payload[0]?.value ?? 0}%</div>
     </div>
   )
 }
@@ -413,22 +413,22 @@ export function DashboardPage() {
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
         .dash-select:focus { border-color: #4F6BED !important; outline: none; }
-        .period-btn:hover { background: #F9FAFB !important; }
-        .qr-card:hover { border-color: #D1D5DB !important; }
+        .period-btn:hover { background: var(--dm-bg-muted) !important; }
+        .qr-card:hover { border-color: var(--dm-border-strong) !important; }
       `}</style>
 
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
         <div>
-          <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 22, color: '#111827', letterSpacing: '-0.015em', margin: '0 0 3px' }}>
+          <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 22, color: 'var(--dm-text-ink)', letterSpacing: '-0.015em', margin: '0 0 3px' }}>
             {greeting(user?.full_name ?? 'there')}
           </h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#9CA3AF' }}>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-muted)' }}>
               {today.toLocaleDateString('en-GH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </span>
-            <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#D1D5DB' }} />
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>
+            <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--dm-border-strong)' }} />
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>
               Week {weekNum} · {season}
             </span>
           </div>
@@ -440,7 +440,7 @@ export function DashboardPage() {
             className="dash-select"
             value={selectedBranch}
             onChange={e => handleBranchChange(e.target.value)}
-            style={{ height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151', background: '#fff', padding: '0 12px', cursor: 'pointer' }}
+            style={{ height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', background: 'var(--dm-bg-card)', padding: '0 12px', cursor: 'pointer' }}
           >
             <option value="">All Branches (Org-Wide)</option>
             {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -468,15 +468,15 @@ export function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: 16, marginBottom: 16 }}>
 
         {/* Giving Trend */}
-        <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '18px 20px' }}>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827' }}>Giving Trend</div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>{fGHSFull(givingTotal12)} · 12-month total</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>Giving Trend</div>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-muted)', marginTop: 2 }}>{fGHSFull(givingTotal12)} · 12-month total</div>
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
               {(['3M', '6M', '12M', 'YTD'] as const).map(p => (
-                <button key={p} className="period-btn" onClick={() => setGivingPeriod(p)} style={{ height: 28, padding: '0 10px', borderRadius: 6, border: `1px solid ${givingPeriod === p ? '#4F6BED' : '#E5E7EB'}`, background: givingPeriod === p ? '#EEF1FD' : '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11.5, color: givingPeriod === p ? '#4F6BED' : '#6B7280', cursor: 'pointer' }}>{p}</button>
+                <button key={p} className="period-btn" onClick={() => setGivingPeriod(p)} style={{ height: 28, padding: '0 10px', borderRadius: 6, border: `1px solid ${givingPeriod === p ? '#4F6BED' : 'var(--dm-border)'}`, background: givingPeriod === p ? 'var(--dm-bg-tint)' : 'var(--dm-bg-card)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11.5, color: givingPeriod === p ? '#4F6BED' : 'var(--dm-text-secondary)', cursor: 'pointer' }}>{p}</button>
               ))}
             </div>
           </div>
@@ -494,8 +494,8 @@ export function DashboardPage() {
         </div>
 
         {/* Donut */}
-        <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '18px 20px' }}>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 14 }}>Giving Breakdown</div>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 14 }}>Giving Breakdown</div>
           {loadingCharts || catBreakdown.length === 0 ? <Skeleton h={180} /> : (
             <>
               <div style={{ position: 'relative' }}>
@@ -508,16 +508,16 @@ export function DashboardPage() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: '#111827' }}>{fGHS(donutTotal)}</div>
-                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10, color: '#9CA3AF' }}>total</div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: 'var(--dm-text-ink)' }}>{fGHS(donutTotal)}</div>
+                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10, color: 'var(--dm-text-muted)' }}>total</div>
                 </div>
               </div>
               <div style={{ marginTop: 8 }}>
                 {catBreakdown.slice(0, 4).map((c, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                     <span style={{ width: 8, height: 8, borderRadius: 2, background: DONUT_COLORS[i % DONUT_COLORS.length], flexShrink: 0 }} />
-                    <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#374151', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.category}</span>
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: '#6B7280' }}>{donutTotal > 0 ? pct(Number(c.total), donutTotal) : 0}%</span>
+                    <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-body)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.category}</span>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: 'var(--dm-text-secondary)' }}>{donutTotal > 0 ? pct(Number(c.total), donutTotal) : 0}%</span>
                   </div>
                 ))}
               </div>
@@ -530,10 +530,10 @@ export function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
 
         {/* Membership Growth */}
-        <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '18px 20px' }}>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 14 }}>Membership Growth</div>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 14 }}>Membership Growth</div>
           {loadingCharts ? <Skeleton h={180} /> : memberGrowth.length === 0 ? (
-            <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>No data yet</div>
+            <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No data yet</div>
           ) : (
             <ResponsiveContainer width="100%" height={180}>
               <ComposedChart data={memberGrowth} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
@@ -550,10 +550,10 @@ export function DashboardPage() {
         </div>
 
         {/* Attendance Trend */}
-        <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '18px 20px' }}>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 14 }}>Attendance Trend <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: '#9CA3AF' }}>Sunday services · last 12 wks</span></div>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 14 }}>Attendance Trend <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: 'var(--dm-text-muted)' }}>Sunday services · last 12 wks</span></div>
           {loadingCharts ? <Skeleton h={180} /> : attTrend.length === 0 ? (
-            <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>No Sunday service data</div>
+            <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No Sunday service data</div>
           ) : (
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={attTrend} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
@@ -571,42 +571,42 @@ export function DashboardPage() {
 
       {/* ── Branch Comparison (org-wide only) ── */}
       {!selectedBranch && (
-        <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '18px 20px', marginBottom: 16 }}>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 14 }}>Branch Comparison</div>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px', marginBottom: 16 }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 14 }}>Branch Comparison</div>
           {loadingCharts ? <Skeleton h={80} /> : branchComp.length === 0 ? (
-            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF', textAlign: 'center', padding: '20px 0' }}>No branch data</div>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)', textAlign: 'center', padding: '20px 0' }}>No branch data</div>
           ) : (
             <div>
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 1fr 1fr', gap: 8, marginBottom: 6 }}>
                 {['Branch', 'Members', 'Giving (this month)', 'Attendance %'].map(h => (
-                  <div key={h} style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, fontWeight: 500, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
+                  <div key={h} style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, fontWeight: 500, color: 'var(--dm-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
                 ))}
               </div>
               {branchComp.map(b => (
-                <div key={b.branch_id} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 1fr 1fr', gap: 8, alignItems: 'center', padding: '8px 0', borderTop: '0.5px solid #F3F4F6' }}>
-                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#111827', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.branch_name}</div>
+                <div key={b.branch_id} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 1fr 1fr', gap: 8, alignItems: 'center', padding: '8px 0', borderTop: '0.5px solid var(--dm-border-subtle)' }}>
+                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.branch_name}</div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#F3F4F6' }}>
+                      <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--dm-bg-muted)' }}>
                         <div style={{ height: 6, borderRadius: 3, background: '#4F6BED', width: `${pct(b.member_count, maxMembers)}%` }} />
                       </div>
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#6B7280', minWidth: 28, textAlign: 'right' }}>{b.member_count}</span>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-secondary)', minWidth: 28, textAlign: 'right' }}>{b.member_count}</span>
                     </div>
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#F3F4F6' }}>
+                      <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--dm-bg-muted)' }}>
                         <div style={{ height: 6, borderRadius: 3, background: '#C8964A', width: `${pct(Number(b.monthly_giving), maxGiving)}%` }} />
                       </div>
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#6B7280', minWidth: 50, textAlign: 'right' }}>{fGHS(Number(b.monthly_giving))}</span>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-secondary)', minWidth: 50, textAlign: 'right' }}>{fGHS(Number(b.monthly_giving))}</span>
                     </div>
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#F3F4F6' }}>
+                      <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--dm-bg-muted)' }}>
                         <div style={{ height: 6, borderRadius: 3, background: '#22C55E', width: `${Math.min(Number(b.attendance_rate), 100)}%` }} />
                       </div>
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#6B7280', minWidth: 36, textAlign: 'right' }}>{b.attendance_rate}%</span>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-secondary)', minWidth: 36, textAlign: 'right' }}>{b.attendance_rate}%</span>
                     </div>
                   </div>
                 </div>
@@ -620,11 +620,11 @@ export function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
 
         {/* Members at Risk */}
-        <div className="qr-card" onClick={() => navigate('/reports?tab=attendance')} style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '16px 18px', cursor: 'pointer', transition: 'border-color 0.15s' }}>
+        <div className="qr-card" onClick={() => navigate('/reports?tab=attendance')} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '16px 18px', cursor: 'pointer', transition: 'border-color 0.15s' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>Members at Risk</div>
-              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>No attendance in 30 days</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)' }}>Members at Risk</div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>No attendance in 30 days</div>
             </div>
             <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 24, color: '#EF4444' }}>{loadingQuick ? '—' : atRiskCount}</div>
           </div>
@@ -632,67 +632,67 @@ export function DashboardPage() {
             {atRiskMembers.map((m, i) => {
               const { bg, color } = avatarPalette(m.first_name + m.last_name)
               return (
-                <div key={`${m.id}-${i}`} title={`${m.first_name} ${m.last_name}`} style={{ width: 30, height: 30, borderRadius: '50%', background: bg, color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>
+                <div key={`${m.id}-${i}`} title={`${m.first_name} ${m.last_name}`} style={{ width: 30, height: 30, borderRadius: '50%', background: bg, color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--dm-bg-card)' }}>
                   {m.first_name[0]}{m.last_name[0]}
                 </div>
               )
             })}
-            {atRiskCount > 5 && <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#F3F4F6', color: '#6B7280', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>+{atRiskCount - 5}</div>}
+            {atRiskCount > 5 && <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--dm-bg-muted)', color: 'var(--dm-text-secondary)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--dm-bg-card)' }}>+{atRiskCount - 5}</div>}
           </div>
         </div>
 
         {/* New Member Follow-up */}
-        <div className="qr-card" onClick={() => navigate('/reports?tab=members')} style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '16px 18px', cursor: 'pointer', transition: 'border-color 0.15s' }}>
+        <div className="qr-card" onClick={() => navigate('/reports?tab=members')} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '16px 18px', cursor: 'pointer', transition: 'border-color 0.15s' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <div>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>New Member Follow-up</div>
-              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Joined in last 30 days</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)' }}>New Member Follow-up</div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>Joined in last 30 days</div>
             </div>
             <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 24, color: '#4F6BED' }}>{loadingQuick ? '—' : newMemberCount}</div>
           </div>
           {!loadingQuick && newMemberCount > 0 && (
-            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280' }}>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-secondary)' }}>
               <span style={{ color: '#22C55E', fontWeight: 600 }}>{newInGroupCount}</span> assigned to a group · <span style={{ color: '#EF4444', fontWeight: 600 }}>{newMemberCount - newInGroupCount}</span> unassigned
             </div>
           )}
         </div>
 
         {/* Birthdays */}
-        <div className="qr-card" onClick={() => navigate('/reports?tab=members')} style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '16px 18px', cursor: 'pointer', transition: 'border-color 0.15s' }}>
+        <div className="qr-card" onClick={() => navigate('/reports?tab=members')} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '16px 18px', cursor: 'pointer', transition: 'border-color 0.15s' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <div>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>Birthdays This Month</div>
-              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)' }}>Birthdays This Month</div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>
                 {today.toLocaleDateString('en', { month: 'long' })}
               </div>
             </div>
             <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 24, color: '#C8964A' }}>{loadingQuick ? '—' : birthdayCount}</div>
           </div>
           {!loadingQuick && birthdayCount > 0 && (
-            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280' }}>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-secondary)' }}>
               <span style={{ color: '#4F6BED', fontWeight: 600 }}>{birthdayThisWeek}</span> celebrating this week
             </div>
           )}
         </div>
 
         {/* Top Givers */}
-        <div className="qr-card" onClick={() => navigate('/reports?tab=giving')} style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '16px 18px', cursor: 'pointer', transition: 'border-color 0.15s' }}>
+        <div className="qr-card" onClick={() => navigate('/reports?tab=giving')} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '16px 18px', cursor: 'pointer', transition: 'border-color 0.15s' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <div>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>Top Givers This Month</div>
-              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>Top 25 by giving</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)' }}>Top Givers This Month</div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>Top 25 by giving</div>
             </div>
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 18, color: '#22C55E' }}>{loadingQuick ? '—' : fGHS(topGiversTotal)}</div>
           </div>
           {!loadingQuick && sundayEvent && (
-            <div style={{ marginTop: 4, padding: '8px 10px', background: '#F9FAFB', borderRadius: 6 }}>
-              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#6B7280', marginBottom: 2 }}>Next Sunday: {sundayEvent.name}</div>
+            <div style={{ marginTop: 4, padding: '8px 10px', background: 'var(--dm-bg-muted)', borderRadius: 6 }}>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-secondary)', marginBottom: 2 }}>Next Sunday: {sundayEvent.name}</div>
               {sundayEvent.expected_attendance && (
-                <div style={{ height: 4, borderRadius: 2, background: '#E5E7EB' }}>
+                <div style={{ height: 4, borderRadius: 2, background: 'var(--dm-border)' }}>
                   <div style={{ height: 4, borderRadius: 2, background: '#4F6BED', width: `${Math.min(pct(sundayAttendees, sundayEvent.expected_attendance), 100)}%` }} />
                 </div>
               )}
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: 'var(--dm-text-muted)', marginTop: 2 }}>
                 {sundayAttendees} / {sundayEvent.expected_attendance ?? '?'} expected
               </div>
             </div>

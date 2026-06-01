@@ -110,27 +110,27 @@ export function AddPledgePage() {
   // ─── Styles ────────────────────────────────────────────────────────────────
 
   const card: React.CSSProperties = {
-    background: '#fff', border: '0.5px solid #E5E7EB',
+    background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
     borderRadius: 12, padding: 20, marginBottom: 16,
   }
 
   const sectionLabel: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
     fontWeight: 600, fontSize: 11, textTransform: 'uppercase',
-    letterSpacing: '0.12em', color: '#9CA3AF', marginBottom: 14,
+    letterSpacing: '0.12em', color: 'var(--dm-text-muted)', marginBottom: 14,
   }
 
   const fieldLabel: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 12, fontWeight: 500, color: '#374151',
+    fontSize: 12, fontWeight: 500, color: 'var(--dm-text-body)',
     display: 'block', marginBottom: 6,
   }
 
   const inputBase: React.CSSProperties = {
     width: '100%', height: 38, borderRadius: 8,
-    border: '0.5px solid #E5E7EB', background: '#fff',
+    border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827', padding: '0 12px',
+    fontSize: 13, color: 'var(--dm-text-ink)', padding: '0 12px',
     boxSizing: 'border-box', outline: 'none',
     transition: 'border-color 0.15s',
   }
@@ -145,7 +145,7 @@ export function AddPledgePage() {
       <style>{`
         .ap-input:focus { border-color: #4F6BED !important; }
         .ap-select:focus { border-color: #4F6BED !important; outline: none; }
-        .ap-member:hover { background: #F4F5F7 !important; }
+        .ap-member:hover { background: var(--dm-bg-muted) !important; }
       `}</style>
 
       {/* Page Header */}
@@ -154,9 +154,9 @@ export function AddPledgePage() {
           onClick={() => navigate('/donations/pledges')}
           style={{
             width: 32, height: 32, borderRadius: 8,
-            border: '0.5px solid #E5E7EB', background: '#fff',
+            border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
             display: 'grid', placeItems: 'center',
-            cursor: 'pointer', color: '#6B7280', flexShrink: 0,
+            cursor: 'pointer', color: 'var(--dm-text-secondary)', flexShrink: 0,
           }}
           aria-label="Back"
         >
@@ -243,7 +243,7 @@ export function AddPledgePage() {
                 {memberDropdownOpen && filteredMembers.length > 0 && (
                   <div style={{
                     position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-                    background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8,
+                    background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 8,
                     boxShadow: '0 4px 16px rgba(0,0,0,0.08)', marginTop: 4,
                     maxHeight: 240, overflowY: 'auto',
                   }}>
@@ -258,7 +258,7 @@ export function AddPledgePage() {
                         }}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 10,
-                          padding: '10px 12px', cursor: 'pointer', background: '#fff',
+                          padding: '10px 12px', cursor: 'pointer', background: 'var(--dm-bg-card)',
                         }}
                       >
                         <div style={{
@@ -378,12 +378,12 @@ export function AddPledgePage() {
               onClick={() => navigate('/donations/pledges')}
               style={{
                 height: 38, padding: '0 18px', borderRadius: 8,
-                border: '0.5px solid #E5E7EB', background: '#fff',
+                border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontWeight: 600, fontSize: 13, color: '#374151', cursor: 'pointer',
+                fontWeight: 600, fontSize: 13, color: 'var(--dm-text-body)', cursor: 'pointer',
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#FAFBFE')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
             >
               Cancel
             </button>

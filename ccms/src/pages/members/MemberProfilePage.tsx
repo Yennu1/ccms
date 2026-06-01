@@ -140,8 +140,8 @@ const INVERSE: Record<RelationshipType, RelationshipType> = {
 }
 
 const cardStyle: React.CSSProperties = {
-  background: '#fff',
-  border: '0.5px solid #E5E7EB',
+  background: 'var(--dm-bg-card)',
+  border: '0.5px solid var(--dm-border)',
   borderRadius: 12,
   padding: 24,
 }
@@ -150,10 +150,10 @@ const cardHeaderStyle: React.CSSProperties = {
   fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
   fontWeight: 600,
   fontSize: 14,
-  color: '#111827',
+  color: 'var(--dm-text-ink)',
   marginBottom: 16,
   paddingBottom: 12,
-  borderBottom: '0.5px solid #F3F4F6',
+  borderBottom: '0.5px solid var(--dm-border-subtle)',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -282,7 +282,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div style={{ marginBottom: 16 }}>
       <div style={{
         fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-        fontWeight: 500, fontSize: 11, color: '#9CA3AF',
+        fontWeight: 500, fontSize: 11, color: 'var(--dm-text-muted)',
         textTransform: 'uppercase', letterSpacing: '0.06em',
         marginBottom: 4,
       }}>
@@ -290,7 +290,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       </div>
       <div style={{
         fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-        fontWeight: 400, fontSize: 14, color: '#111827',
+        fontWeight: 400, fontSize: 14, color: 'var(--dm-text-ink)',
       }}>
         {children}
       </div>
@@ -485,15 +485,15 @@ function AddRelationshipModal({
 
   const inputBase: React.CSSProperties = {
     width: '100%', height: 38, borderRadius: 8,
-    border: '0.5px solid #E5E7EB',
+    border: '0.5px solid var(--dm-border)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827', background: '#fff',
+    fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)',
     outline: 'none', padding: '0 10px', boxSizing: 'border-box',
   }
 
   const labelStyle: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontWeight: 500, fontSize: 12, color: '#374151',
+    fontWeight: 500, fontSize: 12, color: 'var(--dm-text-body)',
     display: 'block', marginBottom: 6,
   }
 
@@ -508,21 +508,21 @@ function AddRelationshipModal({
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div style={{
-        background: '#fff', borderRadius: 12,
-        border: '0.5px solid #E5E7EB',
+        background: 'var(--dm-bg-card)', borderRadius: 12,
+        border: '0.5px solid var(--dm-border)',
         padding: 24, width: 460, maxWidth: '90vw',
         boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
       }}>
         <div style={{
           fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-          fontWeight: 600, fontSize: 16, color: '#111827',
+          fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)',
           marginBottom: 6,
         }}>
           Add Family Relationship
         </div>
         <div style={{
           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-          fontSize: 13, color: '#6B7280', marginBottom: 20,
+          fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 20,
         }}>
           Link this member to another member in your church.
         </div>
@@ -553,7 +553,7 @@ function AddRelationshipModal({
               {dropdownOpen && (
                 <div style={{
                   position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
-                  background: '#fff', border: '0.5px solid #E5E7EB',
+                  background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
                   borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
                   zIndex: 200, maxHeight: 200, overflowY: 'auto',
                   padding: '4px 0',
@@ -578,7 +578,7 @@ function AddRelationshipModal({
                         border: 'none', cursor: 'pointer',
                         padding: '8px 12px',
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
                       onMouseLeave={e => (e.currentTarget.style.background = m.id === selectedId ? '#F0F2FE' : 'none')}
                     >
                       <div style={{
@@ -661,13 +661,13 @@ function AddRelationshipModal({
             onClick={onClose}
             style={{
               height: 36, padding: '0 16px', borderRadius: 8,
-              border: '0.5px solid #E5E7EB', background: '#fff',
+              border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
               cursor: 'pointer',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 500, fontSize: 13, color: '#374151',
+              fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
           >
             Cancel
           </button>
@@ -766,15 +766,15 @@ function AssignToGroupModal({
 
   const inputBase: React.CSSProperties = {
     width: '100%', height: 38, borderRadius: 8,
-    border: '0.5px solid #E5E7EB',
+    border: '0.5px solid var(--dm-border)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827', background: '#fff',
+    fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)',
     outline: 'none', padding: '0 10px', boxSizing: 'border-box',
   }
 
   const labelStyle: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontWeight: 500, fontSize: 12, color: '#374151',
+    fontWeight: 500, fontSize: 12, color: 'var(--dm-text-body)',
     display: 'block', marginBottom: 6,
   }
 
@@ -783,11 +783,11 @@ function AssignToGroupModal({
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #E5E7EB', padding: 24, width: 460, maxWidth: '90vw', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: '#111827', marginBottom: 6 }}>
+      <div style={{ background: 'var(--dm-bg-card)', borderRadius: 12, border: '0.5px solid var(--dm-border)', padding: 24, width: 460, maxWidth: '90vw', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 6 }}>
           Assign to Group
         </div>
-        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280', marginBottom: 20 }}>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 20 }}>
           Add this member to a group in your church.
         </div>
 
@@ -811,7 +811,7 @@ function AssignToGroupModal({
                 <ChevronDownIcon />
               </span>
               {dropdownOpen && (
-                <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 200, maxHeight: 200, overflowY: 'auto', padding: '4px 0' }}>
+                <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 200, maxHeight: 200, overflowY: 'auto', padding: '4px 0' }}>
                   {filtered.length === 0 ? (
                     <div style={{ padding: '10px 12px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
                       No groups available
@@ -845,7 +845,7 @@ function AssignToGroupModal({
                 key={r}
                 type="button"
                 onClick={() => setRole(r)}
-                style={{ flex: 1, height: 38, borderRadius: 8, border: `0.5px solid ${role === r ? '#4F6BED' : '#E5E7EB'}`, background: role === r ? '#EEF0FD' : '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: role === r ? '#4F6BED' : '#6B7280', transition: 'all 0.12s' }}
+                style={{ flex: 1, height: 38, borderRadius: 8, border: `0.5px solid ${role === r ? '#4F6BED' : 'var(--dm-border)'}`, background: role === r ? '#EEF0FD' : 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: role === r ? '#4F6BED' : 'var(--dm-text-secondary)', transition: 'all 0.12s' }}
               >
                 {r === 'member' ? 'Member' : 'Leader'}
               </button>
@@ -862,9 +862,9 @@ function AssignToGroupModal({
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button
             onClick={onClose}
-            style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#374151' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+            style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
           >
             Cancel
           </button>
@@ -988,7 +988,7 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
   const paginated = historyRecords.slice((page - 1) * ATT_PAGE, page * ATT_PAGE)
 
   const statCardStyle: React.CSSProperties = {
-    background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 10,
+    background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 10,
     padding: '14px 16px', flex: 1, position: 'relative', overflow: 'hidden',
   }
 
@@ -1024,7 +1024,7 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
       </div>
 
       {/* Heatmap */}
-      <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: '16px 20px' }}>
+      <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '16px 20px' }}>
         <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827', marginBottom: 12 }}>
           Attendance Heatmap — {currentYear}
         </div>
@@ -1061,7 +1061,7 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
       </div>
 
       {/* History Table */}
-      <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ padding: '14px 18px', borderBottom: '0.5px solid #F3F4F6' }}>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>Attendance History</div>
         </div>
@@ -1082,8 +1082,8 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
               if (!r.events) return null
               const ts = getAttTypeStyle(r.events.event_type)
               return (
-                <tr key={r.id} onClick={() => navigate(`/events/${r.events!.id}`)} style={{ borderBottom: '0.5px solid #EFF1F7', height: 52, background: '#fff', cursor: 'pointer', transition: 'background 0.1s' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#FAFBFE')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+                <tr key={r.id} onClick={() => navigate(`/events/${r.events!.id}`)} style={{ borderBottom: '0.5px solid #EFF1F7', height: 52, background: 'var(--dm-bg-card)', cursor: 'pointer', transition: 'background 0.1s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>
                   <td style={{ padding: '0 18px' }}>
                     <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#111827' }}>{r.events.name}</div>
                   </td>
@@ -1104,7 +1104,7 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
                     </span>
                   </td>
                   <td style={{ padding: '0 12px' }}>
-                    <button onClick={e => { e.stopPropagation(); navigate(`/events/${r.events!.id}`) }} style={{ width: 26, height: 26, borderRadius: 5, border: '0.5px solid #E5E7EB', background: '#fff', display: 'grid', placeItems: 'center', color: '#6B7280', cursor: 'pointer' }}>
+                    <button onClick={e => { e.stopPropagation(); navigate(`/events/${r.events!.id}`) }} style={{ width: 26, height: 26, borderRadius: 5, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', display: 'grid', placeItems: 'center', color: 'var(--dm-text-secondary)', cursor: 'pointer' }}>
                       <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     </button>
                   </td>
@@ -1119,8 +1119,8 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
               {Math.min((page - 1) * ATT_PAGE + 1, historyRecords.length)}–{Math.min(page * ATT_PAGE, historyRecords.length)} of {historyRecords.length}
             </span>
             <div style={{ flex: 1 }} />
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: page === 1 ? 'not-allowed' : 'pointer', color: page === 1 ? '#D1D5DB' : '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12 }}>← Prev</button>
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: page === totalPages ? '#D1D5DB' : '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12 }}>Next →</button>
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: page === 1 ? 'not-allowed' : 'pointer', color: page === 1 ? 'var(--dm-text-muted)' : 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12 }}>← Prev</button>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: page === totalPages ? 'var(--dm-text-muted)' : 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12 }}>Next →</button>
           </div>
         )}
       </div>
@@ -1173,7 +1173,7 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
   const paginatedPast = past.slice((page - 1) * GROUPS_PAGE, page * GROUPS_PAGE)
 
   const statCardStyle: React.CSSProperties = {
-    background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 10,
+    background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 10,
     padding: '14px 16px', flex: 1, position: 'relative', overflow: 'hidden',
   }
 
@@ -1228,7 +1228,7 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
       </div>
 
       {active.length === 0 ? (
-        <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>
           Not a member of any active groups yet.
         </div>
       ) : (
@@ -1243,7 +1243,7 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
               const schedule = parseMeetingSchedule(g.meeting_schedule)
               const isConfirming = confirmLeaveId === gm.id
               return (
-                <div key={gm.id} style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, padding: 18 }}>
+                <div key={gm.id} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: 18 }}>
                   {g.ministries && (
                     <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4F6BED', marginBottom: 6 }}>
                       {g.ministries.name}
@@ -1271,7 +1271,7 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button
                       onClick={() => navigate(`/groups/${g.ministries?.id}/${g.id}`)}
-                      style={{ flex: 1, height: 32, borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#374151', transition: 'border-color 0.15s' }}
+                      style={{ flex: 1, height: 32, borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: 'var(--dm-text-body)', transition: 'border-color 0.15s' }}
                       onMouseEnter={e => (e.currentTarget.style.borderColor = '#4F6BED')}
                       onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
                     >
@@ -1280,9 +1280,9 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
                     {!isConfirming ? (
                       <button
                         onClick={() => setConfirmLeaveId(gm.id)}
-                        style={{ height: 32, padding: '0 10px', borderRadius: 6, border: '0.5px solid #FCA5A5', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#EF4444', transition: 'background 0.15s' }}
+                        style={{ height: 32, padding: '0 10px', borderRadius: 6, border: '0.5px solid #FCA5A5', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#EF4444', transition: 'background 0.15s' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')}
-                        onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
                       >
                         Leave
                       </button>
@@ -1290,7 +1290,7 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
                       <div style={{ display: 'flex', gap: 4 }}>
                         <button
                           onClick={() => setConfirmLeaveId(null)}
-                          style={{ height: 32, padding: '0 8px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#6B7280' }}
+                          style={{ height: 32, padding: '0 8px', borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: 'var(--dm-text-secondary)' }}
                         >
                           Cancel
                         </button>
@@ -1312,7 +1312,7 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
       )}
 
       {past.length > 0 && (
-        <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ padding: '14px 18px', borderBottom: '0.5px solid #F3F4F6' }}>
             <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>Past Memberships</div>
           </div>
@@ -1328,7 +1328,7 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
             </thead>
             <tbody>
               {paginatedPast.map(gm => (
-                <tr key={gm.id} style={{ borderBottom: '0.5px solid #EFF1F7', height: 48, background: '#fff' }}>
+                <tr key={gm.id} style={{ borderBottom: '0.5px solid #EFF1F7', height: 48, background: 'var(--dm-bg-card)' }}>
                   <td style={{ padding: '0 18px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#111827' }}>
                     {gm.groups?.name ?? '—'}
                   </td>
@@ -1621,8 +1621,8 @@ export function MemberProfilePage() {
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               height: 38, padding: '0 14px', borderRadius: 8,
-              border: '0.5px solid #E5E7EB', background: '#fff',
-              cursor: 'pointer', color: '#374151',
+              border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
+              cursor: 'pointer', color: 'var(--dm-text-body)',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
               fontWeight: 500, fontSize: 13,
               transition: 'border-color 0.15s',
@@ -1638,8 +1638,8 @@ export function MemberProfilePage() {
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               height: 38, padding: '0 14px', borderRadius: 8,
-              border: '0.5px solid #E5E7EB', background: '#fff',
-              cursor: 'pointer', color: '#374151',
+              border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
+              cursor: 'pointer', color: 'var(--dm-text-body)',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
               fontWeight: 500, fontSize: 13,
               transition: 'border-color 0.15s',
@@ -1809,7 +1809,7 @@ export function MemberProfilePage() {
                             <button
                               type="button"
                               onClick={() => setSidebarLeaveConfirmId(null)}
-                              style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11, color: '#6B7280' }}
+                              style={{ height: 28, padding: '0 10px', borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11, color: 'var(--dm-text-secondary)' }}
                             >
                               Cancel
                             </button>
@@ -1921,13 +1921,13 @@ export function MemberProfilePage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 gap: 6, width: '100%', height: 38,
                 borderRadius: 8, border: '0.5px solid #4F6BED',
-                background: '#fff', cursor: 'pointer',
+                background: 'var(--dm-bg-card)', cursor: 'pointer',
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontWeight: 500, fontSize: 13, color: '#4F6BED',
                 transition: 'background 0.15s',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = '#F0F2FE')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
             >
               + Add Relationship
             </button>
@@ -2049,10 +2049,10 @@ export function MemberProfilePage() {
               onClick={() => navigate(`/members/${member.id}/edit`)}
               style={{
                 display: 'block', width: '100%', height: 38,
-                borderRadius: 8, border: '0.5px solid #E5E7EB',
-                background: '#fff', cursor: 'pointer',
+                borderRadius: 8, border: '0.5px solid var(--dm-border)',
+                background: 'var(--dm-bg-card)', cursor: 'pointer',
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontWeight: 500, fontSize: 13, color: '#374151',
+                fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)',
                 marginBottom: 8, transition: 'border-color 0.15s',
               }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')}
@@ -2070,7 +2070,7 @@ export function MemberProfilePage() {
                 style={{
                   display: 'block', width: '100%', height: 38,
                   borderRadius: 8, border: '0.5px solid #FCA5A5',
-                  background: '#fff',
+                  background: 'var(--dm-bg-card)',
                   cursor: toggling ? 'not-allowed' : 'pointer',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontWeight: 500, fontSize: 13, color: '#EF4444',
@@ -2086,7 +2086,7 @@ export function MemberProfilePage() {
                 style={{
                   display: 'block', width: '100%', height: 38,
                   borderRadius: 8, border: '0.5px solid #86EFAC',
-                  background: '#fff',
+                  background: 'var(--dm-bg-card)',
                   cursor: toggling ? 'not-allowed' : 'pointer',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontWeight: 500, fontSize: 13, color: '#22C55E',

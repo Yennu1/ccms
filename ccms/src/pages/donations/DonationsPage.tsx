@@ -501,10 +501,10 @@ export function DonationsPage() {
   }
 
   const inputStyle: React.CSSProperties = {
-    height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB',
+    height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827',
-    background: '#fff', outline: 'none',
+    fontSize: 13, color: 'var(--dm-text-ink)',
+    background: 'var(--dm-bg-card)', outline: 'none',
     transition: 'border-color 0.15s',
   }
 
@@ -522,11 +522,11 @@ export function DonationsPage() {
     <>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-        .tx-row:hover { background: #FAFBFE !important; }
+        .tx-row:hover { background: var(--dm-bg-muted) !important; }
         .tx-row:hover .row-actions { opacity: 1 !important; }
         .filter-select-d:focus { border-color: #4F6BED !important; outline: none; }
         .filter-input-d:focus { border-color: #4F6BED !important; }
-        .icon-mini:hover { background: #FAFBFE !important; color: #111827 !important; }
+        .icon-mini:hover { background: var(--dm-bg-muted) !important; color: var(--dm-text-ink) !important; }
       `}</style>
 
       {/* Page Header */}
@@ -553,7 +553,7 @@ export function DonationsPage() {
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 height: 36, padding: '0 14px', borderRadius: 8,
-                border: '0.5px solid #E5E7EB', background: exportOpen ? '#FAFBFE' : '#fff', color: '#374151',
+                border: '0.5px solid var(--dm-border)', background: exportOpen ? 'var(--dm-bg-muted)' : 'var(--dm-bg-card)', color: 'var(--dm-text-body)',
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontWeight: 600, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
               }}
@@ -566,7 +566,7 @@ export function DonationsPage() {
             {exportOpen && (
               <div style={{
                 position: 'absolute', top: 'calc(100% + 4px)', right: 0,
-                background: '#fff', border: '0.5px solid #E5E7EB',
+                background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
                 borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
                 zIndex: 100, minWidth: 180, padding: '4px 0',
               }}>
@@ -578,7 +578,7 @@ export function DonationsPage() {
                     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                     fontSize: 13, color: '#374151',
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                 >
                   Export as CSV
@@ -591,7 +591,7 @@ export function DonationsPage() {
                     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                     fontSize: 13, color: '#374151',
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                 >
                   Export as Excel (.xlsx)
@@ -618,7 +618,7 @@ export function DonationsPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
 
         {/* Total This Month */}
-        <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6B7280' }}>Total This Month</span>
             <span style={{ width: 30, height: 30, borderRadius: 8, background: '#EEF1FE', color: '#4F6BED', display: 'grid', placeItems: 'center' }}>
@@ -649,7 +649,7 @@ export function DonationsPage() {
         </div>
 
         {/* Tithes */}
-        <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6B7280' }}>Tithes</span>
             <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(200,150,74,.12)', color: '#C8964A', display: 'grid', placeItems: 'center' }}>
@@ -671,7 +671,7 @@ export function DonationsPage() {
         </div>
 
         {/* Offerings */}
-        <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6B7280' }}>Offerings</span>
             <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(34,197,94,.10)', color: '#22C55E', display: 'grid', placeItems: 'center' }}>
@@ -693,7 +693,7 @@ export function DonationsPage() {
         </div>
 
         {/* Building Fund */}
-        <div style={{ background: '#fff', border: '0.5px solid #E6E8F0', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6B7280' }}>Building Fund</span>
             <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(123,147,245,.14)', color: '#7B93F5', display: 'grid', placeItems: 'center' }}>
@@ -753,7 +753,7 @@ export function DonationsPage() {
       {/* Filter Bar */}
       <div style={{
         display: 'grid', gridTemplateColumns: '1.7fr repeat(4, 1fr)', gap: 10,
-        padding: 14, background: '#fff', border: '0.5px solid #E5E7EB',
+        padding: 14, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
         borderRadius: 12, marginBottom: 16,
       }}>
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -827,7 +827,7 @@ export function DonationsPage() {
       </div>
 
       {/* Table Card */}
-      <div style={{ background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5 }}>
           <thead>
             <tr>
@@ -887,7 +887,7 @@ export function DonationsPage() {
                   onClick={() => navigate(`/donations/${t.id}`)}
                   style={{
                     borderBottom: '0.5px solid #EFF1F7',
-                    height: 56, background: '#fff',
+                    height: 56, background: 'var(--dm-bg-card)',
                     transition: 'background 0.1s', cursor: 'pointer',
                   }}
                 >
@@ -934,7 +934,7 @@ export function DonationsPage() {
                         className="icon-mini"
                         aria-label="View"
                         onClick={e => { e.stopPropagation(); navigate(`/donations/${t.id}`) }}
-                        style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', display: 'grid', placeItems: 'center', color: '#6B7280', cursor: 'pointer' }}
+                        style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', display: 'grid', placeItems: 'center', color: 'var(--dm-text-secondary)', cursor: 'pointer' }}
                       >
                         <ArrowRightIcon />
                       </button>
@@ -942,7 +942,7 @@ export function DonationsPage() {
                         className="icon-mini"
                         aria-label="More"
                         onClick={e => e.stopPropagation()}
-                        style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid #E5E7EB', background: '#fff', display: 'grid', placeItems: 'center', color: '#6B7280', cursor: 'pointer' }}
+                        style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', display: 'grid', placeItems: 'center', color: 'var(--dm-text-secondary)', cursor: 'pointer' }}
                       >
                         <DotsIcon />
                       </button>
@@ -971,7 +971,7 @@ export function DonationsPage() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              style={{ height: 32, padding: '0 10px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: page === 1 ? 'not-allowed' : 'pointer', color: page === 1 ? '#D1D5DB' : '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
+              style={{ height: 32, padding: '0 10px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: page === 1 ? 'not-allowed' : 'pointer', color: page === 1 ? 'var(--dm-text-muted)' : 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
               <ChevronIcon dir="left" /> Previous
             </button>
             <button

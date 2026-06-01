@@ -190,7 +190,7 @@ function StatusBadge({ status }: { status: string | undefined }) {
 
 function SkeletonRow() {
   const pulse: React.CSSProperties = {
-    background: 'linear-gradient(90deg, #F3F4F6 25%, #E9EAEC 50%, #F3F4F6 75%)',
+    background: 'linear-gradient(90deg, var(--dm-bg-muted) 25%, var(--dm-bg-surface) 50%, var(--dm-bg-muted) 75%)',
     backgroundSize: '200% 100%',
     animation: 'skeleton-pulse 1.4s ease infinite',
     borderRadius: 4,
@@ -229,13 +229,13 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
           <PersonIcon />
           <div style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            fontWeight: 600, fontSize: 16, color: '#111827',
+            fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)',
           }}>
             No members yet
           </div>
           <div style={{
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontSize: 13, color: '#9CA3AF',
+            fontSize: 13, color: 'var(--dm-text-muted)',
           }}>
             Add your first member to get started
           </div>
@@ -397,17 +397,17 @@ export function MembersPage() {
     padding: '12px 16px',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
     fontWeight: 500, fontSize: 11,
-    color: '#9CA3AF', textTransform: 'uppercase',
+    color: 'var(--dm-text-muted)', textTransform: 'uppercase',
     letterSpacing: '0.06em', textAlign: 'left',
-    borderBottom: '0.5px solid #E5E7EB',
-    background: '#F9FAFB', whiteSpace: 'nowrap',
+    borderBottom: '0.5px solid var(--dm-border)',
+    background: 'var(--dm-bg-muted)', whiteSpace: 'nowrap',
   }
 
   const inputStyle: React.CSSProperties = {
-    height: 38, borderRadius: 8, border: '0.5px solid #E5E7EB',
+    height: 38, borderRadius: 8, border: '0.5px solid var(--dm-border)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827',
-    background: '#fff', outline: 'none',
+    fontSize: 13, color: 'var(--dm-text-ink)',
+    background: 'var(--dm-bg-card)', outline: 'none',
     transition: 'border-color 0.15s',
   }
 
@@ -425,7 +425,7 @@ export function MembersPage() {
     background: 'none', border: 'none',
     cursor: 'pointer',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#374151', textAlign: 'left',
+    fontSize: 13, color: 'var(--dm-text-body)', textAlign: 'left',
     transition: 'background 0.1s',
   }
 
@@ -436,7 +436,7 @@ export function MembersPage() {
           0%   { background-position: 200% 0; }
           100% { background-position: -200% 0; }
         }
-        .member-row:hover { background: #F9FAFB !important; }
+        .member-row:hover { background: var(--dm-bg-muted) !important; }
         .filter-input:focus { border-color: #4F6BED !important; }
         .filter-select:focus { border-color: #4F6BED !important; outline: none; }
       `}</style>
@@ -449,8 +449,8 @@ export function MembersPage() {
             position: 'fixed',
             top: menuPos.top,
             left: menuPos.left,
-            background: '#fff',
-            border: '0.5px solid #E5E7EB',
+            background: 'var(--dm-bg-card)',
+            border: '0.5px solid var(--dm-border)',
             borderRadius: 8,
             boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
             zIndex: 200,
@@ -461,7 +461,7 @@ export function MembersPage() {
           <button
             style={menuItemStyle}
             onClick={() => { setMenuPos(null); navigate(`/members/${menuPos.memberId}`) }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
           >
             View Profile
@@ -469,7 +469,7 @@ export function MembersPage() {
           <button
             style={menuItemStyle}
             onClick={() => { setMenuPos(null); navigate(`/members/${menuPos.memberId}/edit`) }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
           >
             Edit Member
@@ -477,7 +477,7 @@ export function MembersPage() {
           <button
             style={{ ...menuItemStyle, color: menuPos.memberStatus === 'active' ? '#EF4444' : '#22C55E' }}
             onClick={() => handleToggleStatus(menuPos.memberId, menuPos.memberStatus)}
-            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
           >
             {menuPos.memberStatus === 'active' ? 'Deactivate' : 'Activate'}
@@ -490,14 +490,14 @@ export function MembersPage() {
         <div>
           <h1 style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            fontWeight: 600, fontSize: 20, color: '#111827',
+            fontWeight: 600, fontSize: 20, color: 'var(--dm-text-ink)',
             letterSpacing: '-0.02em', margin: 0,
           }}>
             Members
           </h1>
           <p style={{
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontSize: 13, color: '#6B7280', marginTop: 4, marginBottom: 0,
+            fontSize: 13, color: 'var(--dm-text-secondary)', marginTop: 4, marginBottom: 0,
           }}>
             {loading ? 'Loading…' : `${members.length} members · ${newThisMonth} new this month`}
           </p>
@@ -507,15 +507,15 @@ export function MembersPage() {
             onClick={() => toast.info('Import feature coming soon')}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
-              background: '#fff', color: '#374151',
-              border: '0.5px solid #E5E7EB', borderRadius: 8, cursor: 'pointer',
+              background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)',
+              border: '0.5px solid var(--dm-border)', borderRadius: 8, cursor: 'pointer',
               height: 38, padding: '0 14px',
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
               fontWeight: 500, fontSize: 13, flexShrink: 0,
               transition: 'border-color 0.15s',
             }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--dm-border-strong)')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--dm-border)')}
           >
             <ImportIcon /> Import
           </button>
@@ -538,7 +538,7 @@ export function MembersPage() {
       {/* Tab Navigation */}
       <div style={{
         display: 'flex', alignItems: 'center',
-        borderBottom: '0.5px solid #E5E7EB',
+        borderBottom: '0.5px solid var(--dm-border)',
         marginBottom: 16,
       }}>
         <button
@@ -554,11 +554,11 @@ export function MembersPage() {
           onClick={() => navigate('/members/households')}
           style={{
             ...tabBase,
-            color: '#6B7280',
+            color: 'var(--dm-text-secondary)',
             borderBottom: '2px solid transparent',
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#374151')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#6B7280')}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--dm-text-body)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--dm-text-secondary)')}
         >
           Households
         </button>
@@ -566,7 +566,7 @@ export function MembersPage() {
 
       {/* Filter Bar */}
       <div style={{
-        background: '#fff', border: '0.5px solid #E5E7EB',
+        background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
         borderRadius: 12, padding: '12px 16px', marginBottom: 16,
         display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
       }}>
@@ -675,7 +675,7 @@ export function MembersPage() {
 
       {/* Table Card */}
       <div style={{
-        background: '#fff', border: '0.5px solid #E5E7EB',
+        background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
         borderRadius: 12, overflow: 'hidden',
       }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -702,8 +702,8 @@ export function MembersPage() {
           onClick={() => navigate(`/members/${member.id}`)}
           //onMouseEnter={() => setHoveredRow(member.id)}
           style={{
-            borderBottom: '0.5px solid #F3F4F6',
-            height: 56, background: '#fff',
+            borderBottom: '0.5px solid var(--dm-border-subtle)',
+            height: 56, background: 'var(--dm-bg-card)',
             transition: 'background 0.1s',
             cursor: 'pointer',
           }} >
@@ -715,14 +715,14 @@ export function MembersPage() {
                       <div>
                         <div style={{
                           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontWeight: 600, fontSize: 14, color: '#111827',
+                          fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)',
                           lineHeight: 1.3,
                         }}>
                           {member.first_name} {member.last_name}
                         </div>
                         <div style={{
                           fontFamily: "'IBM Plex Mono', monospace",
-                          fontSize: 11, color: '#9CA3AF', marginTop: 2,
+                          fontSize: 11, color: 'var(--dm-text-muted)', marginTop: 2,
                         }}>
                           {formatMemberNumber(member.member_number)}
                         </div>
@@ -734,13 +734,13 @@ export function MembersPage() {
                   <td style={{ padding: '0 16px' }}>
                     <div style={{
                       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                      fontSize: 13, color: '#374151',
+                      fontSize: 13, color: 'var(--dm-text-body)',
                     }}>
                       {member.email ?? '—'}
                     </div>
                     <div style={{
                       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                      fontSize: 12, color: '#9CA3AF', marginTop: 2,
+                      fontSize: 12, color: 'var(--dm-text-muted)', marginTop: 2,
                     }}>
                       {member.phone ?? '—'}
                     </div>
@@ -755,7 +755,7 @@ export function MembersPage() {
                   <td style={{ padding: '0 16px' }}>
                     <span style={{
                       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                      fontSize: 13, color: '#374151',
+                      fontSize: 13, color: 'var(--dm-text-body)',
                     }}>
                       {member.branches?.name ?? '—'}
                     </span>
@@ -765,7 +765,7 @@ export function MembersPage() {
                   <td style={{ padding: '0 16px' }}>
                     <span style={{
                       fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                      fontSize: 13, color: '#374151',
+                      fontSize: 13, color: 'var(--dm-text-body)',
                     }}>
                       {member.group_memberships?.[0]?.groups?.ministries?.name ?? '—'}
                     </span>
@@ -787,7 +787,7 @@ export function MembersPage() {
                         }}
                         style={{
                           background: 'none', border: 'none', cursor: 'pointer',
-                          color: '#6B7280', display: 'flex', alignItems: 'center',
+                          color: 'var(--dm-text-secondary)', display: 'flex', alignItems: 'center',
                           padding: 4, borderRadius: 4, flexShrink: 0,
                           opacity: 1, transition: 'opacity 0.1s',
                         }}
@@ -798,7 +798,7 @@ export function MembersPage() {
                       <span
                         className="row-arrow"
                         style={{
-                          color: '#9CA3AF',
+                          color: 'var(--dm-text-muted)',
                           opacity:1,
                           transition: 'opacity 0.1s',
                           display: 'flex',
@@ -819,11 +819,11 @@ export function MembersPage() {
         {!loading && filtered.length > 0 && (
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '12px 16px', borderTop: '0.5px solid #E5E7EB',
+            padding: '12px 16px', borderTop: '0.5px solid var(--dm-border)',
           }}>
             <span style={{
               fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontSize: 13, color: '#6B7280',
+              fontSize: 13, color: 'var(--dm-text-secondary)',
             }}>
               Showing {Math.min((page - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} members
             </span>
@@ -833,9 +833,9 @@ export function MembersPage() {
                 disabled={page === 1}
                 style={{
                   height: 38, padding: '0 14px', borderRadius: 8,
-                  border: '0.5px solid #E5E7EB', background: '#fff',
+                  border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
                   cursor: page === 1 ? 'not-allowed' : 'pointer',
-                  color: page === 1 ? '#D1D5DB' : '#374151',
+                  color: page === 1 ? 'var(--dm-text-muted)' : 'var(--dm-text-body)',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontSize: 13, display: 'flex', alignItems: 'center', gap: 4,
                 }}
@@ -847,9 +847,9 @@ export function MembersPage() {
                 disabled={page === totalPages}
                 style={{
                   height: 38, padding: '0 14px', borderRadius: 8,
-                  border: '0.5px solid #E5E7EB', background: '#fff',
+                  border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
                   cursor: page === totalPages ? 'not-allowed' : 'pointer',
-                  color: page === totalPages ? '#D1D5DB' : '#374151',
+                  color: page === totalPages ? 'var(--dm-text-muted)' : 'var(--dm-text-body)',
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontSize: 13, display: 'flex', alignItems: 'center', gap: 4,
                 }}

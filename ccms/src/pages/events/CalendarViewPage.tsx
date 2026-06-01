@@ -116,9 +116,9 @@ export function CalendarViewPage() {
   }))
 
   const inputStyle: React.CSSProperties = {
-    height: 36, borderRadius: 8, border: '0.5px solid #E5E7EB',
+    height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 13, color: '#111827', background: '#fff',
+    fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)',
     outline: 'none', padding: '0 10px', cursor: 'pointer',
   }
 
@@ -127,9 +127,9 @@ export function CalendarViewPage() {
       <style>{`
         .fc { font-family: 'IBM Plex Sans', system-ui, sans-serif !important; }
         .fc .fc-toolbar-title { font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; font-size: 18px !important; font-weight: 600 !important; color: #111827 !important; letter-spacing: -0.02em !important; }
-        .fc .fc-button { font-family: 'IBM Plex Sans', system-ui, sans-serif !important; font-weight: 500 !important; font-size: 13px !important; height: 34px !important; padding: 0 12px !important; border-radius: 7px !important; border: 0.5px solid #E5E7EB !important; background: #fff !important; color: #374151 !important; transition: background 0.1s !important; }
-        .fc .fc-button:hover { background: #F9FAFB !important; }
-        .fc .fc-button-primary:not(.fc-button-active) { background: #fff !important; color: #374151 !important; }
+        .fc .fc-button { font-family: 'IBM Plex Sans', system-ui, sans-serif !important; font-weight: 500 !important; font-size: 13px !important; height: 34px !important; padding: 0 12px !important; border-radius: 7px !important; border: 0.5px solid var(--dm-border) !important; background: var(--dm-bg-card) !important; color: var(--dm-text-body) !important; transition: background 0.1s !important; }
+        .fc .fc-button:hover { background: var(--dm-bg-muted) !important; }
+        .fc .fc-button-primary:not(.fc-button-active) { background: var(--dm-bg-card) !important; color: var(--dm-text-body) !important; }
         .fc .fc-button-active, .fc .fc-button-primary.fc-button-active { background: #4F6BED !important; color: #fff !important; border-color: #4F6BED !important; }
         .fc .fc-col-header-cell-cushion { font-family: 'IBM Plex Sans', system-ui, sans-serif !important; font-size: 11px !important; font-weight: 500 !important; color: #9CA3AF !important; text-transform: uppercase !important; letter-spacing: 0.06em !important; }
         .fc .fc-daygrid-day-number { font-family: 'IBM Plex Mono', monospace !important; font-size: 12px !important; color: #374151 !important; }
@@ -164,7 +164,7 @@ export function CalendarViewPage() {
           </select>
           <button
             onClick={() => navigate('/events')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', color: '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
             onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
           >
@@ -199,7 +199,7 @@ export function CalendarViewPage() {
       </div>
 
       {/* Calendar */}
-      <div style={{ background: '#fff', borderRadius: 12, overflow: 'visible' }}>
+      <div style={{ background: 'var(--dm-bg-card)', borderRadius: 12, overflow: 'visible' }}>
         <FullCalendar
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, listPlugin]}
