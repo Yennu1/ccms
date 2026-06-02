@@ -1004,20 +1004,20 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
       {/* Stat Cards */}
       <div style={{ display: 'flex', gap: 14 }}>
         <div style={statCardStyle}>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Attendance Rate</div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: '#111827', lineHeight: 1.1 }}>{last3MonthsRecords.length === 0 ? '—' : `${attendanceRate}%`}</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 4 }}>Attendance Rate</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{last3MonthsRecords.length === 0 ? '—' : `${attendanceRate}%`}</div>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>last 3 months</div>
           <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#4F6BED' }} />
         </div>
         <div style={statCardStyle}>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Current Streak</div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: '#111827', lineHeight: 1.1 }}>{streak} <span style={{ fontSize: 14, fontWeight: 500, color: '#6B7280' }}>wks</span></div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 4 }}>Current Streak</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{streak} <span style={{ fontSize: 14, fontWeight: 500, color: '#6B7280' }}>wks</span></div>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>consecutive weeks</div>
           <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#22C55E' }} />
         </div>
         <div style={statCardStyle}>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Services YTD</div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: '#111827', lineHeight: 1.1 }}>{ytdTotal}</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 4 }}>Services YTD</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{ytdTotal}</div>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>{currentYear} year-to-date</div>
           <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#C8964A' }} />
         </div>
@@ -1025,7 +1025,7 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
 
       {/* Heatmap */}
       <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '16px 20px' }}>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827', marginBottom: 12 }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)', marginBottom: 12 }}>
           Attendance Heatmap — {currentYear}
         </div>
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -1063,7 +1063,7 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
       {/* History Table */}
       <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ padding: '14px 18px', borderBottom: '0.5px solid #F3F4F6' }}>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>Attendance History</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)' }}>Attendance History</div>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -1085,7 +1085,7 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
                 <tr key={r.id} onClick={() => navigate(`/events/${r.events!.id}`)} style={{ borderBottom: '0.5px solid #EFF1F7', height: 52, background: 'var(--dm-bg-card)', cursor: 'pointer', transition: 'background 0.1s' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>
                   <td style={{ padding: '0 18px' }}>
-                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#111827' }}>{r.events.name}</div>
+                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)' }}>{r.events.name}</div>
                   </td>
                   <td style={{ padding: '0 18px' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px', borderRadius: 999, background: ts.bg, color: ts.color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap' }}>
@@ -1208,20 +1208,20 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
 
       <div style={{ display: 'flex', gap: 14 }}>
         <div style={statCardStyle}>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Total Groups Joined</div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: '#111827', lineHeight: 1.1 }}>{memberships.length}</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 4 }}>Total Groups Joined</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{memberships.length}</div>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>all time</div>
           <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#4F6BED' }} />
         </div>
         <div style={statCardStyle}>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Active Groups</div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: '#111827', lineHeight: 1.1 }}>{active.length}</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 4 }}>Active Groups</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{active.length}</div>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>currently active</div>
           <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#22C55E' }} />
         </div>
         <div style={statCardStyle}>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Leadership Roles</div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: '#111827', lineHeight: 1.1 }}>{leaderCount}</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 4 }}>Leadership Roles</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{leaderCount}</div>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>group leader positions</div>
           <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#C8964A' }} />
         </div>
@@ -1233,7 +1233,7 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
         </div>
       ) : (
         <div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 12 }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 12 }}>
             Active Groups
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
@@ -1249,7 +1249,7 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
                       {g.ministries.name}
                     </div>
                   )}
-                  <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 8 }}>
+                  <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 8 }}>
                     {g.name}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: schedule ? 8 : 12 }}>
@@ -1314,7 +1314,7 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
       {past.length > 0 && (
         <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ padding: '14px 18px', borderBottom: '0.5px solid #F3F4F6' }}>
-            <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>Past Memberships</div>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)' }}>Past Memberships</div>
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -1329,7 +1329,7 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
             <tbody>
               {paginatedPast.map(gm => (
                 <tr key={gm.id} style={{ borderBottom: '0.5px solid #EFF1F7', height: 48, background: 'var(--dm-bg-card)' }}>
-                  <td style={{ padding: '0 18px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#111827' }}>
+                  <td style={{ padding: '0 18px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)' }}>
                     {gm.groups?.name ?? '—'}
                   </td>
                   <td style={{ padding: '0 18px' }}>
@@ -1595,7 +1595,7 @@ export function MemberProfilePage() {
           <div>
             <h1 style={{
               fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-              fontWeight: 600, fontSize: 20, color: '#111827',
+              fontWeight: 600, fontSize: 20, color: 'var(--dm-text-ink)',
               letterSpacing: '-0.02em', margin: 0, lineHeight: 1.2,
             }}>
               {member.first_name} {member.last_name}
@@ -1768,7 +1768,7 @@ export function MemberProfilePage() {
                         </div>
                       )}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>
+                        <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)' }}>
                           {g?.name ?? '—'}
                         </span>
                         <span style={{ background: gm.role === 'leader' ? '#FFF8EC' : '#F3F4F6', color: gm.role === 'leader' ? '#C8964A' : '#6B7280', borderRadius: 5, padding: '2px 7px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11, flexShrink: 0 }}>
@@ -2000,7 +2000,7 @@ export function MemberProfilePage() {
                   </div>
                   <div style={{
                     fontFamily: "'IBM Plex Mono', monospace",
-                    fontSize: 16, color: '#111827', fontWeight: 500,
+                    fontSize: 16, color: 'var(--dm-text-ink)', fontWeight: 500,
                   }}>
                     {formatAmount(ytdTotal)}
                   </div>
@@ -2016,7 +2016,7 @@ export function MemberProfilePage() {
                   </div>
                   <div style={{
                     fontFamily: "'IBM Plex Mono', monospace",
-                    fontSize: 13, color: '#374151',
+                    fontSize: 13, color: 'var(--dm-text-ink)',
                   }}>
                     {lastGift
                       ? `${formatAmount(lastGift.amount)} on ${format(new Date(lastGift.transaction_date), 'MMM d, yyyy')}`

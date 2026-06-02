@@ -224,10 +224,10 @@ function DeleteConfirmModal({
 function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent: string }) {
   return (
     <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 6 }}>
+      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 6 }}>
         {label}
       </div>
-      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, letterSpacing: '-0.02em', color: '#111827', lineHeight: 1.1 }}>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>
         {value}
       </div>
       {sub && (
@@ -405,8 +405,8 @@ export function EventsListPage() {
     fontWeight: 500, fontSize: 10.5,
     color: '#9CA3AF', textTransform: 'uppercase',
     letterSpacing: '0.06em', textAlign: 'left',
-    borderBottom: '0.5px solid #EFF1F7',
-    background: '#FAFBFE', whiteSpace: 'nowrap',
+    borderBottom: '0.5px solid var(--dm-border-soft)',
+    background: 'var(--dm-bg-surface)', whiteSpace: 'nowrap',
   }
 
   const inputStyle: React.CSSProperties = {
@@ -464,7 +464,7 @@ export function EventsListPage() {
       {/* Page Header */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 22, color: '#111827', letterSpacing: '-0.015em', margin: '0 0 4px' }}>
+          <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 22, color: 'var(--dm-text-ink)', letterSpacing: '-0.015em', margin: '0 0 4px' }}>
             Events
           </h1>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280' }}>
@@ -596,10 +596,10 @@ export function EventsListPage() {
                 key={ev.id}
                 className="ev-row"
                 onClick={() => navigate(`/events/${ev.id}`)}
-                style={{ borderBottom: '0.5px solid #EFF1F7', height: 60, background: 'var(--dm-bg-card)', transition: 'background 0.1s', cursor: 'pointer' }}
+                style={{ borderBottom: '0.5px solid var(--dm-border-soft)', height: 60, background: 'var(--dm-bg-card)', transition: 'background 0.1s', cursor: 'pointer' }}
               >
                 <td style={{ padding: '0 18px' }}>
-                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13.5, color: '#111827' }}>
+                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13.5, color: 'var(--dm-text-ink)' }}>
                     {ev.name}
                   </div>
                   {ev.speaker && (
@@ -658,7 +658,7 @@ export function EventsListPage() {
         </table>
 
         {/* Pagination */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 18px', color: '#6B7280', fontSize: 12.5, borderTop: '0.5px solid #EFF1F7', background: '#FCFCFE' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 18px', color: '#6B7280', fontSize: 12.5, borderTop: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-surface)' }}>
           <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
             {filtered.length === 0 ? '0 events' : `Showing ${Math.min((page - 1) * PAGE_SIZE + 1, filtered.length)}–${Math.min(page * PAGE_SIZE, filtered.length)} of ${filtered.length} events`}
           </span>

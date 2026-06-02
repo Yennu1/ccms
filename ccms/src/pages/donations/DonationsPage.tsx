@@ -514,8 +514,8 @@ export function DonationsPage() {
     fontWeight: 500, fontSize: 10.5,
     color: '#9CA3AF', textTransform: 'uppercase',
     letterSpacing: '0.06em', textAlign: 'left',
-    borderBottom: '0.5px solid #EFF1F7',
-    background: '#FAFBFE', whiteSpace: 'nowrap',
+    borderBottom: '0.5px solid var(--dm-border-soft)',
+    background: 'var(--dm-bg-surface)', whiteSpace: 'nowrap',
   }
 
   return (
@@ -534,7 +534,7 @@ export function DonationsPage() {
         <div>
           <h1 style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            fontWeight: 700, fontSize: 22, color: '#111827',
+            fontWeight: 700, fontSize: 22, color: 'var(--dm-text-ink)',
             letterSpacing: '-0.015em', margin: '0 0 4px',
           }}>
             Donations
@@ -620,12 +620,12 @@ export function DonationsPage() {
         {/* Total This Month */}
         <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6B7280' }}>Total This Month</span>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)' }}>Total This Month</span>
             <span style={{ width: 30, height: 30, borderRadius: 8, background: '#EEF1FE', color: '#4F6BED', display: 'grid', placeItems: 'center' }}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5" /><path stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" d="M9.8 6.2A2.2 2.2 0 0 0 8 5.3c-1.2 0-2 .6-2 1.4 0 .9.8 1.2 2 1.5s2 .6 2 1.5-.8 1.4-2 1.4a2.2 2.2 0 0 1-1.8-.9M8 4.3v1M8 11.7v1" /></svg>
             </span>
           </div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: '#111827', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
             {loading ? '—' : formatAmount(totalThisMonth)}
           </div>
           {trendPct !== null ? (
@@ -651,12 +651,12 @@ export function DonationsPage() {
         {/* Tithes */}
         <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6B7280' }}>Tithes</span>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)' }}>Tithes</span>
             <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(200,150,74,.12)', color: '#C8964A', display: 'grid', placeItems: 'center' }}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 13.5S2.5 10.2 2.5 6.4A2.9 2.9 0 0 1 8 5a2.9 2.9 0 0 1 5.5 1.4C13.5 10.2 8 13.5 8 13.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
             </span>
           </div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: '#111827', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
             {loading ? '—' : formatAmount(tithesThisMonth)}
           </div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#22C55E', background: 'rgba(34,197,94,.10)', padding: '2px 8px', borderRadius: 999, marginTop: 8 }}>
@@ -673,12 +673,12 @@ export function DonationsPage() {
         {/* Offerings */}
         <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6B7280' }}>Offerings</span>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)' }}>Offerings</span>
             <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(34,197,94,.10)', color: '#22C55E', display: 'grid', placeItems: 'center' }}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 2h9v12l-1.5-1-1.5 1-1.5-1-1.5 1-1.5-1-1.5 1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /><path d="M6 5h4M6 8h4M6 11h2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
             </span>
           </div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: '#111827', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
             {loading ? '—' : formatAmount(offeringsThisMonth)}
           </div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#22C55E', background: 'rgba(34,197,94,.10)', padding: '2px 8px', borderRadius: 999, marginTop: 8 }}>
@@ -695,12 +695,12 @@ export function DonationsPage() {
         {/* Building Fund */}
         <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6B7280' }}>Building Fund</span>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)' }}>Building Fund</span>
             <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(123,147,245,.14)', color: '#7B93F5', display: 'grid', placeItems: 'center' }}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 14c-2.5 0-4-1.5-4-3.5 0-2 1.5-3 1.5-4.5 0 1.5 1 2 1 2S6 4 8 2c0 3 3 4 3 7C11 11.5 10 14 8 14z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
             </span>
           </div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: '#111827', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
             {loading ? '—' : formatAmount(buildingFundThisMonth)}
           </div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#22C55E', background: 'rgba(34,197,94,.10)', padding: '2px 8px', borderRadius: 999, marginTop: 8 }}>
@@ -886,7 +886,7 @@ export function DonationsPage() {
                   className="tx-row"
                   onClick={() => navigate(`/donations/${t.id}`)}
                   style={{
-                    borderBottom: '0.5px solid #EFF1F7',
+                    borderBottom: '0.5px solid var(--dm-border-soft)',
                     height: 56, background: 'var(--dm-bg-card)',
                     transition: 'background 0.1s', cursor: 'pointer',
                   }}
@@ -898,7 +898,7 @@ export function DonationsPage() {
                         : <Avatar firstName={firstName} lastName={lastName || 'A'} />
                       }
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {isCollective ? 'Collective Offering' : t.member ? `${firstName} ${lastName}` : 'Anonymous'}
                         </div>
                         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>
@@ -911,7 +911,7 @@ export function DonationsPage() {
                     {isCollective ? <CollectiveBadge /> : <CategoryPill categoryName={catName} />}
                   </td>
                   <td style={{ padding: '0 18px', textAlign: 'right' }}>
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: '#111827', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: 'var(--dm-text-ink)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                       {formatAmount(t.amount)}
                     </span>
                   </td>
@@ -958,7 +958,7 @@ export function DonationsPage() {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '12px 18px', color: '#6B7280', fontSize: 12.5,
-          borderTop: '0.5px solid #EFF1F7', background: '#FCFCFE',
+          borderTop: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-surface)',
         }}>
           <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
             {filtered.length === 0
@@ -977,7 +977,7 @@ export function DonationsPage() {
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              style={{ height: 32, padding: '0 10px', borderRadius: 8, border: '0.5px solid #E5E7EB', background: '#fff', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: page === totalPages ? '#D1D5DB' : '#374151', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
+              style={{ height: 32, padding: '0 10px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: page === totalPages ? 'var(--dm-text-muted)' : 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
               Next <ChevronIcon dir="right" />
             </button>
           </div>

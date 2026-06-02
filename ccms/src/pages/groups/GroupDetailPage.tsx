@@ -75,8 +75,8 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string 
   return (
     <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, letterSpacing: '-0.02em', color: '#111827', lineHeight: 1.1 }}>{value}</div>
-      {sub && <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>{sub}</div>}
+      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{value}</div>
+      {sub && <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-secondary)', marginTop: 4 }}>{sub}</div>}
       <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: accent }} />
     </div>
   )
@@ -589,28 +589,28 @@ export function GroupDetailPage() {
         <SlashIcon />
         <button onClick={() => navigate(`/groups/${ministryId}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF', padding: 0 }} onMouseEnter={e => (e.currentTarget.style.color = '#4F6BED')} onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}>{group.ministries?.name ?? 'Ministry'}</button>
         <SlashIcon />
-        <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151', fontWeight: 500 }}>{group.name}</span>
+        <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)', fontWeight: 500 }}>{group.name}</span>
       </div>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 20, color: '#111827', letterSpacing: '-0.015em', margin: 0 }}>{group.name}</h1>
+            <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 20, color: 'var(--dm-text-ink)', letterSpacing: '-0.015em', margin: 0 }}>{group.name}</h1>
             {group.ministries && (
               <button onClick={() => navigate(`/groups/${ministryId}`)} style={{ display: 'inline-flex', background: '#E8ECF9', color: '#4F6BED', borderRadius: 5, padding: '2px 8px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11, border: 'none', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = '#D5DCFA')} onMouseLeave={e => (e.currentTarget.style.background = '#E8ECF9')}>{group.ministries.name}</button>
             )}
             <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: 999, background: group.is_active ? '#DCFCE7' : '#F3F4F6', color: group.is_active ? '#166534' : '#6B7280', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11 }}>{group.is_active ? 'Active' : 'Inactive'}</span>
           </div>
           {schedules.length === 1 && (
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-body)', marginTop: 2 }}>
               {[schedules[0].meeting_day, formatScheduleTime(schedules[0].meeting_time), schedules[0].meeting_venue].filter(Boolean).join(' · ')}
             </div>
           )}
           {schedules.length > 1 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 2 }}>
               {schedules.map(s => (
-                <div key={s.id} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#9CA3AF' }}>
+                <div key={s.id} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-body)' }}>
                   {[s.meeting_day.slice(0, 3), formatScheduleTime(s.meeting_time), s.meeting_venue].filter(Boolean).join(' · ')}
                 </div>
               ))}
@@ -619,8 +619,8 @@ export function GroupDetailPage() {
           {group.leader && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
               {(() => { const { bg, color } = avatarColor(group.leader.first_name + group.leader.last_name); return <div style={{ width: 20, height: 20, borderRadius: '50%', background: bg, color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{group.leader.first_name[0]}{group.leader.last_name[0]}</div> })()}
-              <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280' }}>{group.leader.first_name} {group.leader.last_name}</span>
-              <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF' }}>· Leader</span>
+              <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-body)' }}>{group.leader.first_name} {group.leader.last_name}</span>
+              <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-body)' }}>· Leader</span>
             </div>
           )}
         </div>
@@ -697,7 +697,7 @@ export function GroupDetailPage() {
               <thead>
                 <tr>
                   {['Member', 'Role', 'Joined', ''].map(h => (
-                    <th key={h} style={{ padding: '11px 18px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 10.5, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left', borderBottom: '0.5px solid #EFF1F7', background: '#FAFBFE', whiteSpace: 'nowrap' }}>{h}</th>
+                    <th key={h} style={{ padding: '11px 18px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 10.5, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left', borderBottom: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-surface)', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -707,13 +707,13 @@ export function GroupDetailPage() {
                     {members.length === 0 ? 'No members yet — click Add Member to get started' : 'No members match your filters'}
                   </td></tr>
                 ) : filteredMembers.map(gm => (
-                  <tr key={gm.id} className="gd-row" style={{ borderBottom: '0.5px solid #EFF1F7', height: 56, background: 'var(--dm-bg-card)', transition: 'background 0.1s' }}>
+                  <tr key={gm.id} className="gd-row" style={{ borderBottom: '0.5px solid var(--dm-border-soft)', height: 56, background: 'var(--dm-bg-card)', transition: 'background 0.1s' }}>
                     <td style={{ padding: '0 18px' }}>
                       {gm.member && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <Avatar firstName={gm.member.first_name} lastName={gm.member.last_name} size={32} />
                           <div>
-                            <button onClick={() => navigate(`/members/${gm.member!.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#111827', textAlign: 'left' }} onMouseEnter={e => (e.currentTarget.style.color = '#4F6BED')} onMouseLeave={e => (e.currentTarget.style.color = '#111827')}>
+                            <button onClick={() => navigate(`/members/${gm.member!.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)', textAlign: 'left' }} onMouseEnter={e => (e.currentTarget.style.color = '#4F6BED')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--dm-text-ink)')}>
                               {gm.member.first_name} {gm.member.last_name}
                             </button>
                             {gm.member.member_number && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>{gm.member.member_number}</div>}

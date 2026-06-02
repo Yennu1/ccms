@@ -98,7 +98,7 @@ function ProgressBar({ paid, total, status }: { paid: number; total: number; sta
 
 function SkeletonRow() {
   return (
-    <tr style={{ borderBottom: '0.5px solid #EFF1F7', height: 60 }}>
+    <tr style={{ borderBottom: '0.5px solid var(--dm-border-soft)', height: 60 }}>
       {[22, 18, 28, 10, 10, 5].map((w, i) => (
         <td key={i} style={{ padding: '0 18px' }}>
           <div style={{
@@ -182,8 +182,8 @@ export function PledgesPage() {
     fontWeight: 500, fontSize: 10.5,
     color: '#9CA3AF', textTransform: 'uppercase',
     letterSpacing: '0.06em', textAlign: 'left',
-    borderBottom: '0.5px solid #EFF1F7',
-    background: '#FAFBFE', whiteSpace: 'nowrap',
+    borderBottom: '0.5px solid var(--dm-border-soft)',
+    background: 'var(--dm-bg-surface)', whiteSpace: 'nowrap',
   }
 
   return (
@@ -202,7 +202,7 @@ export function PledgesPage() {
         <div>
           <h1 style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            fontWeight: 700, fontSize: 22, color: '#111827',
+            fontWeight: 700, fontSize: 22, color: 'var(--dm-text-ink)',
             letterSpacing: '-0.015em', margin: '0 0 4px',
           }}>
             Pledges
@@ -277,13 +277,13 @@ export function PledgesPage() {
             </div>
             <div style={{
               fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-              fontWeight: 700, fontSize: 22, color: '#111827',
+              fontWeight: 700, fontSize: 22, color: 'var(--dm-text-ink)',
               letterSpacing: '-0.015em', fontVariantNumeric: 'tabular-nums',
               marginBottom: 4,
             }}>
               {c.value}
             </div>
-            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF' }}>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-secondary)' }}>
               {c.sub}
             </div>
           </div>
@@ -388,7 +388,7 @@ export function PledgesPage() {
                   key={p.id}
                   className="pl-row"
                   style={{
-                    borderBottom: '0.5px solid #EFF1F7',
+                    borderBottom: '0.5px solid var(--dm-border-soft)',
                     height: 60, background: 'var(--dm-bg-card)',
                     transition: 'background 0.1s', cursor: 'default',
                   }}
@@ -406,7 +406,7 @@ export function PledgesPage() {
                         {firstName[0]}{lastName[0]}
                       </div>
                       <div>
-                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>
+                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)' }}>
                           {firstName} {lastName}
                         </div>
                         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>
@@ -416,10 +416,10 @@ export function PledgesPage() {
                     </div>
                   </td>
                   <td style={{ padding: '0 18px' }}>
-                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#374151' }}>
+                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)' }}>
                       {p.transaction_categories?.name ?? '—'}
                     </div>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-body)', marginTop: 2 }}>
                       {p.id.slice(0, 8).toUpperCase()}
                     </div>
                   </td>
@@ -474,7 +474,7 @@ export function PledgesPage() {
         {/* Footer */}
         <div style={{
           padding: '12px 18px', color: '#6B7280', fontSize: 12.5,
-          borderTop: '0.5px solid #EFF1F7', background: '#FCFCFE',
+          borderTop: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)',
           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
         }}>
           {filtered.length} pledge{filtered.length !== 1 ? 's' : ''} shown

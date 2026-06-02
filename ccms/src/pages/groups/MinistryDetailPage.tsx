@@ -78,8 +78,8 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string 
   return (
     <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, letterSpacing: '-0.02em', color: '#111827', lineHeight: 1.1 }}>{value}</div>
-      {sub && <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>{sub}</div>}
+      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{value}</div>
+      {sub && <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-secondary)', marginTop: 4 }}>{sub}</div>}
       <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: accent }} />
     </div>
   )
@@ -395,7 +395,7 @@ export function MinistryDetailPage() {
           </button>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 20, color: '#111827', letterSpacing: '-0.015em', margin: 0 }}>{ministry.name}</h1>
+              <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 20, color: 'var(--dm-text-ink)', letterSpacing: '-0.015em', margin: 0 }}>{ministry.name}</h1>
               {ministry.is_org_wide && <span style={{ display: 'inline-flex', background: '#E8ECF9', color: '#4F6BED', borderRadius: 5, padding: '2px 8px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11 }}>Org-Wide</span>}
               <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: 999, background: ministry.is_active ? '#DCFCE7' : '#F3F4F6', color: ministry.is_active ? '#166534' : '#6B7280', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11 }}>{ministry.is_active ? 'Active' : 'Inactive'}</span>
             </div>
@@ -459,7 +459,7 @@ export function MinistryDetailPage() {
                   <div key={group.id} className="md-group-card" onClick={() => navigate(`/groups/${ministry.id}/${group.id}`)} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: 18, cursor: 'pointer', transition: 'border-color 0.15s' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
                       <div>
-                        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#111827' }}>{group.name}</div>
+                        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>{group.name}</div>
                         <span style={{ display: 'inline-flex', marginTop: 4, padding: '2px 8px', borderRadius: 999, background: group.is_active ? '#DCFCE7' : '#F3F4F6', color: group.is_active ? '#166534' : '#6B7280', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10.5 }}>{group.is_active ? 'Active' : 'Inactive'}</span>
                       </div>
                       <div style={{ width: 26, height: 26, borderRadius: 6, border: '0.5px solid #E5E7EB', display: 'grid', placeItems: 'center', color: '#9CA3AF', flexShrink: 0 }}><ArrowRightIcon /></div>
@@ -467,16 +467,16 @@ export function MinistryDetailPage() {
                     {group.leader && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
                         <Avatar firstName={group.leader.first_name} lastName={group.leader.last_name} size={24} />
-                        <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#374151' }}>{group.leader.first_name} {group.leader.last_name}</span>
+                        <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-body)' }}>{group.leader.first_name} {group.leader.last_name}</span>
                       </div>
                     )}
                     {first && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginBottom: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-body)', marginBottom: 10 }}>
                         <span>{[first.meeting_day.slice(0, 3), formatScheduleTime(first.meeting_time), first.meeting_venue].filter(Boolean).join(' · ')}</span>
                         {extra > 0 && <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 10.5, color: '#4F6BED', background: '#E8ECF9', borderRadius: 4, padding: '1px 5px' }}>+{extra} more</span>}
                       </div>
                     )}
-                    <div style={{ paddingTop: 10, borderTop: '0.5px solid #F3F4F6', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280' }}>
+                    <div style={{ paddingTop: 10, borderTop: '0.5px solid #F3F4F6', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-secondary)' }}>
                       {group._memberCount ?? 0} {(group._memberCount ?? 0) === 1 ? 'member' : 'members'}
                     </div>
                   </div>

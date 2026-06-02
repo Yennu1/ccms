@@ -68,8 +68,8 @@ function OrgWideIcon() {
 function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent: string }) {
   return (
     <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, letterSpacing: '-0.02em', color: '#111827', lineHeight: 1.1 }}>{value}</div>
+      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 6 }}>{label}</div>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{value}</div>
       {sub && <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>{sub}</div>}
       <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: accent }} />
     </div>
@@ -225,7 +225,7 @@ export function MinistriesPage() {
       {/* Page Header */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 22, color: '#111827', letterSpacing: '-0.015em', margin: '0 0 4px' }}>Ministries & Groups</h1>
+          <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 22, color: 'var(--dm-text-ink)', letterSpacing: '-0.015em', margin: '0 0 4px' }}>Ministries & Groups</h1>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280' }}>
             {loading ? 'Loading…' : `${ministries.length} ministries · ${totalGroups} groups`}
           </div>
@@ -305,7 +305,7 @@ export function MinistriesPage() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <span style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 15, color: '#111827' }}>{ministry.name}</span>
+                      <span style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 15, color: 'var(--dm-text-ink)' }}>{ministry.name}</span>
                       {ministry.is_org_wide && (
                         <span title="Org-Wide" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: '#E8ECF9', color: '#4F6BED', borderRadius: 5, padding: '2px 7px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 10.5 }}>
                           <OrgWideIcon /> Org-Wide
@@ -346,7 +346,7 @@ export function MinistriesPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                     <Avatar firstName={leader.first_name} lastName={leader.last_name} size={28} />
                     <div>
-                      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, color: '#374151' }}>{leader.first_name} {leader.last_name}</div>
+                      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12.5, color: 'var(--dm-text-body)' }}>{leader.first_name} {leader.last_name}</div>
                       <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF' }}>Ministry Leader</div>
                     </div>
                   </div>
@@ -355,12 +355,12 @@ export function MinistriesPage() {
                 {/* Footer Stats */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 12, borderTop: '0.5px solid #F3F4F6' }}>
                   <div>
-                    <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 18, color: '#111827', lineHeight: 1 }}>{groupCount}</div>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 18, color: 'var(--dm-text-ink)', lineHeight: 1 }}>{groupCount}</div>
                     <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{groupCount === 1 ? 'Group' : 'Groups'}</div>
                   </div>
                   <div style={{ width: '0.5px', height: 28, background: '#E5E7EB' }} />
                   <div>
-                    <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 18, color: '#111827', lineHeight: 1 }}>{memberCount}</div>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 18, color: 'var(--dm-text-ink)', lineHeight: 1 }}>{memberCount}</div>
                     <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{memberCount === 1 ? 'Member' : 'Members'}</div>
                   </div>
                   <div style={{ flex: 1 }} />
