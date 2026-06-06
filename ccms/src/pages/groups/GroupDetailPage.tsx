@@ -5,6 +5,7 @@ import { format, startOfMonth } from 'date-fns'
 import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { MemberAvatar } from '../../components/MemberAvatar'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -20,7 +21,7 @@ interface Group {
 
 interface GroupMember {
   id: string; role: string; joined_at: string | null; is_active: boolean
-  member: { id: string; first_name: string; last_name: string; member_number: string | null; membership_status: string } | null
+  member: { id: string; first_name: string; last_name: string; member_number: string | null; membership_status: string; photo_url: string | null } | null
 }
 
 interface MemberOption { id: string; first_name: string; last_name: string; member_number: string | null }
@@ -65,11 +66,6 @@ function ArrowRightIcon() { return <svg width="13" height="13" viewBox="0 0 16 1
 function PencilIcon() { return <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg> }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
-function Avatar({ firstName, lastName, size = 32 }: { firstName: string; lastName: string; size?: number }) {
-  const { bg, color } = avatarColor(firstName + lastName)
-  return <div style={{ width: size, height: size, borderRadius: '50%', background: bg, color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: size * 0.34, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{firstName[0]?.toUpperCase()}{lastName[0]?.toUpperCase()}</div>
-}
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent: string }) {
   return (
@@ -442,7 +438,7 @@ export function GroupDetailPage() {
     if (!groupId) return
     const { data } = await supabase
       .from('group_memberships')
-      .select('id, role, joined_at, is_active, member:members!group_memberships_member_id_fkey(id, first_name, last_name, member_number, membership_status)')
+      .select('id, role, joined_at, is_active, member:members!group_memberships_member_id_fkey(id, first_name, last_name, member_number, membership_status, photo_url)')
       .eq('group_id', groupId)
       .eq('is_active', true)
       .order('joined_at', { ascending: false })
@@ -711,7 +707,7 @@ export function GroupDetailPage() {
                     <td style={{ padding: '0 18px' }}>
                       {gm.member && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <Avatar firstName={gm.member.first_name} lastName={gm.member.last_name} size={32} />
+                          <MemberAvatar firstName={gm.member.first_name} lastName={gm.member.last_name} photoUrl={gm.member.photo_url} size={32} />
                           <div>
                             <button onClick={() => navigate(`/members/${gm.member!.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)', textAlign: 'left' }} onMouseEnter={e => (e.currentTarget.style.color = '#4F6BED')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--dm-text-ink)')}>
                               {gm.member.first_name} {gm.member.last_name}

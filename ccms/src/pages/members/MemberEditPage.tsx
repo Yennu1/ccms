@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { MemberAvatar } from '../../components/MemberAvatar'
 
 // ─── Schema ────────────────────────────────────────────────────────────────────
 
@@ -55,6 +56,7 @@ interface MemberData {
   membership_status: string
   branch_id: string | null
   notes: string | null
+  photo_url: string | null
   branches: { id: string; name: string } | null
 }
 
@@ -265,13 +267,16 @@ export function MemberEditPage() {
   const navigate  = useNavigate()
   const { user }  = useAuth()
 
-  const [member,      setMember]      = useState<MemberData | null>(null)
-  const [loading,     setLoading]     = useState(true)
-  const [notFound,    setNotFound]    = useState(false)
-  const [branches,    setBranches]    = useState<Branch[]>([])
-  const [submitting,  setSubmitting]  = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [member,        setMember]        = useState<MemberData | null>(null)
+  const [loading,       setLoading]       = useState(true)
+  const [notFound,      setNotFound]      = useState(false)
+  const [branches,      setBranches]      = useState<Branch[]>([])
+  const [submitting,    setSubmitting]    = useState(false)
+  const [submitError,   setSubmitError]   = useState<string | null>(null)
   const [autoSaveText] = useState('just now')
+  const [photoUrl,      setPhotoUrl]      = useState<string | null>(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const photoRef = useRef<HTMLInputElement>(null)
 
   const {
     register,
@@ -310,6 +315,7 @@ export function MemberEditPage() {
 
   useEffect(() => {
     if (!member) return
+    setPhotoUrl(member.photo_url ?? null)
     reset({
       first_name:        member.first_name,
       last_name:         member.last_name,
@@ -337,6 +343,48 @@ export function MemberEditPage() {
       .then(({ data }) => { if (active && data) setBranches(data) })
     return () => { active = false }
   }, [user?.org_id])
+
+  const handlePhotoUpload = async (file: File) => {
+    if (!member || !user) return
+    if (file.size > 5 * 1024 * 1024) { toast.error('Photo must be under 5 MB'); return }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Only JPEG, PNG or WebP images are allowed'); return
+    }
+    setPhotoUploading(true)
+    try {
+      const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
+      const path = `${user.org_id}/${member.id}.${ext}`
+      const { error: upErr } = await supabase.storage.from('member-photos').upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+      const { data: { publicUrl } } = supabase.storage.from('member-photos').getPublicUrl(path)
+      const { error: dbErr } = await supabase.from('members').update({ photo_url: publicUrl }).eq('id', member.id)
+      if (dbErr) throw dbErr
+      setPhotoUrl(publicUrl + '?t=' + Date.now())
+      toast.success('Photo updated')
+    } catch {
+      toast.error('Failed to upload photo')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
+  const handlePhotoRemove = async () => {
+    if (!member || !user) return
+    setPhotoUploading(true)
+    try {
+      await supabase.storage.from('member-photos').remove(
+        ['jpg', 'png', 'webp'].map(ext => `${user.org_id}/${member.id}.${ext}`)
+      )
+      const { error: dbErr } = await supabase.from('members').update({ photo_url: null }).eq('id', member.id)
+      if (dbErr) throw dbErr
+      setPhotoUrl(null)
+      toast.success('Photo removed')
+    } catch {
+      toast.error('Failed to remove photo')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
 
   const onSubmit = async (data: FormValues) => {
     if (!id) return
@@ -451,6 +499,75 @@ export function MemberEditPage() {
           background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
           borderRadius: 12, padding: 24,
         }}>
+
+          {/* ── Photo Upload ── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28, paddingBottom: 24, borderBottom: '0.5px solid var(--dm-border-subtle)' }}>
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <MemberAvatar firstName={member.first_name} lastName={member.last_name} photoUrl={photoUrl} size={64} />
+              {photoUploading && (
+                <div style={{
+                  position: 'absolute', inset: 0, borderRadius: '50%',
+                  background: 'rgba(0,0,0,0.4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="edit-spinner">
+                    <circle cx="10" cy="10" r="8" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+                    <path d="M10 2a8 8 0 0 1 8 8" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </div>
+              )}
+            </div>
+            <div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)', marginBottom: 4 }}>
+                Profile Photo
+              </div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)', marginBottom: 10 }}>
+                JPEG, PNG or WebP · max 5 MB
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  disabled={photoUploading}
+                  onClick={() => photoRef.current?.click()}
+                  style={{
+                    height: 32, padding: '0 14px', borderRadius: 7,
+                    border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
+                    cursor: photoUploading ? 'not-allowed' : 'pointer',
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                    fontWeight: 500, fontSize: 12, color: 'var(--dm-text-body)',
+                  }}
+                >
+                  {photoUploading ? 'Uploading…' : 'Upload Photo'}
+                </button>
+                {photoUrl && !photoUploading && (
+                  <button
+                    type="button"
+                    onClick={handlePhotoRemove}
+                    style={{
+                      height: 32, padding: '0 14px', borderRadius: 7,
+                      border: '0.5px solid #FCA5A5', background: 'var(--dm-bg-card)',
+                      cursor: 'pointer',
+                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                      fontWeight: 500, fontSize: 12, color: '#EF4444',
+                    }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              <input
+                ref={photoRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: 'none' }}
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (file) handlePhotoUpload(file)
+                  e.target.value = ''
+                }}
+              />
+            </div>
+          </div>
 
           {/* ── Section 1: Personal Information ── */}
           <SectionHeader

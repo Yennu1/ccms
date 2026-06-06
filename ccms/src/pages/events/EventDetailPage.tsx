@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { MemberAvatar as SharedMemberAvatar } from '../../components/MemberAvatar'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ interface RosterMember {
   first_name: string
   last_name: string
   member_number: string | null
+  photo_url: string | null
 }
 
 interface AttendanceRecord {
@@ -205,8 +207,8 @@ function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
 
       const [membersRes, attRes] = await Promise.all([
         branchId
-          ? supabase.from('members').select('id, first_name, last_name, member_number').eq('org_id', orgId).eq('branch_id', branchId).eq('membership_status', 'active').order('first_name')
-          : supabase.from('members').select('id, first_name, last_name, member_number').eq('org_id', orgId).eq('membership_status', 'active').order('first_name'),
+          ? supabase.from('members').select('id, first_name, last_name, member_number, photo_url').eq('org_id', orgId).eq('branch_id', branchId).eq('membership_status', 'active').order('first_name')
+          : supabase.from('members').select('id, first_name, last_name, member_number, photo_url').eq('org_id', orgId).eq('membership_status', 'active').order('first_name'),
         supabase.from('attendance').select('id, member_id, present').eq('event_id', event.id),
       ])
 
@@ -408,7 +410,7 @@ function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
               onMouseEnter={e => { if (!present) e.currentTarget.style.background = 'var(--dm-bg-surface)' }}
               onMouseLeave={e => { e.currentTarget.style.background = present ? 'rgba(34,197,94,0.08)' : 'var(--dm-bg-card)' }}
             >
-              <MemberAvatar first={m.first_name} last={m.last_name} />
+              <SharedMemberAvatar firstName={m.first_name} lastName={m.last_name} photoUrl={m.photo_url} size={32} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)' }}>
                   {m.first_name} {m.last_name}
@@ -666,8 +668,8 @@ export function EventDetailPage() {
     supabase.from('organisations').select('name').eq('id', user.org_id).maybeSingle()
       .then(({ data }) => { if (data?.name) setOrgName(data.name) })
     const mq = event.branch_id
-      ? supabase.from('members').select('id, first_name, last_name, member_number').eq('org_id', user.org_id).eq('branch_id', event.branch_id).eq('membership_status', 'active').order('first_name')
-      : supabase.from('members').select('id, first_name, last_name, member_number').eq('org_id', user.org_id).eq('membership_status', 'active').order('first_name')
+      ? supabase.from('members').select('id, first_name, last_name, member_number, photo_url').eq('org_id', user.org_id).eq('branch_id', event.branch_id).eq('membership_status', 'active').order('first_name')
+      : supabase.from('members').select('id, first_name, last_name, member_number, photo_url').eq('org_id', user.org_id).eq('membership_status', 'active').order('first_name')
     Promise.all([mq, supabase.from('attendance').select('id, member_id, present').eq('event_id', event.id)])
       .then(([mr, ar]) => {
         setPrintMembers((mr.data ?? []) as RosterMember[])

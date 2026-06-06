@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { format, formatDistance } from 'date-fns'
+import { MemberAvatar } from '../../components/MemberAvatar'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -99,6 +100,7 @@ interface Member {
   address: string | null
   city: string | null
   notes: string | null
+  photo_url: string | null
   branches: { id: string; name: string } | null
   group_memberships: GroupMembership[] | null
 }
@@ -1399,6 +1401,11 @@ export function MemberProfilePage() {
   const [sidebarLeaveConfirmId, setSidebarLeaveConfirmId] = useState<string | null>(null)
   const [sidebarLeaving, setSidebarLeaving] = useState(false)
 
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [avatarHovered, setAvatarHovered] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const fetchMember = async () => {
     if (!id) return
     const { data, error } = await supabase
@@ -1482,6 +1489,53 @@ export function MemberProfilePage() {
   }
 
   useEffect(() => {
+    if (member) setPhotoUrl(member.photo_url ?? null)
+  }, [member?.id])
+
+  const handlePhotoUpload = async (file: File) => {
+    if (!member || !user) return
+    if (file.size > 5 * 1024 * 1024) { toast.error('Photo must be under 5 MB'); return }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Only JPEG, PNG or WebP images are allowed')
+      return
+    }
+    setPhotoUploading(true)
+    try {
+      const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
+      const path = `${user.org_id}/${member.id}.${ext}`
+      const { error: upErr } = await supabase.storage.from('member-photos').upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+      const { data: { publicUrl } } = supabase.storage.from('member-photos').getPublicUrl(path)
+      const { error: dbErr } = await supabase.from('members').update({ photo_url: publicUrl }).eq('id', member.id)
+      if (dbErr) throw dbErr
+      setPhotoUrl(publicUrl + '?t=' + Date.now())
+      toast.success('Photo updated')
+    } catch {
+      toast.error('Failed to upload photo')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
+  const handlePhotoRemove = async () => {
+    if (!member || !user) return
+    setPhotoUploading(true)
+    try {
+      await supabase.storage.from('member-photos').remove(
+        ['jpg', 'png', 'webp'].map(ext => `${user.org_id}/${member.id}.${ext}`)
+      )
+      const { error: dbErr } = await supabase.from('members').update({ photo_url: null }).eq('id', member.id)
+      if (dbErr) throw dbErr
+      setPhotoUrl(null)
+      toast.success('Photo removed')
+    } catch {
+      toast.error('Failed to remove photo')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchMember()
     fetchSidebarGroups()
   }, [id])
@@ -1541,16 +1595,13 @@ export function MemberProfilePage() {
     ? format(new Date(member.membership_date), 'MMM yyyy')
     : null
 
-  const initials = `${member.first_name[0] ?? ''}${member.last_name[0] ?? ''}`.toUpperCase()
-  const avatarColors = getAvatarColor(member.first_name, member.last_name)
-
   // Giving summary
   const ytdTotal = transactions.reduce((sum, t) => sum + (t.amount ?? 0), 0)
   const lastGift = transactions[0] ?? null
 
   return (
     <>
-      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} } @keyframes photo-spin { to { transform: rotate(360deg) } } .photo-spin { animation: photo-spin 0.8s linear infinite; transform-origin: center; }`}</style>
 
       {showAddRel && user && (
         <AddRelationshipModal
@@ -1577,20 +1628,64 @@ export function MemberProfilePage() {
             <BackArrowIcon />
           </button>
 
-          {/* Large avatar */}
-          <div style={{
-            width: 48, height: 48, borderRadius: '50%',
-            background: avatarColors.bg,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <span style={{
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-              fontWeight: 600, fontSize: 18, color: avatarColors.color,
-            }}>
-              {initials}
-            </span>
+          {/* Clickable photo avatar */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div
+              style={{ position: 'relative', width: 48, height: 48, borderRadius: '50%', cursor: 'pointer', overflow: 'hidden' }}
+              onClick={() => !photoUploading && fileInputRef.current?.click()}
+              onMouseEnter={() => setAvatarHovered(true)}
+              onMouseLeave={() => setAvatarHovered(false)}
+            >
+              <MemberAvatar firstName={member.first_name} lastName={member.last_name} photoUrl={photoUrl} size={48} />
+              {(avatarHovered || photoUploading) && (
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'rgba(0,0,0,0.45)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: '50%',
+                }}>
+                  {photoUploading ? (
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="photo-spin">
+                      <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+                      <path d="M8 2a6 6 0 0 1 6 6" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="1.5" />
+                    </svg>
+                  )}
+                </div>
+              )}
+            </div>
+            {photoUrl && !photoUploading && (
+              <button
+                onClick={handlePhotoRemove}
+                title="Remove photo"
+                style={{
+                  position: 'absolute', top: -4, right: -4,
+                  width: 18, height: 18, borderRadius: '50%',
+                  background: '#EF4444', border: '1.5px solid white',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: 'white', fontSize: 12, lineHeight: 1,
+                  padding: 0,
+                }}
+              >
+                ×
+              </button>
+            )}
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            style={{ display: 'none' }}
+            onChange={e => {
+              const file = e.target.files?.[0]
+              if (file) handlePhotoUpload(file)
+              e.target.value = ''
+            }}
+          />
 
           <div>
             <h1 style={{

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { startOfMonth } from 'date-fns'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { MemberAvatar } from '../../components/MemberAvatar'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,6 +29,7 @@ interface Member {
   member_number: string | null
   created_at: string
   membership_date: string | null
+  photo_url: string | null
   branches: { id: string; name: string } | null
   group_memberships: Array<{
     groups: { ministries: { id: string; name: string } | null } | null
@@ -47,27 +49,7 @@ const STATUS_STYLES: Record<MemberStatus, { bg: string; color: string; dot: stri
   deceased:    { bg: '#FEE2E2', color: '#991B1B', dot: '#F87171', label: 'Deceased' },
 }
 
-const AVATAR_PALETTE = [
-  { bg: '#E8ECF9', color: '#4F6BED' },
-  { bg: '#DCFCE7', color: '#15803D' },
-  { bg: '#FEF3C7', color: '#B45309' },
-  { bg: '#FCE7F3', color: '#BE185D' },
-  { bg: '#EEF2FF', color: '#4338CA' },
-  { bg: '#FFF7ED', color: '#C2410C' },
-  { bg: '#F0FDFA', color: '#0F766E' },
-  { bg: '#F5F3FF', color: '#7C3AED' },
-]
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getAvatarColor(firstName: string, lastName: string): { bg: string; color: string } {
-  const str = (firstName + lastName).toLowerCase()
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length]
-}
 
 function calculateAge(dob: string | null): number | null {
   if (!dob) return null
@@ -151,22 +133,6 @@ function DotsMenuIcon() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function Avatar({ firstName, lastName }: { firstName: string; lastName: string }) {
-  const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase()
-  const { bg, color } = getAvatarColor(firstName, lastName)
-  return (
-    <div style={{
-      width: 36, height: 36, borderRadius: '50%',
-      background: bg, color,
-      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-      fontWeight: 600, fontSize: 12,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexShrink: 0,
-    }}>
-      {initials}
-    </div>
-  )
-}
 
 function StatusBadge({ status }: { status: string | undefined }) {
   const s = STATUS_STYLES[status?.toLowerCase() as MemberStatus]
@@ -711,7 +677,7 @@ export function MembersPage() {
                   {/* Member */}
                   <td style={{ padding: '0 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Avatar firstName={member.first_name} lastName={member.last_name} />
+                      <MemberAvatar firstName={member.first_name} lastName={member.last_name} photoUrl={member.photo_url} size={36} />
                       <div>
                         <div style={{
                           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
