@@ -27,7 +27,10 @@
       "mcp__claude_ai_Supabase__apply_migration",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(grep -v \"//.*#fff\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('dependencies',{}\\).get\\('recharts','not found'\\)\\)\")",
+      "mcp__claude_ai_Supabase__execute_sql"
     ]
   }
 }

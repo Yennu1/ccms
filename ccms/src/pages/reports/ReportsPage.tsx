@@ -532,19 +532,17 @@ export function ReportsPage() {
               </div>
             </div>
             {loadingGiving ? <Skeleton h={220} /> : givingByCat.length === 0 ? <EmptyState message="No giving data for this period" /> : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={givingByCat} margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
-                  <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={v => fGHS(v)} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={64} />
-                  <Tooltip content={<GivingTooltip />} />
-                  <Legend wrapperStyle={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12 }} />
-                  <Bar dataKey="tithe" stackId="a" fill="#4F6BED" name="Tithe" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="offering" stackId="a" fill="#C8964A" name="Offering" />
-                  <Bar dataKey="building" stackId="a" fill="#7B93F5" name="Building" />
-                  <Bar dataKey="other_amount" stackId="a" fill="#9CA3AF" name="Other" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <BarChart width={700} height={220} data={givingByCat} margin={{ top: 0, right: 8, bottom: 4, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
+                <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={v => fGHS(v)} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={64} />
+                <Tooltip content={<GivingTooltip />} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar dataKey="tithe" stackId="a" fill="#4F6BED" name="Tithe" radius={[0, 0, 0, 0]} minPointSize={0} isAnimationActive={false} />
+                <Bar dataKey="offering" stackId="a" fill="#C8964A" name="Offering" minPointSize={0} isAnimationActive={false} />
+                <Bar dataKey="building" stackId="a" fill="#7B93F5" name="Building" minPointSize={0} isAnimationActive={false} />
+                <Bar dataKey="other_amount" stackId="a" fill="#9CA3AF" name="Other" radius={[3, 3, 0, 0]} minPointSize={0} isAnimationActive={false} />
+              </BarChart>
             )}
           </div>
 
@@ -586,15 +584,13 @@ export function ReportsPage() {
               {loadingGiving ? <Skeleton h={180} /> : givingByBranch.length === 0 ? (
                 <EmptyState message={selectedBranch ? 'Select "All Branches" to see this view' : 'No branch data'} />
               ) : (
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={givingByBranch} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" horizontal={false} />
-                    <XAxis type="number" tickFormatter={v => fGHS(v)} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
-                    <YAxis type="category" dataKey="branch_name" width={80} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-text-body)' }} axisLine={false} tickLine={false} />
-                    <Tooltip formatter={(v: number) => fGHSFull(v)} />
-                    <Bar dataKey="total" fill="#4F6BED" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <BarChart width={500} height={180} data={givingByBranch} layout="vertical" margin={{ top: 0, right: 16, bottom: 4, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" horizontal={false} />
+                  <XAxis type="number" tickFormatter={v => fGHS(v)} tick={{ fontSize: 10.5, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="branch_name" width={80} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(v: number) => fGHSFull(v)} />
+                  <Bar dataKey="total" fill="#4F6BED" radius={[0, 4, 4, 0]} minPointSize={0} isAnimationActive={false} />
+                </BarChart>
               )}
             </div>
           </div>
@@ -674,15 +670,13 @@ export function ReportsPage() {
               </div>
             </div>
             {loadingAtt ? <Skeleton h={220} /> : weeklyAtt.length === 0 ? <EmptyState message="No attendance data for this period" /> : (
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={weeklyAtt} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
-                  <XAxis dataKey="week_start" tickFormatter={fShortDate} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={40} />
-                  <Tooltip content={<AttTooltip />} />
-                  <Line type="monotone" dataKey="rate" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#4F6BED' }} />
-                </LineChart>
-              </ResponsiveContainer>
+              <LineChart width={700} height={220} data={weeklyAtt} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
+                <XAxis dataKey="week_start" tickFormatter={fShortDate} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={40} />
+                <Tooltip content={<AttTooltip />} />
+                <Line type="monotone" dataKey="rate" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#4F6BED' }} isAnimationActive={false} />
+              </LineChart>
             )}
           </div>
 
@@ -692,15 +686,13 @@ export function ReportsPage() {
               Attendance by Event Type
             </div>
             {loadingAtt ? <Skeleton h={180} /> : attByType.length === 0 ? <EmptyState message="No event type data" /> : (
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={attByType} margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
-                  <XAxis dataKey="event_type" tickFormatter={fEventType} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={v => `${v}%`} domain={[0, 100]} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={40} />
-                  <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} labelFormatter={fEventType} />
-                  <Bar dataKey="avg_rate" fill="#7B93F5" radius={[4, 4, 0, 0]} name="Avg Rate (%)" />
-                </BarChart>
-              </ResponsiveContainer>
+              <BarChart width={700} height={180} data={attByType} margin={{ top: 0, right: 8, bottom: 4, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
+                <XAxis dataKey="event_type" tickFormatter={fEventType} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={v => `${v}%`} domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={40} />
+                <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} labelFormatter={fEventType} />
+                <Bar dataKey="avg_rate" fill="#7B93F5" radius={[4, 4, 0, 0]} name="Avg Rate (%)" minPointSize={0} isAnimationActive={false} />
+              </BarChart>
             )}
           </div>
 
@@ -776,17 +768,15 @@ export function ReportsPage() {
               Membership Growth
             </div>
             {loadingMembers ? <Skeleton h={220} /> : memberGrowth.length === 0 ? <EmptyState message="No member growth data" /> : (
-              <ResponsiveContainer width="100%" height={220}>
-                <ComposedChart data={memberGrowth} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
-                  <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
-                  <YAxis yAxisId="left" tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={36} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={48} />
-                  <Tooltip />
-                  <Bar yAxisId="left" dataKey="new_members" fill="var(--avatar-1-bg)" radius={[3, 3, 0, 0]} name="New Members" />
-                  <Line yAxisId="right" type="monotone" dataKey="cumulative" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4 }} name="Cumulative" />
-                </ComposedChart>
-              </ResponsiveContainer>
+              <ComposedChart width={700} height={220} data={memberGrowth} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
+                <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={36} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={48} />
+                <Tooltip />
+                <Bar yAxisId="left" dataKey="new_members" fill="var(--avatar-1-bg)" radius={[3, 3, 0, 0]} name="New Members" minPointSize={0} isAnimationActive={false} />
+                <Line yAxisId="right" type="monotone" dataKey="cumulative" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4 }} name="Cumulative" isAnimationActive={false} />
+              </ComposedChart>
             )}
           </div>
 
@@ -830,15 +820,13 @@ export function ReportsPage() {
             <div style={card}>
               <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 16 }}>Age Breakdown</div>
               {loadingMembers ? <Skeleton h={160} /> : ageBreakdown.length === 0 ? <EmptyState message="No age data available" /> : (
-                <ResponsiveContainer width="100%" height={160}>
-                  <BarChart data={ageBreakdown} margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
-                    <XAxis dataKey="age_group" tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={32} />
-                    <Tooltip />
-                    <Bar dataKey="cnt" fill="#7B93F5" radius={[3, 3, 0, 0]} name="Members" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <BarChart width={500} height={160} data={ageBreakdown} margin={{ top: 0, right: 8, bottom: 4, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
+                  <XAxis dataKey="age_group" tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={32} />
+                  <Tooltip />
+                  <Bar dataKey="cnt" fill="#7B93F5" radius={[3, 3, 0, 0]} name="Members" minPointSize={0} isAnimationActive={false} />
+                </BarChart>
               )}
             </div>
           </div>

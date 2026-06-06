@@ -250,16 +250,26 @@ export function DashboardPage() {
       const evRes = await (bId ? evQ.eq('branch_id', bId) : evQ)
       setEventsThisMonth(evRes.count ?? 0)
 
-      // Groups + ministries
-      const grQ = supabase.from('groups').select('*', { count: 'exact', head: true }).eq('org_id', orgId).eq('is_active', true)
-      const grRes = await (bId ? grQ.eq('branch_id', bId) : grQ)
-      setTotalGroups(grRes.count ?? 0)
+      // Groups + ministries — groups have no direct branch_id, linked via ministry_id
+      let grCount = 0
+      if (bId) {
+        const { data: minData } = await supabase.from('ministries').select('id').eq('org_id', orgId).eq('branch_id', bId)
+        const minIds = (minData ?? []).map((m: { id: string }) => m.id)
+        if (minIds.length > 0) {
+          const { count } = await supabase.from('groups').select('*', { count: 'exact', head: true }).eq('org_id', orgId).eq('is_active', true).in('ministry_id', minIds)
+          grCount = count ?? 0
+        }
+      } else {
+        const { count } = await supabase.from('groups').select('*', { count: 'exact', head: true }).eq('org_id', orgId).eq('is_active', true)
+        grCount = count ?? 0
+      }
+      setTotalGroups(grCount)
       const { count: minCount } = await supabase.from('ministries').select('*', { count: 'exact', head: true }).eq('org_id', orgId).eq('is_active', true)
       setTotalMinistries(minCount ?? 0)
 
       // Avg attendance (last 4 sundays)
       const evAttQ = supabase.from('events').select('id, expected_attendance').eq('org_id', orgId)
-        .eq('event_type', 'sunday_service').gte('starts_at', start28 + 'T00:00:00')
+        .eq('event_type', 'service').gte('starts_at', start28 + 'T00:00:00')
       const evAttRes = await (bId ? evAttQ.eq('branch_id', bId) : evAttQ)
       const evAttData = (evAttRes.data ?? []) as { id: string; expected_attendance: number | null }[]
       if (evAttData.length > 0) {
@@ -480,16 +490,14 @@ export function DashboardPage() {
               ))}
             </div>
           </div>
-          {loadingCharts ? <Skeleton h={180} /> : (
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={filteredGiving} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                <CartesianGrid stroke="#F3F4F6" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={v => `₵${(v / 1000).toFixed(0)}k`} tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={48} />
-                <Tooltip content={<GivingTooltip />} />
-                <Line type="monotone" dataKey="total" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#4F6BED' }} />
-              </LineChart>
-            </ResponsiveContainer>
+          {loadingCharts ? <Skeleton h={200} /> : (
+            <LineChart width={700} height={200} data={filteredGiving} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+              <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={v => `₵${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={48} />
+              <Tooltip content={<GivingTooltip />} />
+              <Line type="monotone" dataKey="total" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#4F6BED' }} isAnimationActive={false} />
+            </LineChart>
           )}
         </div>
 
@@ -535,17 +543,15 @@ export function DashboardPage() {
           {loadingCharts ? <Skeleton h={180} /> : memberGrowth.length === 0 ? (
             <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No data yet</div>
           ) : (
-            <ResponsiveContainer width="100%" height={180}>
-              <ComposedChart data={memberGrowth} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                <CartesianGrid stroke="#F3F4F6" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                <YAxis yAxisId="left" tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={30} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={34} />
-                <Tooltip labelFormatter={monthLabel} />
-                <Bar yAxisId="left" dataKey="new_members" fill="#E8ECF9" name="New" radius={[3, 3, 0, 0]} />
-                <Line yAxisId="right" type="monotone" dataKey="cumulative" stroke="#4F6BED" strokeWidth={2} dot={false} name="Total" />
-              </ComposedChart>
-            </ResponsiveContainer>
+            <ComposedChart width={500} height={200} data={memberGrowth} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+              <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="left" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={30} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={34} />
+              <Tooltip labelFormatter={monthLabel} />
+              <Bar yAxisId="left" dataKey="new_members" fill="#7B93F5" name="New" radius={[3, 3, 0, 0]} minPointSize={0} isAnimationActive={false} />
+              <Line yAxisId="right" type="monotone" dataKey="cumulative" stroke="#4F6BED" strokeWidth={2} dot={false} name="Total" isAnimationActive={false} />
+            </ComposedChart>
           )}
         </div>
 
@@ -555,16 +561,14 @@ export function DashboardPage() {
           {loadingCharts ? <Skeleton h={180} /> : attTrend.length === 0 ? (
             <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No Sunday service data</div>
           ) : (
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={attTrend} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                <CartesianGrid stroke="#F3F4F6" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="week_start" tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={v => v.slice(5)} />
-                <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} width={38} />
-                <Tooltip content={<AttTooltip />} />
-                <ReferenceArea y1={75} y2={85} fill="#22C55E" fillOpacity={0.07} />
-                <Line type="monotone" dataKey="rate" stroke="#22C55E" strokeWidth={2} dot={{ r: 3, fill: '#22C55E' }} activeDot={{ r: 5 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <LineChart width={500} height={200} data={attTrend} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+              <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="week_start" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} tickFormatter={v => v.slice(5)} />
+              <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={38} />
+              <Tooltip content={<AttTooltip />} />
+              <ReferenceArea y1={75} y2={85} fill="#22C55E" fillOpacity={0.07} />
+              <Line type="monotone" dataKey="rate" stroke="#22C55E" strokeWidth={2} dot={{ r: 3, fill: '#22C55E' }} activeDot={{ r: 5 }} isAnimationActive={false} />
+            </LineChart>
           )}
         </div>
       </div>
