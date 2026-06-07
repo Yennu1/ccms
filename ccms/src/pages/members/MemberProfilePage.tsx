@@ -1629,34 +1629,36 @@ export function MemberProfilePage() {
           </button>
 
           {/* Clickable photo avatar */}
-          <div style={{ position: 'relative', flexShrink: 0 }}>
+          <div
+            style={{ position: 'relative', flexShrink: 0 }}
+            onMouseEnter={() => setAvatarHovered(true)}
+            onMouseLeave={() => setAvatarHovered(false)}
+          >
             <div
               style={{ position: 'relative', width: 48, height: 48, borderRadius: '50%', cursor: 'pointer', overflow: 'hidden' }}
               onClick={() => !photoUploading && fileInputRef.current?.click()}
-              onMouseEnter={() => setAvatarHovered(true)}
-              onMouseLeave={() => setAvatarHovered(false)}
             >
               <MemberAvatar firstName={member.first_name} lastName={member.last_name} photoUrl={photoUrl} size={48} />
-              {(avatarHovered || photoUploading) && (
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  background: 'rgba(0,0,0,0.45)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  borderRadius: '50%',
-                }}>
-                  {photoUploading ? (
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="photo-spin">
-                      <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
-                      <path d="M8 2a6 6 0 0 1 6 6" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="1.5" />
-                    </svg>
-                  )}
-                </div>
-              )}
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: 'rgba(0,0,0,0.45)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: '50%',
+                opacity: (avatarHovered || photoUploading) ? 1 : 0,
+                transition: 'opacity 0.2s ease',
+              }}>
+                {photoUploading ? (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="photo-spin">
+                    <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+                    <path d="M8 2a6 6 0 0 1 6 6" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="1.5" />
+                  </svg>
+                )}
+              </div>
             </div>
             {photoUrl && !photoUploading && (
               <button
@@ -1665,10 +1667,12 @@ export function MemberProfilePage() {
                 style={{
                   position: 'absolute', top: -4, right: -4,
                   width: 18, height: 18, borderRadius: '50%',
-                  background: '#EF4444', border: '1.5px solid white',
+                  background: 'rgba(239,68,68,0.9)', border: '1.5px solid white',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', color: 'white', fontSize: 12, lineHeight: 1,
                   padding: 0,
+                  opacity: avatarHovered ? 1 : 0,
+                  transition: 'opacity 0.2s ease',
                 }}
               >
                 ×
