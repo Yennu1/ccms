@@ -233,7 +233,6 @@ export function PledgesPage() {
         {[
           { label: 'Transactions', active: false, onClick: () => navigate('/donations') },
           { label: 'Pledges', active: true, onClick: () => {} },
-          { label: 'Categories', active: false, onClick: () => toast.info('Categories coming soon') },
         ].map(tab => (
           <button
             key={tab.label}

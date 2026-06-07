@@ -727,7 +727,6 @@ export function DonationsPage() {
         {[
           { label: 'Transactions', active: true, onClick: () => {} },
           { label: 'Pledges', active: false, onClick: () => navigate('/donations/pledges') },
-          { label: 'Categories', active: false, onClick: () => toast.info('Categories coming soon') },
         ].map(tab => (
           <button
             key={tab.label}
