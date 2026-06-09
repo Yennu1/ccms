@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { format, startOfMonth } from 'date-fns'
@@ -9,7 +9,7 @@ import { MemberAvatar } from '../../components/MemberAvatar'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type GroupTab = 'members' | 'settings'
+type GroupTab = 'members' | 'meetings' | 'settings'
 
 interface Group {
   id: string; org_id: string; name: string; description: string | null
@@ -28,6 +28,14 @@ interface MemberOption { id: string; first_name: string; last_name: string; memb
 interface Ministry { id: string; name: string }
 interface GroupSchedule { id: string; group_id: string; meeting_day: string; meeting_time: string; meeting_venue: string | null }
 interface ScheduleEntry { localId: string; day: string; time: string; venue: string }
+
+interface Meeting {
+  id: string; name: string; starts_at: string; description: string | null; attendance_count: number
+}
+interface AttendanceMemberRow {
+  member_id: string; checked_in_at: string
+  member: { first_name: string; last_name: string; member_number: string | null; photo_url: string | null } | null
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -64,6 +72,7 @@ function ChevronDownIcon() { return <svg width="12" height="12" viewBox="0 0 12 
 function SlashIcon() { return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M5 14L11 2" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" /></svg> }
 function ArrowRightIcon() { return <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg> }
 function PencilIcon() { return <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg> }
+function CalendarIcon() { return <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><rect x="2" y="3.5" width="12" height="10.5" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 2v3M11 2v3M2 7h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -177,6 +186,134 @@ function AddMemberModal({ group, existingMemberIds, orgId, onAdd, onClose }: {
   )
 }
 
+// ─── Mark Attendance Modal ────────────────────────────────────────────────────
+
+function MarkAttendanceModal({ group, groupId, groupMembers, orgId, userId, onClose, onSaved }: {
+  group: Group; groupId: string; groupMembers: GroupMember[]
+  orgId: string; userId: string; onClose: () => void; onSaved: () => void
+}) {
+  const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })()
+  const [date, setDate] = useState(todayStr)
+  const [notes, setNotes] = useState('')
+  const [attendance, setAttendance] = useState<Record<string, boolean>>({})
+  const [search, setSearch] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const validMembers = groupMembers.filter(gm => gm.member)
+  const presentCount = validMembers.filter(gm => attendance[gm.member!.id]).length
+
+  const filteredMembers = validMembers.filter(gm => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return `${gm.member!.first_name} ${gm.member!.last_name}`.toLowerCase().includes(q) ||
+      (gm.member!.member_number ?? '').toLowerCase().includes(q)
+  })
+
+  const handleMarkAll = () => {
+    const all: Record<string, boolean> = {}
+    validMembers.forEach(gm => { all[gm.member!.id] = true })
+    setAttendance(all)
+  }
+
+  const handleSave = async () => {
+    if (!date) { toast.error('Please select a date'); return }
+    setSaving(true)
+    const now = new Date()
+    const [y, mo, dy] = date.split('-')
+    const startsAt = new Date(parseInt(y), parseInt(mo) - 1, parseInt(dy), now.getHours(), now.getMinutes()).toISOString()
+
+    const { data: eventData, error: eventErr } = await supabase
+      .from('events')
+      .insert({ name: `${group.name} Meeting`, event_type: 'group_meeting', group_id: groupId, org_id: orgId, starts_at: startsAt, status: 'completed', description: notes.trim() || null, created_by: userId })
+      .select('id').single()
+
+    if (eventErr || !eventData) { toast.error('Failed to record meeting: ' + (eventErr?.message ?? 'Unknown error')); setSaving(false); return }
+
+    const presentMembers = validMembers.filter(gm => attendance[gm.member!.id])
+    if (presentMembers.length > 0) {
+      await supabase.from('attendance').insert(
+        presentMembers.map(gm => ({ event_id: eventData.id, member_id: gm.member!.id, org_id: orgId, checked_in_at: startsAt, checked_in_by: userId }))
+      )
+    }
+
+    toast.success(`Meeting recorded — ${presentMembers.length} of ${validMembers.length} present`)
+    onSaved(); onClose()
+  }
+
+  const inputBase: React.CSSProperties = { width: '100%', height: 38, borderRadius: 8, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)', outline: 'none', padding: '0 12px', boxSizing: 'border-box' }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{ background: 'var(--dm-bg-card)', borderRadius: 14, border: '0.5px solid var(--dm-border)', width: 540, maxWidth: '92vw', maxHeight: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 16px 48px rgba(0,0,0,0.14)' }}>
+        <div style={{ padding: '20px 24px 16px', borderBottom: '0.5px solid var(--dm-border)' }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 2 }}>{group.name}</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)' }}>Mark Meeting Attendance</div>
+        </div>
+
+        <div style={{ padding: '16px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 12 }}>
+            <div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, fontWeight: 500, color: '#374151', marginBottom: 6 }}>Meeting Date</div>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} style={inputBase} />
+            </div>
+            <div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, fontWeight: 500, color: '#374151', marginBottom: 6 }}>Notes <span style={{ color: '#9CA3AF' }}>(optional)</span></div>
+              <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Guest speaker, topic…" style={inputBase} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, fontWeight: 500, color: 'var(--dm-text-ink)' }}>
+              Attendance &mdash; <span style={{ fontFamily: "'IBM Plex Mono', monospace", color: '#4F6BED' }}>{presentCount}</span> / {validMembers.length} present
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" onClick={handleMarkAll} style={{ height: 30, padding: '0 12px', borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, fontWeight: 500, color: '#4F6BED', cursor: 'pointer' }}>Mark All Present</button>
+              {presentCount > 0 && <button type="button" onClick={() => setAttendance({})} style={{ height: 30, padding: '0 12px', borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, fontWeight: 500, color: '#9CA3AF', cursor: 'pointer' }}>Clear</button>}
+            </div>
+          </div>
+
+          {validMembers.length > 6 && (
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <span style={{ position: 'absolute', left: 10, pointerEvents: 'none', display: 'flex' }}><SearchIcon /></span>
+              <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Filter members…" style={{ ...inputBase, paddingLeft: 34, height: 34 }} />
+            </div>
+          )}
+
+          <div style={{ border: '0.5px solid var(--dm-border)', borderRadius: 10, overflow: 'hidden' }}>
+            {filteredMembers.length === 0 ? (
+              <div style={{ padding: '24px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>No members found</div>
+            ) : filteredMembers.map((gm, idx) => {
+              const m = gm.member!
+              const present = !!attendance[m.id]
+              const { bg, color } = avatarColor(m.first_name + m.last_name)
+              return (
+                <button key={gm.id} type="button" onClick={() => setAttendance(prev => ({ ...prev, [m.id]: !present }))}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', background: present ? '#F0F4FF' : (idx % 2 === 0 ? 'var(--dm-bg-card)' : 'var(--dm-bg-muted)'), border: 'none', borderBottom: idx < filteredMembers.length - 1 ? '0.5px solid var(--dm-border)' : 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 0.1s' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: bg, color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{m.first_name[0]}{m.last_name[0]}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)' }}>{m.first_name} {m.last_name}</div>
+                    {m.member_number && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>{m.member_number}</div>}
+                  </div>
+                  <div style={{ width: 22, height: 22, borderRadius: 6, border: `1.5px solid ${present ? '#4F6BED' : '#D1D5DB'}`, background: present ? '#4F6BED' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.12s' }}>
+                    {present && <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 5.5l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div style={{ padding: '14px 24px 20px', borderTop: '0.5px solid var(--dm-border)', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)' }}>Cancel</button>
+          <button onClick={handleSave} disabled={saving} style={{ height: 36, padding: '0 20px', borderRadius: 8, border: 'none', background: saving ? '#818CF8' : '#4F6BED', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#fff' }}>
+            {saving ? 'Saving…' : 'Save Attendance'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Schedule Builder ─────────────────────────────────────────────────────────
 
 function ScheduleBuilder({ entries, onChange, disabled = false }: {
@@ -239,6 +376,136 @@ function ScheduleBuilder({ entries, onChange, disabled = false }: {
           + Add Another Meeting Time
         </button>
       )}
+    </div>
+  )
+}
+
+// ─── Meetings Tab ─────────────────────────────────────────────────────────────
+
+function MeetingsTab({ groupId, totalMembers }: { groupId: string; totalMembers: number }) {
+  const [meetings, setMeetings] = useState<Meeting[]>([])
+  const [loading, setLoading] = useState(true)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [expandedRows, setExpandedRows] = useState<AttendanceMemberRow[]>([])
+  const [expandLoading, setExpandLoading] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      setLoading(true)
+      const { data: evts } = await supabase
+        .from('events').select('id, name, starts_at, description')
+        .eq('group_id', groupId).eq('event_type', 'group_meeting')
+        .order('starts_at', { ascending: false })
+      if (cancelled) return
+      if (!evts || evts.length === 0) { setMeetings([]); setLoading(false); return }
+
+      const evtIds = evts.map(e => e.id)
+      const { data: countRows } = await supabase.from('attendance').select('event_id').in('event_id', evtIds)
+      if (cancelled) return
+
+      const countMap: Record<string, number> = {}
+      for (const r of countRows ?? []) countMap[r.event_id] = (countMap[r.event_id] ?? 0) + 1
+      setMeetings(evts.map(e => ({ ...e, attendance_count: countMap[e.id] ?? 0 })))
+      setLoading(false)
+    }
+    load()
+    return () => { cancelled = true }
+  }, [groupId])
+
+  const handleExpand = async (meetingId: string) => {
+    if (expandedId === meetingId) { setExpandedId(null); return }
+    setExpandedId(meetingId)
+    setExpandLoading(true)
+    const { data } = await supabase
+      .from('attendance')
+      .select('member_id, checked_in_at, member:members!attendance_member_id_fkey(first_name, last_name, member_number, photo_url)')
+      .eq('event_id', meetingId)
+    setExpandedRows((data ?? []) as unknown as AttendanceMemberRow[])
+    setExpandLoading(false)
+  }
+
+  if (loading) return <div style={{ padding: '32px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>Loading meetings…</div>
+
+  if (meetings.length === 0) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 0', gap: 10 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF', marginBottom: 4 }}><CalendarIcon /></div>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 14, fontWeight: 500, color: '#374151' }}>No meetings recorded yet</div>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>Click "Mark Attendance" to record your first meeting.</div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr>
+            {['Date', 'Attendance', 'Notes', ''].map(h => (
+              <th key={h} style={{ padding: '11px 18px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 10.5, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left', borderBottom: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-surface)', whiteSpace: 'nowrap' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {meetings.map(m => (
+            <Fragment key={m.id}>
+              <tr style={{ borderBottom: '0.5px solid var(--dm-border-soft)', height: 52, background: expandedId === m.id ? '#F5F7FF' : 'var(--dm-bg-card)', transition: 'background 0.1s' }}>
+                <td style={{ padding: '0 18px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, color: 'var(--dm-text-ink)', whiteSpace: 'nowrap' }}>
+                  {format(new Date(m.starts_at), 'EEE, MMM d, yyyy')}
+                </td>
+                <td style={{ padding: '0 18px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 70, height: 5, borderRadius: 999, background: '#E5E7EB', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${totalMembers > 0 ? Math.round((m.attendance_count / totalMembers) * 100) : 0}%`, background: '#4F6BED', borderRadius: 999 }} />
+                    </div>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-ink)', whiteSpace: 'nowrap' }}>{m.attendance_count}/{totalMembers}</span>
+                  </div>
+                </td>
+                <td style={{ padding: '0 18px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280', maxWidth: 280 }}>
+                  <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.description ?? '—'}</span>
+                </td>
+                <td style={{ padding: '0 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  <button onClick={() => handleExpand(m.id)} style={{ height: 28, padding: '0 12px', borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, fontWeight: 500, color: '#4F6BED', cursor: 'pointer' }}>
+                    {expandedId === m.id ? 'Close' : 'View'}
+                  </button>
+                </td>
+              </tr>
+              {expandedId === m.id && (
+                <tr style={{ background: '#F8F9FF' }}>
+                  <td colSpan={4} style={{ padding: '12px 18px 16px' }}>
+                    {expandLoading ? (
+                      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>Loading…</div>
+                    ) : expandedRows.length === 0 ? (
+                      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>No attendance records for this meeting.</div>
+                    ) : (
+                      <div>
+                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Present ({expandedRows.length})</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {expandedRows.map(row => {
+                            const mem = row.member
+                            const { bg, color } = avatarColor(mem ? mem.first_name + mem.last_name : 'XX')
+                            return (
+                              <div key={row.member_id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'white', border: '0.5px solid var(--dm-border)', borderRadius: 20, padding: '4px 10px 4px 5px' }}>
+                                <div style={{ width: 22, height: 22, borderRadius: '50%', background: bg, color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  {mem ? `${mem.first_name[0]}${mem.last_name[0]}` : '?'}
+                                </div>
+                                <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12.5, color: 'var(--dm-text-ink)' }}>
+                                  {mem ? `${mem.first_name} ${mem.last_name}` : row.member_id}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              )}
+            </Fragment>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -418,6 +685,8 @@ export function GroupDetailPage() {
   const [newThisMonth, setNewThisMonth] = useState(0)
   const [exportOpen, setExportOpen] = useState(false)
   const exportRef = useRef<HTMLDivElement>(null)
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false)
+  const [meetingsThisMonth, setMeetingsThisMonth] = useState(0)
 
   const canManage = user?.role === 'super_admin' || user?.role === 'pastor'
   const isGroupLeader = user?.role === 'group_leader'
@@ -474,6 +743,15 @@ export function GroupDetailPage() {
     supabase.from('group_memberships').select('*', { count: 'exact', head: true })
       .eq('group_id', groupId).gte('joined_at', monthStart)
       .then(({ count }) => { if (count !== null) setNewThisMonth(count) })
+  }, [groupId])
+
+  // Meetings this month
+  useEffect(() => {
+    if (!groupId) return
+    const monthStart = startOfMonth(new Date()).toISOString()
+    supabase.from('events').select('*', { count: 'exact', head: true })
+      .eq('group_id', groupId).eq('event_type', 'group_meeting').gte('starts_at', monthStart)
+      .then(({ count }) => { if (count !== null) setMeetingsThisMonth(count) })
   }, [groupId])
 
   const handleRemoveMember = async (gmId: string) => {
@@ -560,6 +838,7 @@ export function GroupDetailPage() {
   const existingMemberIds = members.map(m => m.member?.id ?? '').filter(Boolean)
   const tabs: { key: GroupTab; label: string }[] = [
     { key: 'members', label: `Members (${members.length})` },
+    { key: 'meetings', label: 'Meetings' },
   ]
 
   const inputStyle: React.CSSProperties = { height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)', outline: 'none' }
@@ -574,6 +853,9 @@ export function GroupDetailPage() {
 
       {showAddMember && user && (
         <AddMemberModal group={group} existingMemberIds={existingMemberIds} orgId={user.org_id} onAdd={() => { setShowAddMember(false); fetchMembers() }} onClose={() => setShowAddMember(false)} />
+      )}
+      {showAttendanceModal && user && (
+        <MarkAttendanceModal group={group} groupId={group.id} groupMembers={members} orgId={user.org_id} userId={user.id} onClose={() => setShowAttendanceModal(false)} onSaved={() => { const ms = startOfMonth(new Date()).toISOString(); supabase.from('events').select('*', { count: 'exact', head: true }).eq('group_id', group.id).eq('event_type', 'group_meeting').gte('starts_at', ms).then(({ count }) => { if (count !== null) setMeetingsThisMonth(count) }) }} />
       )}
 
       {/* Breadcrumb */}
@@ -649,6 +931,11 @@ export function GroupDetailPage() {
             </button>
           )}
           {(canManage || isGroupLeader) && (
+            <button onClick={() => setShowAttendanceModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+              <CalendarIcon /> Mark Attendance
+            </button>
+          )}
+          {(canManage || isGroupLeader) && (
             <button onClick={() => setShowAddMember(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
               <PlusIcon /> Add Member
             </button>
@@ -657,10 +944,11 @@ export function GroupDetailPage() {
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 22 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 22 }}>
         <StatCard label="Total Members" value={members.length} sub={`${leaderCount} leader · ${memberCount} member`} accent="#4F6BED" />
         <StatCard label="New This Month" value={newThisMonth} sub="joined this month" accent="#22C55E" />
         <StatCard label="Active Rate" value={members.length > 0 ? `${Math.round((members.filter(m => m.member?.membership_status === 'active').length / members.length) * 100)}%` : '—'} sub="members active" accent="#C8964A" />
+        <StatCard label="Meetings This Month" value={meetingsThisMonth} sub="meetings recorded" accent="#7B93F5" />
       </div>
 
       {/* Tabs */}
@@ -748,6 +1036,11 @@ export function GroupDetailPage() {
             </table>
           </div>
         </>
+      )}
+
+      {/* ── Meetings Tab ────────────────────────────────────────────────────────── */}
+      {activeTab === 'meetings' && (
+        <MeetingsTab groupId={group.id} totalMembers={members.length} />
       )}
 
       {/* ── Settings Tab ───────────────────────────────────────────────────────── */}

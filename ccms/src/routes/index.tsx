@@ -6,6 +6,7 @@ import { MembersPage } from '../pages/members/MembersPage'
 import { MemberNewPage } from '../pages/members/MemberNewPage'
 import { MemberProfilePage } from '../pages/members/MemberProfilePage'
 import { MemberEditPage } from '../pages/members/MemberEditPage'
+import { MemberImportPage } from '../pages/members/MemberImportPage'
 import { HouseholdsPage } from '../pages/members/HouseholdsPage'
 import { HouseholdNewPage } from '../pages/members/HouseholdNewPage'
 import { HouseholdProfilePage } from '../pages/members/HouseholdProfilePage'
@@ -53,6 +54,7 @@ export const router = createBrowserRouter([
           { path: '/', element: <DashboardPage /> },
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/members', element: <MembersPage /> },
+          { path: '/members/import', element: <MemberImportPage /> },
           { path: '/members/new', element: <MemberNewPage /> },
           { path: '/members/households', element: <HouseholdsPage /> },
           { path: '/members/households/new', element: <HouseholdNewPage /> },

@@ -470,7 +470,7 @@ export function MembersPage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
-            onClick={() => toast.info('Import feature coming soon')}
+            onClick={() => navigate('/members/import')}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)',
