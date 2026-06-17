@@ -566,7 +566,7 @@ export function LoginPage() {
                 <input
                   id="email"
                   type="email"
-                  placeholder="you@church.org"
+                  placeholder="Enter your email address"
                   className={`ccms-input${errors.email ? ' ccms-input--error' : ''}`}
                   {...register('email')}
                 />

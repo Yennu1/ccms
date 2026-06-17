@@ -508,7 +508,28 @@ export function MinistryDetailPage() {
               </thead>
               <tbody>
                 {filteredMembers.length === 0 ? (
-                  <tr><td colSpan={5} style={{ padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>No members found</td></tr>
+                  <tr>
+                    <td colSpan={5}>
+                      {groups.length === 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 0', gap: 12 }}>
+                          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 15, color: '#111827' }}>No groups yet</div>
+                          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF', textAlign: 'center', maxWidth: 320 }}>Members can only be added through a group. Create a group to start adding members.</div>
+                          {canManage && (
+                            <button onClick={() => navigate(`/groups/${ministry.id}/new`)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                              <PlusIcon /> Create First Group
+                            </button>
+                          )}
+                        </div>
+                      ) : allMembers.length === 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 0', gap: 12 }}>
+                          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 15, color: '#111827' }}>No members yet</div>
+                          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF', textAlign: 'center' }}>Add members to your groups to see them listed here.</div>
+                        </div>
+                      ) : (
+                        <div style={{ padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>No members found</div>
+                      )}
+                    </td>
+                  </tr>
                 ) : filteredMembers.map(m => (
                   <tr key={m.id} className="md-member-row" onClick={() => m.member && navigate(`/members/${m.member.id}`)} style={{ borderBottom: '0.5px solid #EFF1F7', height: 56, background: 'var(--dm-bg-card)', transition: 'background 0.1s', cursor: 'pointer' }}>
                     <td style={{ padding: '0 18px' }}>
