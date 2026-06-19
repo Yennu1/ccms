@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   LineChart, Line, Bar, ComposedChart,
@@ -8,6 +8,19 @@ import {
 } from 'recharts'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+
+function useElementWidth(ref: React.RefObject<HTMLDivElement | null>): number {
+  const [width, setWidth] = React.useState(600)
+  React.useEffect(() => {
+    if (!ref.current) return
+    const ro = new ResizeObserver(([entry]) => {
+      setWidth(entry.contentRect.width)
+    })
+    ro.observe(ref.current)
+    return () => ro.disconnect()
+  }, [ref])
+  return width
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -191,6 +204,13 @@ export function DashboardPage() {
   // This Sunday
   const [sundayEvent, setSundayEvent] = useState<{ name: string; starts_at: string; expected_attendance: number | null } | null>(null)
   const [sundayAttendees, setSundayAttendees] = useState(0)
+
+  const givingTrendRef = React.useRef<HTMLDivElement>(null)
+  const memberGrowthRef = React.useRef<HTMLDivElement>(null)
+  const attTrendRef = React.useRef<HTMLDivElement>(null)
+  const givingTrendWidth = useElementWidth(givingTrendRef)
+  const memberGrowthWidth = useElementWidth(memberGrowthRef)
+  const attTrendWidth = useElementWidth(attTrendRef)
 
   const branchId = selectedBranch || null
 
@@ -487,7 +507,7 @@ export function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: 16, marginBottom: 16 }}>
 
         {/* Giving Trend */}
-        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
+        <div ref={givingTrendRef} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div>
               <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>Giving Trend</div>
@@ -500,7 +520,7 @@ export function DashboardPage() {
             </div>
           </div>
           {loadingCharts ? <Skeleton h={200} /> : (
-            <LineChart width={700} height={200} data={filteredGiving} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+            <LineChart width={givingTrendWidth} height={200} data={filteredGiving} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
               <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
               <YAxis domain={[0, givingCeiling]} ticks={givingTicks} tickFormatter={v => `₵${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={48} />
@@ -547,12 +567,12 @@ export function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
 
         {/* Membership Growth */}
-        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
+        <div ref={memberGrowthRef} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 14 }}>Membership Growth</div>
           {loadingCharts ? <Skeleton h={180} /> : memberGrowth.length === 0 ? (
             <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No data yet</div>
           ) : (
-            <ComposedChart width={500} height={200} data={memberGrowth} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+            <ComposedChart width={memberGrowthWidth} height={200} data={memberGrowth} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
               <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="left" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={30} />
@@ -565,12 +585,12 @@ export function DashboardPage() {
         </div>
 
         {/* Attendance Trend */}
-        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
+        <div ref={attTrendRef} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 14 }}>Attendance Trend <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: 'var(--dm-text-muted)' }}>Sunday services · last 12 wks</span></div>
           {loadingCharts ? <Skeleton h={180} /> : attTrend.length === 0 ? (
             <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No Sunday service data</div>
           ) : (
-            <LineChart width={500} height={200} data={attTrend} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+            <LineChart width={attTrendWidth} height={200} data={attTrend} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
               <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="week_start" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} tickFormatter={v => v.slice(5)} />
               <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={38} />
