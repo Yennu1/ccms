@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  LineChart, Line, BarChart, Bar, ComposedChart,
-  Cell, LabelList,
+  LineChart, Line, Bar, ComposedChart,
+  PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceArea,
 } from 'recharts'
@@ -46,11 +46,6 @@ function isoWeek(d: Date) {
   t.setUTCDate(t.getUTCDate() + 4 - dow)
   const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1))
   return Math.ceil((((t.getTime() - y.getTime()) / 86400000) + 1) / 7)
-}
-function roundUpToNiceNumber(value: number): number {
-  if (value <= 0) return 5000
-  const step = value < 50000 ? 5000 : value < 200000 ? 10000 : 50000
-  return Math.ceil(value / step) * step
 }
 function computeEaster(yr: number) {
   const a = yr % 19, b = Math.floor(yr / 100), c = yr % 100
@@ -407,10 +402,6 @@ export function DashboardPage() {
     return givingTrend.slice(-months)
   })()
 
-  const givingMax = Math.max(...filteredGiving.map(d => d.total), 0)
-  const givingCeiling = roundUpToNiceNumber(givingMax)
-  const givingTicks = [0, givingCeiling / 4, givingCeiling / 2, (givingCeiling * 3) / 4, givingCeiling]
-
   const givingTotal12 = givingTrend.reduce((s, d) => s + Number(d.total), 0)
 
   // Donut data
@@ -500,15 +491,13 @@ export function DashboardPage() {
             </div>
           </div>
           {loadingCharts ? <Skeleton h={200} /> : (
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={filteredGiving} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-                <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
-                <YAxis domain={[0, givingCeiling]} ticks={givingTicks} tickFormatter={v => `₵${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={48} />
-                <Tooltip content={<GivingTooltip />} />
-                <Line type="monotone" dataKey="total" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#4F6BED' }} isAnimationActive={false} />
-              </LineChart>
-            </ResponsiveContainer>
+            <LineChart width={700} height={200} data={filteredGiving} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+              <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={v => `₵${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={48} />
+              <Tooltip content={<GivingTooltip />} />
+              <Line type="monotone" dataKey="total" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#4F6BED' }} isAnimationActive={false} />
+            </LineChart>
           )}
         </div>
 
@@ -517,18 +506,29 @@ export function DashboardPage() {
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 14 }}>Giving Breakdown</div>
           {loadingCharts || catBreakdown.length === 0 ? <Skeleton h={180} /> : (
             <>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-muted)', marginBottom: 12 }}>{fGHS(donutTotal)} total</div>
-              <ResponsiveContainer width="100%" height={190}>
-                <BarChart layout="vertical" data={catBreakdown} margin={{ top: 0, right: 44, bottom: 0, left: 0 }}>
-                  <XAxis type="number" axisLine={false} tickLine={false} tick={false} />
-                  <YAxis type="category" dataKey="category" width={82} tick={{ fontSize: 11, fill: 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(v: number) => fGHSFull(v)} />
-                  <Bar dataKey="total" radius={[0, 4, 4, 0]} isAnimationActive={false}>
-                    {catBreakdown.map((_, i) => <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />)}
-                    <LabelList dataKey="total" position="right" formatter={(v: number) => `${pct(v, donutTotal)}%`} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fill: 'var(--dm-text-secondary)' }} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <div style={{ position: 'relative' }}>
+                <ResponsiveContainer width="100%" height={140}>
+                  <PieChart>
+                    <Pie data={catBreakdown} cx="50%" cy="50%" innerRadius={42} outerRadius={60} dataKey="total" paddingAngle={2}>
+                      {catBreakdown.map((_, i) => <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip formatter={(v: number) => fGHSFull(v)} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: 'var(--dm-text-ink)' }}>{fGHS(donutTotal)}</div>
+                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10, color: 'var(--dm-text-muted)' }}>total</div>
+                </div>
+              </div>
+              <div style={{ marginTop: 8 }}>
+                {catBreakdown.slice(0, 4).map((c, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 2, background: DONUT_COLORS[i % DONUT_COLORS.length], flexShrink: 0 }} />
+                    <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-body)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.category}</span>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: 'var(--dm-text-secondary)' }}>{donutTotal > 0 ? pct(Number(c.total), donutTotal) : 0}%</span>
+                  </div>
+                ))}
+              </div>
             </>
           )}
         </div>
@@ -543,17 +543,15 @@ export function DashboardPage() {
           {loadingCharts ? <Skeleton h={180} /> : memberGrowth.length === 0 ? (
             <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No data yet</div>
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <ComposedChart data={memberGrowth} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-                <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
-                <YAxis yAxisId="left" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={30} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={34} />
-                <Tooltip labelFormatter={monthLabel} />
-                <Bar yAxisId="left" dataKey="new_members" fill="#7B93F5" name="New" radius={[3, 3, 0, 0]} minPointSize={0} isAnimationActive={false} />
-                <Line yAxisId="right" type="monotone" dataKey="cumulative" stroke="#4F6BED" strokeWidth={2} dot={false} name="Total" isAnimationActive={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
+            <ComposedChart width={500} height={200} data={memberGrowth} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+              <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="left" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={30} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={34} />
+              <Tooltip labelFormatter={monthLabel} />
+              <Bar yAxisId="left" dataKey="new_members" fill="#7B93F5" name="New" radius={[3, 3, 0, 0]} minPointSize={0} isAnimationActive={false} />
+              <Line yAxisId="right" type="monotone" dataKey="cumulative" stroke="#4F6BED" strokeWidth={2} dot={false} name="Total" isAnimationActive={false} />
+            </ComposedChart>
           )}
         </div>
 
@@ -563,16 +561,14 @@ export function DashboardPage() {
           {loadingCharts ? <Skeleton h={180} /> : attTrend.length === 0 ? (
             <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No Sunday service data</div>
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={attTrend} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-                <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="week_start" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} tickFormatter={v => v.slice(5)} />
-                <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={38} />
-                <Tooltip content={<AttTooltip />} />
-                <ReferenceArea y1={75} y2={85} fill="#22C55E" fillOpacity={0.07} />
-                <Line type="monotone" dataKey="rate" stroke="#22C55E" strokeWidth={2} dot={{ r: 3, fill: '#22C55E' }} activeDot={{ r: 5 }} isAnimationActive={false} />
-              </LineChart>
-            </ResponsiveContainer>
+            <LineChart width={500} height={200} data={attTrend} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+              <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="week_start" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} tickFormatter={v => v.slice(5)} />
+              <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={38} />
+              <Tooltip content={<AttTooltip />} />
+              <ReferenceArea y1={75} y2={85} fill="#22C55E" fillOpacity={0.07} />
+              <Line type="monotone" dataKey="rate" stroke="#22C55E" strokeWidth={2} dot={{ r: 3, fill: '#22C55E' }} activeDot={{ r: 5 }} isAnimationActive={false} />
+            </LineChart>
           )}
         </div>
       </div>

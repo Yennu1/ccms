@@ -327,7 +327,6 @@ export function MembersPage() {
       !q ||
       m.first_name.toLowerCase().includes(q) ||
       m.last_name.toLowerCase().includes(q) ||
-      `${m.first_name} ${m.last_name}`.toLowerCase().includes(q) ||
       (m.email ?? '').toLowerCase().includes(q) ||
       (m.member_number ?? '').toLowerCase().includes(q)
 

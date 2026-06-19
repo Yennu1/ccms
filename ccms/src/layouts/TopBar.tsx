@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { ThemeToggle } from '../components/ThemeToggle'
@@ -101,45 +101,12 @@ function getInitials(name: string) {
     .slice(0, 2)
 }
 
-// ─── Search types ─────────────────────────────────────────────────────────────
-
-interface MemberResult {
-  id: string
-  first_name: string
-  last_name: string
-  member_number: string | null
-}
-
-interface TransactionResult {
-  id: string
-  reference_number: string | null
-  amount: number
-  transaction_date: string | null
-}
-
-interface EventResult {
-  id: string
-  name: string
-  starts_at: string
-}
-
-interface SearchResults {
-  members: MemberResult[]
-  transactions: TransactionResult[]
-  events: EventResult[]
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TopBar() {
   const { pathname } = useLocation()
   const { user } = useAuth()
-  const navigate = useNavigate()
   const [orgName, setOrgName] = useState('Centry CMS')
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<SearchResults | null>(null)
-  const [open, setOpen] = useState(false)
-  const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!user?.org_id) return
@@ -151,96 +118,7 @@ export function TopBar() {
       .then(({ data }) => { if (data?.name) setOrgName(data.name) })
   }, [user?.org_id])
 
-  // Debounced search
-  useEffect(() => {
-    if (query.length < 2) {
-      setResults(null)
-      setOpen(false)
-      return
-    }
-    const timer = setTimeout(async () => {
-      if (!user?.org_id) return
-      const q = `%${query}%`
-      const [membersRes, txRes, eventsRes] = await Promise.all([
-        supabase
-          .from('members')
-          .select('id, first_name, last_name, member_number')
-          .eq('org_id', user.org_id)
-          .or(`first_name.ilike.${q},last_name.ilike.${q},member_number.ilike.${q}`)
-          .limit(5),
-        supabase
-          .from('transactions')
-          .select('id, reference_number, amount, transaction_date')
-          .eq('org_id', user.org_id)
-          .ilike('reference_number', q)
-          .limit(5),
-        supabase
-          .from('events')
-          .select('id, name, starts_at')
-          .eq('org_id', user.org_id)
-          .ilike('name', q)
-          .limit(5),
-      ])
-      setResults({
-        members: (membersRes.data ?? []) as MemberResult[],
-        transactions: (txRes.data ?? []) as TransactionResult[],
-        events: (eventsRes.data ?? []) as EventResult[],
-      })
-      setOpen(true)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [query, user?.org_id])
-
-  // Click-outside to close
-  useEffect(() => {
-    function handle(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
-  }, [])
-
-  function handleResultClick(path: string) {
-    navigate(path)
-    setOpen(false)
-    setQuery('')
-    setResults(null)
-  }
-
-  const hasResults = results !== null && (
-    results.members.length > 0 ||
-    results.transactions.length > 0 ||
-    results.events.length > 0
-  )
-  const showDropdown = open && query.length >= 2 && results !== null
-
   const breadcrumbs = getBreadcrumbs(pathname)
-
-  const groupHeaderStyle: React.CSSProperties = {
-    padding: '8px 12px 4px',
-    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-    fontSize: 10,
-    fontWeight: 600,
-    color: 'hsl(var(--muted-foreground))',
-    textTransform: 'uppercase',
-    letterSpacing: '0.07em',
-  }
-
-  const dividerStyle: React.CSSProperties = {
-    height: 1,
-    background: 'hsl(var(--border))',
-    margin: '4px 0',
-  }
-
-  const rowStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '7px 12px',
-    cursor: 'pointer',
-  }
 
   return (
     <>
@@ -251,8 +129,6 @@ export function TopBar() {
           outline: none;
         }
         .topbar-icon-btn:hover { color: #4F6BED !important; }
-        .search-result-row { transition: background 0.1s; }
-        .search-result-row:hover { background: hsl(var(--muted)); }
       `}</style>
 
       <header style={{
@@ -304,10 +180,10 @@ export function TopBar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
 
           {/* Search */}
-          <div ref={wrapperRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <svg
               width="15" height="15" viewBox="0 0 16 16" fill="none"
-              style={{ position: 'absolute', left: 10, pointerEvents: 'none', flexShrink: 0, color: 'hsl(var(--muted-foreground))', zIndex: 1 }}
+              style={{ position: 'absolute', left: 10, pointerEvents: 'none', flexShrink: 0, color: 'hsl(var(--muted-foreground))' }}
             >
               <path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10ZM14 14l-2.9-2.9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
@@ -315,14 +191,6 @@ export function TopBar() {
               className="topbar-search"
               type="text"
               placeholder="Search members, donations, events..."
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Escape') {
-                  setOpen(false)
-                  e.currentTarget.blur()
-                }
-              }}
               style={{
                 width: 280,
                 height: 34,
@@ -333,136 +201,23 @@ export function TopBar() {
                 fontSize: 13,
                 color: 'hsl(var(--foreground))',
                 paddingLeft: 32,
-                paddingRight: 12,
+                paddingRight: 40,
                 boxSizing: 'border-box',
                 transition: 'border-color 0.15s',
               }}
+              readOnly
             />
-
-            {/* Dropdown */}
-            {showDropdown && (
-              <div style={{
-                position: 'absolute',
-                top: 'calc(100% + 4px)',
-                left: 0,
-                width: 280,
-                background: 'hsl(var(--card))',
-                border: '0.5px solid hsl(var(--border))',
-                borderRadius: 8,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-                zIndex: 50,
-                overflow: 'hidden',
-                paddingTop: 4,
-                paddingBottom: 4,
-              }}>
-                {!hasResults ? (
-                  <div style={{
-                    padding: '16px 12px',
-                    textAlign: 'center',
-                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                    fontSize: 13,
-                    color: 'hsl(var(--muted-foreground))',
-                  }}>
-                    No results found
-                  </div>
-                ) : (
-                  <>
-                    {results.members.length > 0 && (
-                      <section>
-                        <div style={groupHeaderStyle}>Members</div>
-                        {results.members.map(m => (
-                          <div
-                            key={m.id}
-                            className="search-result-row"
-                            onClick={() => handleResultClick(`/members/${m.id}`)}
-                            style={rowStyle}
-                          >
-                            <span style={{
-                              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                              fontSize: 13,
-                              color: 'hsl(var(--foreground))',
-                            }}>
-                              {m.first_name} {m.last_name}
-                            </span>
-                            {m.member_number && (
-                              <span style={{
-                                fontFamily: "'IBM Plex Mono', monospace",
-                                fontSize: 11,
-                                color: 'hsl(var(--muted-foreground))',
-                              }}>
-                                {m.member_number}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </section>
-                    )}
-
-                    {results.transactions.length > 0 && (
-                      <section>
-                        {results.members.length > 0 && <div style={dividerStyle} />}
-                        <div style={groupHeaderStyle}>Donations</div>
-                        {results.transactions.map(t => (
-                          <div
-                            key={t.id}
-                            className="search-result-row"
-                            onClick={() => handleResultClick(`/donations/${t.id}`)}
-                            style={rowStyle}
-                          >
-                            <span style={{
-                              fontFamily: "'IBM Plex Mono', monospace",
-                              fontSize: 12,
-                              color: 'hsl(var(--foreground))',
-                            }}>
-                              {t.reference_number ?? '—'}
-                            </span>
-                            <span style={{
-                              fontFamily: "'IBM Plex Mono', monospace",
-                              fontSize: 11,
-                              color: 'hsl(var(--muted-foreground))',
-                            }}>
-                              {Number(t.amount).toLocaleString()}
-                            </span>
-                          </div>
-                        ))}
-                      </section>
-                    )}
-
-                    {results.events.length > 0 && (
-                      <section>
-                        {(results.members.length > 0 || results.transactions.length > 0) && (
-                          <div style={dividerStyle} />
-                        )}
-                        <div style={groupHeaderStyle}>Events</div>
-                        {results.events.map(ev => (
-                          <div
-                            key={ev.id}
-                            className="search-result-row"
-                            onClick={() => handleResultClick(`/events/${ev.id}`)}
-                            style={rowStyle}
-                          >
-                            <span style={{
-                              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                              fontSize: 13,
-                              color: 'hsl(var(--foreground))',
-                            }}>
-                              {ev.name}
-                            </span>
-                            <span style={{
-                              fontFamily: "'IBM Plex Mono', monospace",
-                              fontSize: 11,
-                              color: 'hsl(var(--muted-foreground))',
-                            }}>
-                              {new Date(ev.starts_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                            </span>
-                          </div>
-                        ))}
-                      </section>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
+            <span style={{
+              position: 'absolute',
+              right: 10,
+              pointerEvents: 'none',
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 11,
+              color: 'hsl(var(--muted-foreground))',
+              letterSpacing: '0.02em',
+            }}>
+              ⌘K
+            </span>
           </div>
 
           {/* Theme toggle */}
