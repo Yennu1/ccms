@@ -93,6 +93,12 @@ function delta(curr: number, prev: number) {
 }
 function now() { return new Date() }
 
+function roundUpToNiceNumber(value: number): number {
+  if (value <= 0) return 5000
+  const step = value < 50000 ? 5000 : value < 200000 ? 10000 : 50000
+  return Math.ceil(value / step) * step
+}
+
 // ─── Subcomponents ────────────────────────────────────────────────────────────
 
 function Skeleton({ h = 160, r = 8 }: { h?: number; r?: number }) {
@@ -401,6 +407,9 @@ export function DashboardPage() {
     const months = givingPeriod === '3M' ? 3 : givingPeriod === '6M' ? 6 : 12
     return givingTrend.slice(-months)
   })()
+  const givingMax = Math.max(...filteredGiving.map(d => d.total), 0)
+  const givingCeiling = roundUpToNiceNumber(givingMax)
+  const givingTicks = [0, givingCeiling / 4, givingCeiling / 2, (givingCeiling * 3) / 4, givingCeiling]
 
   const givingTotal12 = givingTrend.reduce((s, d) => s + Number(d.total), 0)
 
@@ -494,7 +503,7 @@ export function DashboardPage() {
             <LineChart width={700} height={200} data={filteredGiving} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
               <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={v => `₵${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={48} />
+              <YAxis domain={[0, givingCeiling]} ticks={givingTicks} tickFormatter={v => `₵${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={48} />
               <Tooltip content={<GivingTooltip />} />
               <Line type="monotone" dataKey="total" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#4F6BED' }} isAnimationActive={false} />
             </LineChart>
