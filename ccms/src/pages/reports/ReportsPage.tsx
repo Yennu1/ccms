@@ -532,7 +532,7 @@ export function ReportsPage() {
               </div>
             </div>
             {loadingGiving ? <Skeleton h={220} /> : givingByCat.length === 0 ? <EmptyState message="No giving data for this period" /> : (
-              <BarChart width={700} height={220} data={givingByCat} margin={{ top: 0, right: 8, bottom: 4, left: 0 }}>
+              <BarChart width={700} height={220} data={givingByCat} margin={{ top: 0, right: 8, bottom: 4, left: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
                 <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={v => fGHS(v)} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={64} />
@@ -584,7 +584,7 @@ export function ReportsPage() {
               {loadingGiving ? <Skeleton h={180} /> : givingByBranch.length === 0 ? (
                 <EmptyState message={selectedBranch ? 'Select "All Branches" to see this view' : 'No branch data'} />
               ) : (
-                <BarChart width={500} height={180} data={givingByBranch} layout="vertical" margin={{ top: 0, right: 16, bottom: 4, left: 0 }}>
+                <BarChart width={500} height={180} data={givingByBranch} layout="vertical" margin={{ top: 0, right: 16, bottom: 4, left: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" horizontal={false} />
                   <XAxis type="number" tickFormatter={v => fGHS(v)} tick={{ fontSize: 10.5, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
                   <YAxis type="category" dataKey="branch_name" width={80} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
@@ -670,7 +670,7 @@ export function ReportsPage() {
               </div>
             </div>
             {loadingAtt ? <Skeleton h={220} /> : weeklyAtt.length === 0 ? <EmptyState message="No attendance data for this period" /> : (
-              <LineChart width={700} height={220} data={weeklyAtt} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+              <LineChart width={700} height={220} data={weeklyAtt} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
                 <XAxis dataKey="week_start" tickFormatter={fShortDate} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
                 <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={40} />
@@ -686,7 +686,7 @@ export function ReportsPage() {
               Attendance by Event Type
             </div>
             {loadingAtt ? <Skeleton h={180} /> : attByType.length === 0 ? <EmptyState message="No event type data" /> : (
-              <BarChart width={700} height={180} data={attByType} margin={{ top: 0, right: 8, bottom: 4, left: 0 }}>
+              <BarChart width={700} height={180} data={attByType} margin={{ top: 0, right: 8, bottom: 4, left: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
                 <XAxis dataKey="event_type" tickFormatter={fEventType} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={v => `${v}%`} domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={40} />
@@ -768,7 +768,7 @@ export function ReportsPage() {
               Membership Growth
             </div>
             {loadingMembers ? <Skeleton h={220} /> : memberGrowth.length === 0 ? <EmptyState message="No member growth data" /> : (
-              <ComposedChart width={700} height={220} data={memberGrowth} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+              <ComposedChart width={700} height={220} data={memberGrowth} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
                 <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
                 <YAxis yAxisId="left" tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={36} />
@@ -820,7 +820,7 @@ export function ReportsPage() {
             <div style={card}>
               <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 16 }}>Age Breakdown</div>
               {loadingMembers ? <Skeleton h={160} /> : ageBreakdown.length === 0 ? <EmptyState message="No age data available" /> : (
-                <BarChart width={500} height={160} data={ageBreakdown} margin={{ top: 0, right: 8, bottom: 4, left: 0 }}>
+                <BarChart width={500} height={160} data={ageBreakdown} margin={{ top: 0, right: 8, bottom: 4, left: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
                   <XAxis dataKey="age_group" tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={32} />

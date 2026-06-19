@@ -208,10 +208,9 @@ export function DashboardPage() {
   const givingTrendRef = React.useRef<HTMLDivElement>(null)
   const memberGrowthRef = React.useRef<HTMLDivElement>(null)
   const attTrendRef = React.useRef<HTMLDivElement>(null)
-  const givingTrendWidth = useElementWidth(givingTrendRef)
-  const memberGrowthWidth = useElementWidth(memberGrowthRef)
-  const attTrendWidth = useElementWidth(attTrendRef)
-
+  const givingTrendWidth = useElementWidth(givingTrendRef) - 40
+  const memberGrowthWidth = useElementWidth(memberGrowthRef) - 40
+  const attTrendWidth = useElementWidth(attTrendRef) - 40
   const branchId = selectedBranch || null
 
   function handleBranchChange(v: string) {
@@ -519,8 +518,8 @@ export function DashboardPage() {
               ))}
             </div>
           </div>
-          {loadingCharts || givingTrendWidth === 0 ? <Skeleton h={200} /> : (
-            <LineChart width={givingTrendWidth} height={200} data={filteredGiving} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+          {loadingCharts || givingTrendWidth <= 0 ? <Skeleton h={200} /> : (
+            <LineChart width={givingTrendWidth} height={200} data={filteredGiving} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
               <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
               <YAxis domain={[0, givingCeiling]} ticks={givingTicks} tickFormatter={v => `₵${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={48} />
@@ -569,10 +568,10 @@ export function DashboardPage() {
         {/* Membership Growth */}
         <div ref={memberGrowthRef} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 14 }}>Membership Growth</div>
-          {loadingCharts || memberGrowthWidth === 0 ? <Skeleton h={180} /> : memberGrowth.length === 0 ? (
+          {loadingCharts || memberGrowthWidth <= 0 ? <Skeleton h={180} /> : memberGrowth.length === 0 ? (
             <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No data yet</div>
           ) : (
-            <ComposedChart width={memberGrowthWidth} height={200} data={memberGrowth} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+            <ComposedChart width={memberGrowthWidth} height={200} data={memberGrowth} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
               <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="left" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={30} />
@@ -587,10 +586,10 @@ export function DashboardPage() {
         {/* Attendance Trend */}
         <div ref={attTrendRef} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 14 }}>Attendance Trend <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: 'var(--dm-text-muted)' }}>Sunday services · last 12 wks</span></div>
-          {loadingCharts || attTrendWidth === 0 ? <Skeleton h={180} /> : attTrend.length === 0 ? (
+          {loadingCharts || attTrendWidth <= 0 ? <Skeleton h={180} /> : attTrend.length === 0 ? (
             <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No Sunday service data</div>
           ) : (
-            <LineChart width={attTrendWidth} height={200} data={attTrend} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+            <LineChart width={attTrendWidth} height={200} data={attTrend} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
               <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="week_start" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} tickFormatter={v => v.slice(5)} />
               <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={38} />
