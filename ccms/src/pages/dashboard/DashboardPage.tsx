@@ -10,7 +10,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 
 function useElementWidth(ref: React.RefObject<HTMLDivElement | null>): number {
-  const [width, setWidth] = React.useState(600)
+  const [width, setWidth] = React.useState(0)
   React.useEffect(() => {
     if (!ref.current) return
     const ro = new ResizeObserver(([entry]) => {
@@ -519,7 +519,7 @@ export function DashboardPage() {
               ))}
             </div>
           </div>
-          {loadingCharts ? <Skeleton h={200} /> : (
+          {loadingCharts || givingTrendWidth === 0 ? <Skeleton h={200} /> : (
             <LineChart width={givingTrendWidth} height={200} data={filteredGiving} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
               <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
@@ -569,7 +569,7 @@ export function DashboardPage() {
         {/* Membership Growth */}
         <div ref={memberGrowthRef} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 14 }}>Membership Growth</div>
-          {loadingCharts ? <Skeleton h={180} /> : memberGrowth.length === 0 ? (
+          {loadingCharts || memberGrowthWidth === 0 ? <Skeleton h={180} /> : memberGrowth.length === 0 ? (
             <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No data yet</div>
           ) : (
             <ComposedChart width={memberGrowthWidth} height={200} data={memberGrowth} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
@@ -587,7 +587,7 @@ export function DashboardPage() {
         {/* Attendance Trend */}
         <div ref={attTrendRef} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 14 }}>Attendance Trend <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: 'var(--dm-text-muted)' }}>Sunday services · last 12 wks</span></div>
-          {loadingCharts ? <Skeleton h={180} /> : attTrend.length === 0 ? (
+          {loadingCharts || attTrendWidth === 0 ? <Skeleton h={180} /> : attTrend.length === 0 ? (
             <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No Sunday service data</div>
           ) : (
             <LineChart width={attTrendWidth} height={200} data={attTrend} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
