@@ -112,36 +112,6 @@ function roundUpToNiceNumber(value: number): number {
   return Math.ceil(value / step) * step
 }
 
-function XTick({ x, y, payload, formatter }: any) {
-  const label = formatter ? formatter(payload.value) : payload.value
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <text
-        x={0} y={0} dy={12}
-        textAnchor="middle"
-        fill="#6B7280"
-        fontSize={10}
-        fontFamily="IBM Plex Sans, system-ui, sans-serif"
-      >{label}</text>
-    </g>
-  )
-}
-
-function YTick({ x, y, payload, formatter }: any) {
-  const label = formatter ? formatter(payload.value) : payload.value
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <text
-        x={0} y={0} dy={4}
-        textAnchor="end"
-        fill="#6B7280"
-        fontSize={10}
-        fontFamily="IBM Plex Mono, monospace"
-      >{label}</text>
-    </g>
-  )
-}
-
 // ─── Subcomponents ────────────────────────────────────────────────────────────
 
 function Skeleton({ h = 160, r = 8 }: { h?: number; r?: number }) {
@@ -551,8 +521,8 @@ export function DashboardPage() {
           {loadingCharts || givingTrendWidth <= 0 ? <Skeleton h={200} /> : (
             <LineChart width={givingTrendWidth} height={200} data={filteredGiving} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
               <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" tick={<XTick formatter={monthLabel} />} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, givingCeiling]} ticks={givingTicks} tick={<YTick formatter={(v: number) => `₵${(v / 1000).toFixed(0)}k`} />} axisLine={false} tickLine={false} width={48} />
+              <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 14, fill: '#FF0000' }} axisLine={true} tickLine={true} />
+              <YAxis domain={[0, givingCeiling]} ticks={givingTicks} tickFormatter={(v: number) => `₵${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 14, fill: '#FF0000' }} axisLine={true} tickLine={true} width={48} />
               <Tooltip content={<GivingTooltip />} />
               <Line type="monotone" dataKey="total" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#4F6BED' }} isAnimationActive={false} />
             </LineChart>
@@ -603,9 +573,9 @@ export function DashboardPage() {
           ) : (
             <ComposedChart width={memberGrowthWidth} height={200} data={memberGrowth} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
               <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" tick={<XTick formatter={monthLabel} />} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="left" tick={<YTick />} axisLine={false} tickLine={false} width={30} />
-              <YAxis yAxisId="right" orientation="right" tick={<YTick />} axisLine={false} tickLine={false} width={34} />
+              <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="left" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={30} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={34} />
               <Tooltip labelFormatter={monthLabel} />
               <Bar yAxisId="left" dataKey="new_members" fill="#7B93F5" name="New" radius={[3, 3, 0, 0]} minPointSize={0} isAnimationActive={false} />
               <Line yAxisId="right" type="monotone" dataKey="cumulative" stroke="#4F6BED" strokeWidth={2} dot={false} name="Total" isAnimationActive={false} />
@@ -621,8 +591,8 @@ export function DashboardPage() {
           ) : (
             <LineChart width={attTrendWidth} height={200} data={attTrend} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
               <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="week_start" tick={<XTick formatter={(v: string) => v.slice(5)} />} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, 100]} tick={<YTick formatter={(v: number) => `${v}%`} />} axisLine={false} tickLine={false} width={38} />
+              <XAxis dataKey="week_start" tickFormatter={(v: string) => v.slice(5)} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={38} />
               <Tooltip content={<AttTooltip />} />
               <ReferenceArea y1={75} y2={85} fill="#22C55E" fillOpacity={0.07} />
               <Line type="monotone" dataKey="rate" stroke="#22C55E" strokeWidth={2} dot={{ r: 3, fill: '#22C55E' }} activeDot={{ r: 5 }} isAnimationActive={false} />
