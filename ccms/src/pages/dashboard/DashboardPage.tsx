@@ -521,8 +521,8 @@ export function DashboardPage() {
           {loadingCharts || givingTrendWidth <= 0 ? <Skeleton h={200} /> : (
             <LineChart width={givingTrendWidth} height={200} data={filteredGiving} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
               <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 14, fill: '#FF0000' }} axisLine={true} tickLine={true} />
-              <YAxis domain={[0, givingCeiling]} ticks={givingTicks} tickFormatter={(v: number) => `₵${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 14, fill: '#FF0000' }} axisLine={true} tickLine={true} width={48} />
+              <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, givingCeiling]} ticks={givingTicks} tickFormatter={(v: number) => `₵${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={48} />
               <Tooltip content={<GivingTooltip />} />
               <Line type="monotone" dataKey="total" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#4F6BED' }} isAnimationActive={false} />
             </LineChart>
