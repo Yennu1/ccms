@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { ThemeToggle } from '../components/ThemeToggle'
@@ -9,6 +9,26 @@ import { ThemeToggle } from '../components/ThemeToggle'
 interface BreadcrumbSegment {
   label: string
   isLast: boolean
+}
+
+// ─── Search result types ──────────────────────────────────────────────────────
+
+interface MemberResult {
+  id: string
+  first_name: string
+  last_name: string
+  member_number: string | null
+}
+
+interface TransactionResult {
+  id: string
+  reference_number: string | null
+  amount: number
+}
+
+interface EventResult {
+  id: string
+  name: string
 }
 
 function getBreadcrumbs(pathname: string): BreadcrumbSegment[] {
@@ -106,7 +126,16 @@ function getInitials(name: string) {
 export function TopBar() {
   const { pathname } = useLocation()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [orgName, setOrgName] = useState('Centry CMS')
+
+  // ─── Search state ────────────────────────────────────────────────────────
+  const [query, setQuery] = useState<string>('')
+  const [members, setMembers] = useState<MemberResult[]>([])
+  const [transactions, setTransactions] = useState<TransactionResult[]>([])
+  const [events, setEvents] = useState<EventResult[]>([])
+  const [open, setOpen] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!user?.org_id) return
@@ -117,6 +146,79 @@ export function TopBar() {
       .maybeSingle()
       .then(({ data }) => { if (data?.name) setOrgName(data.name) })
   }, [user?.org_id])
+
+  // ─── Debounced search ────────────────────────────────────────────────────
+  useEffect(() => {
+    const q = query.trim()
+    if (q.length < 2) {
+      setMembers([])
+      setTransactions([])
+      setEvents([])
+      setOpen(false)
+      return
+    }
+    if (!user?.org_id) return
+    const orgId = user.org_id
+    const like = `%${q}%`
+
+    const handle = setTimeout(async () => {
+      const [mRes, tRes, eRes] = await Promise.all([
+        supabase
+          .from('members')
+          .select('id, first_name, last_name, member_number')
+          .eq('org_id', orgId)
+          .or(`first_name.ilike.${like},last_name.ilike.${like},member_number.ilike.${like}`)
+          .limit(5),
+        supabase
+          .from('transactions')
+          .select('id, reference_number, amount')
+          .eq('org_id', orgId)
+          .ilike('reference_number', like)
+          .limit(5),
+        supabase
+          .from('events')
+          .select('id, name')
+          .eq('org_id', orgId)
+          .ilike('name', like)
+          .limit(5),
+      ])
+
+      const m = (mRes.data ?? []) as MemberResult[]
+      const t = (tRes.data ?? []) as TransactionResult[]
+      const ev = (eRes.data ?? []) as EventResult[]
+      setMembers(m)
+      setTransactions(t)
+      setEvents(ev)
+      setOpen(m.length > 0 || t.length > 0 || ev.length > 0)
+    }, 300)
+
+    return () => clearTimeout(handle)
+  }, [query, user?.org_id])
+
+  // ─── Close on outside click / Escape ─────────────────────────────────────
+  useEffect(() => {
+    if (!open) return
+    function onMouseDown(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
+  function goTo(path: string) {
+    navigate(path)
+    setQuery('')
+    setOpen(false)
+  }
 
   const breadcrumbs = getBreadcrumbs(pathname)
 
@@ -129,6 +231,7 @@ export function TopBar() {
           outline: none;
         }
         .topbar-icon-btn:hover { color: #4F6BED !important; }
+        .topbar-search-result:hover { background: hsl(var(--muted)) !important; }
       `}</style>
 
       <header style={{
@@ -180,7 +283,7 @@ export function TopBar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
 
           {/* Search */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <div ref={searchRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <svg
               width="15" height="15" viewBox="0 0 16 16" fill="none"
               style={{ position: 'absolute', left: 10, pointerEvents: 'none', flexShrink: 0, color: 'hsl(var(--muted-foreground))' }}
@@ -191,6 +294,11 @@ export function TopBar() {
               className="topbar-search"
               type="text"
               placeholder="Search members, donations, events..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onFocus={() => {
+                if (members.length > 0 || transactions.length > 0 || events.length > 0) setOpen(true)
+              }}
               style={{
                 width: 280,
                 height: 34,
@@ -205,7 +313,6 @@ export function TopBar() {
                 boxSizing: 'border-box',
                 transition: 'border-color 0.15s',
               }}
-              readOnly
             />
             <span style={{
               position: 'absolute',
@@ -218,6 +325,173 @@ export function TopBar() {
             }}>
               ⌘K
             </span>
+
+            {/* Results dropdown */}
+            {open && (
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 6px)',
+                left: 0,
+                width: 280,
+                maxHeight: 360,
+                overflowY: 'auto',
+                background: 'hsl(var(--card))',
+                border: '0.5px solid hsl(var(--border))',
+                borderRadius: 8,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                padding: 4,
+                zIndex: 50,
+              }}>
+                {members.length > 0 && (
+                  <>
+                    <div style={{
+                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      color: 'hsl(var(--muted-foreground))',
+                      padding: '8px 8px 4px',
+                    }}>
+                      Members
+                    </div>
+                    {members.map(m => (
+                      <button
+                        key={m.id}
+                        className="topbar-search-result"
+                        onClick={() => goTo(`/members/${m.id}`)}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
+                          gap: 2,
+                          width: '100%',
+                          textAlign: 'left',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '6px 8px',
+                          borderRadius: 6,
+                          transition: 'background 0.12s',
+                        }}
+                      >
+                        <span style={{
+                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                          fontSize: 13,
+                          color: 'hsl(var(--foreground))',
+                        }}>
+                          {m.first_name} {m.last_name}
+                        </span>
+                        {m.member_number && (
+                          <span style={{
+                            fontFamily: "'IBM Plex Mono', monospace",
+                            fontSize: 12,
+                            color: 'hsl(var(--muted-foreground))',
+                          }}>
+                            {m.member_number}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                {transactions.length > 0 && (
+                  <>
+                    <div style={{
+                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      color: 'hsl(var(--muted-foreground))',
+                      padding: '8px 8px 4px',
+                    }}>
+                      Donations
+                    </div>
+                    {transactions.map(t => (
+                      <button
+                        key={t.id}
+                        className="topbar-search-result"
+                        onClick={() => goTo('/donations')}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
+                          gap: 2,
+                          width: '100%',
+                          textAlign: 'left',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '6px 8px',
+                          borderRadius: 6,
+                          transition: 'background 0.12s',
+                        }}
+                      >
+                        <span style={{
+                          fontFamily: "'IBM Plex Mono', monospace",
+                          fontSize: 13,
+                          color: 'hsl(var(--foreground))',
+                        }}>
+                          {t.reference_number ?? t.id.slice(0, 8).toUpperCase()}
+                        </span>
+                        <span style={{
+                          fontFamily: "'IBM Plex Mono', monospace",
+                          fontSize: 12,
+                          color: 'hsl(var(--muted-foreground))',
+                        }}>
+                          ₵{Number(t.amount).toLocaleString()}
+                        </span>
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                {events.length > 0 && (
+                  <>
+                    <div style={{
+                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      color: 'hsl(var(--muted-foreground))',
+                      padding: '8px 8px 4px',
+                    }}>
+                      Events
+                    </div>
+                    {events.map(ev => (
+                      <button
+                        key={ev.id}
+                        className="topbar-search-result"
+                        onClick={() => goTo(`/events/${ev.id}`)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          width: '100%',
+                          textAlign: 'left',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '6px 8px',
+                          borderRadius: 6,
+                          transition: 'background 0.12s',
+                        }}
+                      >
+                        <span style={{
+                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                          fontSize: 13,
+                          color: 'hsl(var(--foreground))',
+                        }}>
+                          {ev.name}
+                        </span>
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Theme toggle */}
