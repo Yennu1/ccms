@@ -323,10 +323,12 @@ export function MembersPage() {
 
   const filtered = members.filter(m => {
     const q = search.toLowerCase()
+    const fullName = `${m.first_name} ${m.last_name}`.toLowerCase()
     const matchesSearch =
       !q ||
       m.first_name.toLowerCase().includes(q) ||
       m.last_name.toLowerCase().includes(q) ||
+      fullName.includes(q) ||
       (m.email ?? '').toLowerCase().includes(q) ||
       (m.member_number ?? '').toLowerCase().includes(q)
 
