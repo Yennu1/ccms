@@ -12,6 +12,7 @@ type DetailTab = 'groups' | 'members' | 'settings'
 interface Ministry {
   id: string; org_id: string; name: string; description: string | null
   is_org_wide: boolean; is_active: boolean; branch_id: string | null; leader_id: string | null
+  ministry_type: 'standalone' | 'grouped'
   branches: { id: string; name: string } | null
   leader: { id: string; first_name: string; last_name: string; member_number: string | null } | null
 }
@@ -27,9 +28,9 @@ interface Group {
 }
 
 interface MinistryMember {
-  id: string; group_id: string; role: string; joined_at: string | null; is_active: boolean
+  id: string; group_id?: string | null; role: string; joined_at: string | null; is_active: boolean
   member: { id: string; first_name: string; last_name: string; member_number: string | null; membership_status: string } | null
-  group: { id: string; name: string } | null
+  group?: { id: string; name: string } | null
 }
 
 interface Branch { id: string; name: string }
@@ -295,6 +296,18 @@ export function MinistryDetailPage() {
 
   const fetchAllMembers = useCallback(async () => {
     if (!ministryId) return
+
+    if (ministry?.ministry_type === 'standalone') {
+      const { data } = await supabase
+        .from('ministry_memberships')
+        .select('id, role, joined_at, is_active, member:members!ministry_memberships_member_id_fkey(id, first_name, last_name, member_number, membership_status)')
+        .eq('ministry_id', ministryId)
+        .eq('is_active', true)
+        .order('joined_at', { ascending: false })
+      setAllMembers((data ?? []) as unknown as MinistryMember[])
+      return
+    }
+
     const { data: grpData } = await supabase.from('groups').select('id').eq('ministry_id', ministryId)
     const groupIds = (grpData ?? []).map((g: { id: string }) => g.id)
     if (groupIds.length === 0) { setAllMembers([]); return }
@@ -305,7 +318,7 @@ export function MinistryDetailPage() {
       .eq('is_active', true)
       .order('joined_at', { ascending: false })
     setAllMembers((data ?? []) as unknown as MinistryMember[])
-  }, [ministryId])
+  }, [ministryId, ministry?.ministry_type])
 
   useEffect(() => { fetchMinistry() }, [fetchMinistry])
   useEffect(() => { fetchGroups() }, [fetchGroups])
@@ -407,9 +420,15 @@ export function MinistryDetailPage() {
             <DownloadIcon /> Export Members
           </button>
           {canManage && (
-            <button onClick={() => navigate(`/groups/${ministry.id}/new`)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-              <PlusIcon /> New Group
-            </button>
+            ministry.ministry_type === 'standalone' ? (
+              <button onClick={() => {}} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                <PlusIcon /> Add Member
+              </button>
+            ) : (
+              <button onClick={() => navigate(`/groups/${ministry.id}/new`)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                <PlusIcon /> New Group
+              </button>
+            )
           )}
         </div>
       </div>
@@ -500,7 +519,7 @@ export function MinistryDetailPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  {['Member', 'Group', 'Role', 'Joined'].map(h => (
+                  {(ministry.ministry_type === 'standalone' ? ['Member', 'Role', 'Joined'] : ['Member', 'Group', 'Role', 'Joined']).map(h => (
                     <th key={h} style={{ padding: '11px 18px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 10.5, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left', borderBottom: '0.5px solid #EFF1F7', background: '#FAFBFE', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                   <th style={{ padding: '11px 18px', borderBottom: '0.5px solid #EFF1F7', background: '#FAFBFE', width: 40 }} />
@@ -508,7 +527,7 @@ export function MinistryDetailPage() {
               </thead>
               <tbody>
                 {filteredMembers.length === 0 ? (
-                  <tr><td colSpan={5} style={{ padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>No members found</td></tr>
+                  <tr><td colSpan={ministry.ministry_type === 'standalone' ? 4 : 5} style={{ padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>No members found</td></tr>
                 ) : filteredMembers.map(m => (
                   <tr key={m.id} className="md-member-row" onClick={() => m.member && navigate(`/members/${m.member.id}`)} style={{ borderBottom: '0.5px solid #EFF1F7', height: 56, background: 'var(--dm-bg-card)', transition: 'background 0.1s', cursor: 'pointer' }}>
                     <td style={{ padding: '0 18px' }}>
@@ -522,9 +541,11 @@ export function MinistryDetailPage() {
                         </div>
                       )}
                     </td>
-                    <td style={{ padding: '0 18px' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', background: '#E8ECF9', color: '#4F6BED', borderRadius: 5, padding: '2px 8px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11.5 }}>{m.group?.name ?? '—'}</span>
-                    </td>
+                    {ministry.ministry_type !== 'standalone' && (
+                      <td style={{ padding: '0 18px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', background: '#E8ECF9', color: '#4F6BED', borderRadius: 5, padding: '2px 8px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11.5 }}>{m.group?.name ?? '—'}</span>
+                      </td>
+                    )}
                     <td style={{ padding: '0 18px' }}>
                       <span style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: 5, background: m.role === 'leader' ? '#FFF8EC' : '#F3F4F6', color: m.role === 'leader' ? '#C8964A' : '#6B7280', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11.5, textTransform: 'capitalize' }}>{m.role}</span>
                     </td>
