@@ -20,12 +20,6 @@ interface MemberResult {
   member_number: string | null
 }
 
-interface TransactionResult {
-  id: string
-  reference_number: string | null
-  amount: number
-}
-
 interface EventResult {
   id: string
   name: string
@@ -132,7 +126,6 @@ export function TopBar() {
   // ─── Search state ────────────────────────────────────────────────────────
   const [query, setQuery] = useState<string>('')
   const [members, setMembers] = useState<MemberResult[]>([])
-  const [transactions, setTransactions] = useState<TransactionResult[]>([])
   const [events, setEvents] = useState<EventResult[]>([])
   const [open, setOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
@@ -152,7 +145,6 @@ export function TopBar() {
     const q = query.trim()
     if (q.length < 2) {
       setMembers([])
-      setTransactions([])
       setEvents([])
       setOpen(false)
       return
@@ -162,18 +154,12 @@ export function TopBar() {
     const like = `%${q}%`
 
     const handle = setTimeout(async () => {
-      const [mRes, tRes, eRes] = await Promise.all([
+      const [mRes, eRes] = await Promise.all([
         supabase
           .from('members')
           .select('id, first_name, last_name, member_number')
           .eq('org_id', orgId)
           .or(`first_name.ilike.${like},last_name.ilike.${like},member_number.ilike.${like}`)
-          .limit(5),
-        supabase
-          .from('transactions')
-          .select('id, reference_number, amount')
-          .eq('org_id', orgId)
-          .ilike('reference_number', like)
           .limit(5),
         supabase
           .from('events')
@@ -184,12 +170,10 @@ export function TopBar() {
       ])
 
       const m = (mRes.data ?? []) as MemberResult[]
-      const t = (tRes.data ?? []) as TransactionResult[]
       const ev = (eRes.data ?? []) as EventResult[]
       setMembers(m)
-      setTransactions(t)
       setEvents(ev)
-      setOpen(m.length > 0 || t.length > 0 || ev.length > 0)
+      setOpen(m.length > 0 || ev.length > 0)
     }, 300)
 
     return () => clearTimeout(handle)
@@ -293,11 +277,11 @@ export function TopBar() {
             <input
               className="topbar-search"
               type="text"
-              placeholder="Search members, donations, events..."
+              placeholder="Search members, events..."
               value={query}
               onChange={e => setQuery(e.target.value)}
               onFocus={() => {
-                if (members.length > 0 || transactions.length > 0 || events.length > 0) setOpen(true)
+                if (members.length > 0 || events.length > 0) setOpen(true)
               }}
               style={{
                 width: 280,
@@ -391,58 +375,6 @@ export function TopBar() {
                             {m.member_number}
                           </span>
                         )}
-                      </button>
-                    ))}
-                  </>
-                )}
-
-                {transactions.length > 0 && (
-                  <>
-                    <div style={{
-                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                      color: 'hsl(var(--muted-foreground))',
-                      padding: '8px 8px 4px',
-                    }}>
-                      Donations
-                    </div>
-                    {transactions.map(t => (
-                      <button
-                        key={t.id}
-                        className="topbar-search-result"
-                        onClick={() => goTo('/donations')}
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'flex-start',
-                          gap: 2,
-                          width: '100%',
-                          textAlign: 'left',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: '6px 8px',
-                          borderRadius: 6,
-                          transition: 'background 0.12s',
-                        }}
-                      >
-                        <span style={{
-                          fontFamily: "'IBM Plex Mono', monospace",
-                          fontSize: 13,
-                          color: 'hsl(var(--foreground))',
-                        }}>
-                          {t.reference_number ?? t.id.slice(0, 8).toUpperCase()}
-                        </span>
-                        <span style={{
-                          fontFamily: "'IBM Plex Mono', monospace",
-                          fontSize: 12,
-                          color: 'hsl(var(--muted-foreground))',
-                        }}>
-                          ₵{Number(t.amount).toLocaleString()}
-                        </span>
                       </button>
                     ))}
                   </>
