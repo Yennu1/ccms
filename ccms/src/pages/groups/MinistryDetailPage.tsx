@@ -302,6 +302,172 @@ function MinistryImportMembersModal({ ministryId, ministryName, existingMemberId
   )
 }
 
+// ─── Group Import Modal (grouped ministries) ──────────────────────────────────
+
+function MinistryGroupImportModal({ ministryId, ministryName, orgId, onAdd, onClose }: {
+  ministryId: string; ministryName: string; orgId: string; onAdd: () => void; onClose: () => void
+}) {
+  const [allMembers, setAllMembers] = useState<MemberOption[]>([])
+  const [groups, setGroups] = useState<{ id: string; name: string }[]>([])
+  const [loading, setLoading] = useState(true)
+  const [query, setQuery] = useState('')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [selectedGroupId, setSelectedGroupId] = useState('')
+  const [existingInGroup, setExistingInGroup] = useState<string[]>([])
+  const [role, setRole] = useState<'member' | 'leader'>('member')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from('groups').select('id, name').eq('ministry_id', ministryId).order('name'),
+      supabase.from('members').select('id, first_name, last_name, member_number').eq('org_id', orgId).order('first_name'),
+    ]).then(([{ data: grpData }, { data: memData }]) => {
+      if (grpData) setGroups(grpData as { id: string; name: string }[])
+      if (memData) setAllMembers(memData as MemberOption[])
+      setLoading(false)
+    })
+  }, [ministryId, orgId])
+
+  useEffect(() => {
+    if (!selectedGroupId) { setExistingInGroup([]); setSelectedIds(new Set()); return }
+    supabase.from('group_memberships').select('member_id').eq('group_id', selectedGroupId).eq('is_active', true)
+      .then(({ data }) => {
+        setExistingInGroup((data ?? []).map((r: { member_id: string }) => r.member_id))
+        setSelectedIds(new Set())
+      })
+  }, [selectedGroupId])
+
+  const available = allMembers.filter(m => {
+    if (existingInGroup.includes(m.id)) return false
+    const q = query.toLowerCase()
+    return !q || m.first_name.toLowerCase().includes(q) || m.last_name.toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
+  })
+
+  const allVisibleSelected = available.length > 0 && available.every(m => selectedIds.has(m.id))
+
+  const toggle = (id: string) => {
+    setSelectedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next })
+  }
+
+  const toggleSelectAll = () => {
+    if (allVisibleSelected) {
+      setSelectedIds(prev => { const next = new Set(prev); available.forEach(m => next.delete(m.id)); return next })
+    } else {
+      setSelectedIds(prev => { const next = new Set(prev); available.forEach(m => next.add(m.id)); return next })
+    }
+  }
+
+  const handleImport = async () => {
+    if (!selectedGroupId || selectedIds.size === 0) return
+    setSaving(true)
+    const today = new Date().toISOString().split('T')[0]
+    const groupName = groups.find(g => g.id === selectedGroupId)?.name ?? 'group'
+    const rows = Array.from(selectedIds).map(member_id => ({
+      org_id: orgId, group_id: selectedGroupId, member_id, role, joined_at: today, is_active: true,
+    }))
+    const { error } = await supabase.from('group_memberships').insert(rows)
+    if (error) { toast.error('Failed to import members: ' + error.message); setSaving(false); return }
+    toast.success(`${selectedIds.size} member${selectedIds.size === 1 ? '' : 's'} added to ${groupName}`)
+    onAdd()
+  }
+
+  const inputBase: React.CSSProperties = { width: '100%', height: 38, borderRadius: 8, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)', outline: 'none', padding: '0 12px', boxSizing: 'border-box' }
+  const canImport = !!selectedGroupId && selectedIds.size > 0 && !saving
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{ background: 'var(--dm-bg-card)', borderRadius: 12, border: '0.5px solid var(--dm-border)', padding: 24, width: 480, maxWidth: '90vw', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 6 }}>Import Members to Group</div>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 18 }}>Choose a group in <strong style={{ color: 'var(--dm-text-ink)' }}>{ministryName}</strong>, then select members to add at once.</div>
+
+        {loading ? (
+          <div style={{ padding: '40px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>Loading…</div>
+        ) : groups.length === 0 ? (
+          <>
+            <div style={{ padding: '32px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+              This ministry has no groups yet. Create a group first to import members.
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={onClose} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)' }}>Close</button>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Group selector */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#374151', marginBottom: 8 }}>Import into group</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {groups.map(g => (
+                  <button key={g.id} type="button" onClick={() => setSelectedGroupId(g.id)} style={{ padding: '6px 12px', borderRadius: 8, border: `1.5px solid ${selectedGroupId === g.id ? '#4F6BED' : 'var(--dm-border)'}`, background: selectedGroupId === g.id ? '#EEF1FD' : 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: selectedGroupId === g.id ? '#4F6BED' : 'var(--dm-text-body)', transition: 'border-color 0.12s, background 0.12s' }}>
+                    {g.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Search + select-all */}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ position: 'absolute', left: 10, pointerEvents: 'none', display: 'flex' }}><SearchIcon /></span>
+              <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search members…" disabled={!selectedGroupId} style={{ ...inputBase, paddingLeft: 34, opacity: selectedGroupId ? 1 : 0.5 }} />
+            </div>
+
+            {selectedGroupId && available.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+                <button type="button" onClick={toggleSelectAll} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, fontWeight: 500, color: '#4F6BED', padding: '2px 4px' }}>
+                  {allVisibleSelected ? 'Deselect all' : 'Select all'}
+                </button>
+              </div>
+            )}
+
+            {/* Member list */}
+            <div style={{ flex: 1, overflowY: 'auto', border: '0.5px solid var(--dm-border)', borderRadius: 8, marginBottom: 16, minHeight: 0 }}>
+              {!selectedGroupId ? (
+                <div style={{ padding: '24px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>Select a group above to see available members</div>
+              ) : available.length === 0 ? (
+                <div style={{ padding: '24px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>{query ? 'No members match your search' : 'All members are already in this group'}</div>
+              ) : available.map(m => {
+                const { bg, color } = avatarColor(m.first_name + m.last_name)
+                const checked = selectedIds.has(m.id)
+                return (
+                  <button key={m.id} type="button" onClick={() => toggle(m.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', background: checked ? '#EEF1FD' : 'none', border: 'none', cursor: 'pointer', borderBottom: '0.5px solid #F3F4F6', transition: 'background 0.1s' }} onMouseEnter={e => { if (!checked) e.currentTarget.style.background = '#F9FAFB' }} onMouseLeave={e => { if (!checked) e.currentTarget.style.background = 'none' }}>
+                    <div style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${checked ? '#4F6BED' : '#D1D5DB'}`, background: checked ? '#4F6BED' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.1s, border-color 0.1s' }}>
+                      {checked && <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5l2 2 4-4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                    </div>
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: bg, color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{m.first_name[0]}{m.last_name[0]}</div>
+                    <div style={{ textAlign: 'left' }}>
+                      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#111827' }}>{m.first_name} {m.last_name}</div>
+                      {m.member_number && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>{m.member_number}</div>}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Role */}
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#374151', marginBottom: 8 }}>Role</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {(['member', 'leader'] as const).map(r => (
+                  <button key={r} type="button" onClick={() => setRole(r)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: `1.5px solid ${role === r ? '#4F6BED' : 'var(--dm-border)'}`, background: role === r ? '#EEF1FD' : 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: role === r ? '#4F6BED' : 'var(--dm-text-body)', textTransform: 'capitalize' }}>
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={onClose} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>Cancel</button>
+              <button onClick={handleImport} disabled={!canImport} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: canImport ? '#4F6BED' : '#818CF8', cursor: canImport ? 'pointer' : 'not-allowed', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#fff' }}>
+                {saving ? 'Importing…' : `Import ${selectedIds.size} member${selectedIds.size === 1 ? '' : 's'}`}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Settings Form ────────────────────────────────────────────────────────────
 
 function SettingsTab({ ministry, branches, members, onSaved, canManage }: {
@@ -474,6 +640,7 @@ export function MinistryDetailPage() {
   const [notFound, setNotFound] = useState(false)
   const [showAddMember, setShowAddMember] = useState(false)
   const [showImport, setShowImport] = useState(false)
+  const [showGroupImport, setShowGroupImport] = useState(false)
 
   const canManage = user?.role === 'super_admin' || user?.role === 'pastor'
 
@@ -654,9 +821,14 @@ export function MinistryDetailPage() {
                 </button>
               </>
             ) : (
-              <button onClick={() => navigate(`/groups/${ministry.id}/new`)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-                <PlusIcon /> New Group
-              </button>
+              <>
+                <button onClick={() => setShowGroupImport(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--dm-border-strong)')} onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--dm-border)')}>
+                  <PlusIcon /> Import Members
+                </button>
+                <button onClick={() => navigate(`/groups/${ministry.id}/new`)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                  <PlusIcon /> New Group
+                </button>
+              </>
             )
           )}
         </div>
@@ -818,6 +990,16 @@ export function MinistryDetailPage() {
           orgId={ministry.org_id}
           onAdd={() => { setShowImport(false); fetchAllMembers() }}
           onClose={() => setShowImport(false)}
+        />
+      )}
+
+      {showGroupImport && ministry && ministry.ministry_type === 'grouped' && (
+        <MinistryGroupImportModal
+          ministryId={ministry.id}
+          ministryName={ministry.name}
+          orgId={ministry.org_id}
+          onAdd={() => { setShowGroupImport(false); fetchAllMembers() }}
+          onClose={() => setShowGroupImport(false)}
         />
       )}
     </>
