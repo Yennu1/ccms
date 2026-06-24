@@ -63,6 +63,7 @@ export function MinistryNewPage() {
   const [isOrgWide, setIsOrgWide] = useState(draft?.isOrgWide ?? true)
   const [branchId, setBranchId] = useState(draft?.branchId ?? '')
   const [leaderId, setLeaderId] = useState(draft?.leaderId ?? '')
+  const [ministryType, setMinistryType] = useState<'standalone' | 'grouped'>(draft?.ministryType ?? 'grouped')
   const [leaderQuery, setLeaderQuery] = useState('')
   const [leaderDropdownOpen, setLeaderDropdownOpen] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -83,10 +84,10 @@ export function MinistryNewPage() {
   // Auto-save draft (debounced)
   useEffect(() => {
     const t = setTimeout(() => {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ name, description, isOrgWide, branchId, leaderId }))
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ name, description, isOrgWide, branchId, leaderId, ministryType }))
     }, 600)
     return () => clearTimeout(t)
-  }, [name, description, isOrgWide, branchId, leaderId])
+  }, [name, description, isOrgWide, branchId, leaderId, ministryType])
 
   // Close leader dropdown on outside click
   useEffect(() => {
@@ -131,6 +132,7 @@ export function MinistryNewPage() {
       branch_id: isOrgWide ? null : (branchId || null),
       leader_id: leaderId || null,
       is_active: true,
+      ministry_type: ministryType,
     }
 
     const { data, error } = await supabase.from('ministries').insert(payload).select().single()
@@ -193,7 +195,27 @@ export function MinistryNewPage() {
               <textarea className="mn-input" value={description} onChange={e => setDescription(e.target.value)} placeholder="Brief description of this ministry..." rows={3} style={{ ...inputBase, height: 'auto', padding: '10px 12px', resize: 'vertical', lineHeight: 1.5 }} />
             </div>
 
-            {/* Type Toggle */}
+            {/* Structure picker */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={labelStyle}>Structure <span style={{ color: '#EF4444' }}>*</span></label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { value: 'grouped' as const, label: 'Structured', desc: 'Members are organised into groups (e.g. a choir with sections).' },
+                  { value: 'standalone' as const, label: 'Simple', desc: 'A single list of members with no groups (e.g. a small ushers team).' },
+                ] as const).map(opt => {
+                  const active = ministryType === opt.value
+                  return (
+                    <button key={opt.value} type="button" onClick={() => setMinistryType(opt.value)}
+                      style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: `1.5px solid ${active ? '#4F6BED' : 'var(--dm-border-soft)'}`, background: active ? 'rgba(79,107,237,0.06)' : 'var(--dm-bg-card)', cursor: 'pointer', textAlign: 'left', transition: 'border-color 0.15s, background 0.15s' }}>
+                      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: active ? '#4F6BED' : 'var(--dm-text-body)', marginBottom: 3 }}>{opt.label}</div>
+                      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: 'var(--dm-text-muted)', lineHeight: 1.4 }}>{opt.desc}</div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Scope Toggle */}
             <div style={{ marginBottom: 18 }}>
               <label style={labelStyle}>Ministry Type <span style={{ color: '#EF4444' }}>*</span></label>
               <div style={{ display: 'flex', gap: 8 }}>
