@@ -422,6 +422,12 @@ export function MinistryDetailPage() {
   useEffect(() => { fetchAllMembers() }, [fetchAllMembers])
 
   useEffect(() => {
+    if (ministry?.ministry_type === 'standalone' && activeTab === 'groups') {
+      setActiveTab('members')
+    }
+  }, [ministry?.ministry_type, activeTab])
+
+  useEffect(() => {
     if (!user?.org_id) return
     supabase.from('branches').select('id, name').eq('org_id', user.org_id).order('name').then(({ data }) => { if (data) setBranches(data as Branch[]) })
     supabase.from('members').select('id, first_name, last_name, member_number').eq('org_id', user.org_id).order('first_name').then(({ data }) => { if (data) setMemberOptions(data as MemberOption[]) })
@@ -482,9 +488,9 @@ export function MinistryDetailPage() {
   const activeMemberCount = allMembers.length
 
   const tabs: { key: DetailTab; label: string }[] = [
-    { key: 'groups', label: 'Groups' },
-    { key: 'members', label: `Members (${activeMemberCount})` },
-    { key: 'settings', label: 'Settings' },
+    ...(ministry.ministry_type === 'grouped' ? [{ key: 'groups' as DetailTab, label: 'Groups' }] : []),
+    { key: 'members' as DetailTab, label: `Members (${activeMemberCount})` },
+    { key: 'settings' as DetailTab, label: 'Settings' },
   ]
 
   const inputStyle: React.CSSProperties = { height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)', outline: 'none' }
@@ -531,8 +537,10 @@ export function MinistryDetailPage() {
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 22 }}>
-        <StatCard label="Total Groups" value={groups.length} sub={`${activeGroupCount} active`} accent="#4F6BED" />
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${ministry.ministry_type === 'grouped' ? 3 : 2}, 1fr)`, gap: 14, marginBottom: 22 }}>
+        {ministry.ministry_type === 'grouped' && (
+          <StatCard label="Total Groups" value={groups.length} sub={`${activeGroupCount} active`} accent="#4F6BED" />
+        )}
         <StatCard label="Total Members" value={activeMemberCount} sub="across all groups" accent="#22C55E" />
         <StatCard label="Active %" value={groups.length > 0 ? `${Math.round((activeGroupCount / groups.length) * 100)}%` : '—'} sub="groups active" accent="#C8964A" />
       </div>
