@@ -86,6 +86,102 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string 
   )
 }
 
+// ─── Add Member Modal (standalone ministries) ─────────────────────────────────
+
+function MinistryAddMemberModal({ ministryId, ministryName, existingMemberIds, orgId, onAdd, onClose }: {
+  ministryId: string; ministryName: string; existingMemberIds: string[]; orgId: string; onAdd: () => void; onClose: () => void
+}) {
+  const [allMembers, setAllMembers] = useState<MemberOption[]>([])
+  const [loading, setLoading] = useState(true)
+  const [query, setQuery] = useState('')
+  const [selectedId, setSelectedId] = useState('')
+  const [role, setRole] = useState<'member' | 'leader'>('member')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    supabase.from('members').select('id, first_name, last_name, member_number').eq('org_id', orgId).order('first_name')
+      .then(({ data }) => { if (data) setAllMembers(data as MemberOption[]); setLoading(false) })
+  }, [orgId])
+
+  const available = allMembers.filter(m => {
+    if (existingMemberIds.includes(m.id)) return false
+    const q = query.toLowerCase()
+    return !q || m.first_name.toLowerCase().includes(q) || m.last_name.toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
+  })
+
+  const selected = allMembers.find(m => m.id === selectedId)
+
+  const handleAdd = async () => {
+    if (!selectedId) return
+    setSaving(true)
+    const { error } = await supabase.from('ministry_memberships').insert({
+      org_id: orgId,
+      ministry_id: ministryId,
+      member_id: selectedId,
+      role,
+      joined_at: new Date().toISOString().split('T')[0],
+      is_active: true,
+    })
+    if (error) { toast.error('Failed to add member: ' + error.message); setSaving(false); return }
+    toast.success('Member added to ministry')
+    onAdd()
+  }
+
+  const inputBase: React.CSSProperties = { width: '100%', height: 38, borderRadius: 8, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-ink)', background: 'var(--dm-bg-card)', outline: 'none', padding: '0 12px', boxSizing: 'border-box' }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{ background: 'var(--dm-bg-card)', borderRadius: 12, border: '0.5px solid var(--dm-border)', padding: 24, width: 480, maxWidth: '90vw', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 6 }}>Add Member to Ministry</div>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 18 }}>Search for an org member not already in <strong style={{ color: 'var(--dm-text-ink)' }}>{ministryName}</strong>.</div>
+
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+          <span style={{ position: 'absolute', left: 10, pointerEvents: 'none', display: 'flex' }}><SearchIcon /></span>
+          <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search members…" style={{ ...inputBase, paddingLeft: 34 }} autoFocus />
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', border: '0.5px solid var(--dm-border)', borderRadius: 8, marginBottom: 16, minHeight: 0 }}>
+          {loading ? (
+            <div style={{ padding: '24px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>Loading…</div>
+          ) : available.length === 0 ? (
+            <div style={{ padding: '24px 0', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>{query ? 'No members match your search' : 'All members are already in this ministry'}</div>
+          ) : available.map(m => {
+            const { bg, color } = avatarColor(m.first_name + m.last_name)
+            return (
+              <button key={m.id} type="button" onClick={() => setSelectedId(m.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', background: m.id === selectedId ? '#EEF1FD' : 'none', border: 'none', cursor: 'pointer', borderBottom: '0.5px solid #F3F4F6', transition: 'background 0.1s' }} onMouseEnter={e => { if (m.id !== selectedId) e.currentTarget.style.background = '#F9FAFB' }} onMouseLeave={e => { if (m.id !== selectedId) e.currentTarget.style.background = 'none' }}>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', background: bg, color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{m.first_name[0]}{m.last_name[0]}</div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#111827' }}>{m.first_name} {m.last_name}</div>
+                  {m.member_number && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>{m.member_number}</div>}
+                </div>
+                {m.id === selectedId && <span style={{ marginLeft: 'auto', width: 16, height: 16, borderRadius: '50%', background: '#4F6BED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></span>}
+              </button>
+            )
+          })}
+        </div>
+
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 12, color: '#374151', marginBottom: 8 }}>Role</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {(['member', 'leader'] as const).map(r => (
+              <button key={r} type="button" onClick={() => setRole(r)} style={{ flex: 1, padding: '8px', borderRadius: 8, border: `1.5px solid ${role === r ? '#4F6BED' : 'var(--dm-border)'}`, background: role === r ? '#EEF1FD' : 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: role === r ? '#4F6BED' : 'var(--dm-text-body)', textTransform: 'capitalize' }}>
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>Cancel</button>
+          <button onClick={handleAdd} disabled={!selectedId || saving} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: !selectedId || saving ? '#818CF8' : '#4F6BED', cursor: !selectedId || saving ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: '#fff' }}>
+            {saving ? 'Adding…' : `Add ${selected ? selected.first_name : 'Member'}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Settings Form ────────────────────────────────────────────────────────────
 
 function SettingsTab({ ministry, branches, members, onSaved, canManage }: {
@@ -256,6 +352,7 @@ export function MinistryDetailPage() {
   const [groupSearch, setGroupSearch] = useState('')
   const [memberSearch, setMemberSearch] = useState('')
   const [notFound, setNotFound] = useState(false)
+  const [showAddMember, setShowAddMember] = useState(false)
 
   const canManage = user?.role === 'super_admin' || user?.role === 'pastor'
 
@@ -421,7 +518,7 @@ export function MinistryDetailPage() {
           </button>
           {canManage && (
             ministry.ministry_type === 'standalone' ? (
-              <button onClick={() => {}} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+              <button onClick={() => setShowAddMember(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
                 <PlusIcon /> Add Member
               </button>
             ) : (
@@ -566,6 +663,17 @@ export function MinistryDetailPage() {
       {/* ── Settings Tab ───────────────────────────────────────────────────────── */}
       {activeTab === 'settings' && (
         <SettingsTab ministry={ministry} branches={branches} members={memberOptions} onSaved={fetchMinistry} canManage={canManage} />
+      )}
+
+      {showAddMember && ministry && (
+        <MinistryAddMemberModal
+          ministryId={ministry.id}
+          ministryName={ministry.name}
+          existingMemberIds={allMembers.map(m => m.member?.id).filter(Boolean) as string[]}
+          orgId={ministry.org_id}
+          onAdd={() => { setShowAddMember(false); fetchAllMembers() }}
+          onClose={() => setShowAddMember(false)}
+        />
       )}
     </>
   )
