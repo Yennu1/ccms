@@ -1,0 +1,1 @@
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS is_collective BOOLEAN DEFAULT false;;

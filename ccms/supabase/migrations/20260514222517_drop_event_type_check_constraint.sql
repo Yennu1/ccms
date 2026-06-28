@@ -1,0 +1,1 @@
+ALTER TABLE public.events DROP CONSTRAINT events_event_type_check;;
