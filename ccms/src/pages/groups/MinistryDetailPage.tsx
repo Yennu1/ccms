@@ -642,7 +642,7 @@ export function MinistryDetailPage() {
   const [showImport, setShowImport] = useState(false)
   const [showGroupImport, setShowGroupImport] = useState(false)
 
-  const canManage = user?.role === 'super_admin' || user?.role === 'pastor'
+  const canManage = user?.role === 'super_admin' || user?.role === 'admin'
 
   const fetchMinistry = useCallback(async () => {
     if (!ministryId) return

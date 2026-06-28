@@ -84,11 +84,10 @@ const NAV_ITEMS = [
 ]
 
 const ROLE_LABELS: Record<string, string> = {
-  super_admin:     'Admin',
-  pastor:          'Pastor',
-  finance_officer: 'Finance',
-  group_leader:    'Group Leader',
-  member:          'Member',
+  super_admin:      'Super Admin',
+  admin:            'Branch Admin',
+  finance_officer:  'Finance Officer',
+  group_leader:     'Group Leader',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

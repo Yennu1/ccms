@@ -119,7 +119,7 @@ export function MinistriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Ministry | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  const canManage = user?.role === 'super_admin' || user?.role === 'pastor'
+const canManage = user?.role === 'super_admin' || user?.role === 'admin'
 
   const fetchMinistries = useCallback(async () => {
     if (!user?.org_id) return

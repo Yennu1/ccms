@@ -263,7 +263,7 @@ export function ReportsPage() {
     if (!user?.org_id) return
     supabase.from('branches').select('id, name').eq('org_id', user.org_id).order('name')
       .then(({ data }) => { if (data) setBranches(data as Branch[]) })
-    if (user.role === 'pastor' && user.branch_id) setSelectedBranch(user.branch_id)
+  if (user.role !== 'super_admin' && user.branch_id) setSelectedBranch(user.branch_id)
   }, [user?.org_id])
 
   // ── Giving data ─────────────────────────────────────────────────────────────
@@ -472,7 +472,7 @@ export function ReportsPage() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {user?.role !== 'pastor' && branches.length > 0 && (
+          {user?.role === 'super_admin' && branches.length > 0 && (
             <select value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)} style={selectSt}>
               <option value="">All Branches</option>
               {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}

@@ -5,10 +5,9 @@ import { supabase } from '../lib/supabase'
 
 export type UserRole =
   | 'super_admin'
-  | 'pastor'
+  | 'admin'
   | 'finance_officer'
   | 'group_leader'
-  | 'member'
 
 export interface AuthUser {
   id: string
@@ -65,29 +64,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false
 
     const fetchProfile = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
+      const [profileResult, roleResult] = await Promise.all([
+           supabase.from('profiles').select('id, email, full_name, org_id').eq('id', session.user.id).single(),
+           supabase.from('user_roles').select('role, branch_id').eq('user_id', session.user.id).eq('is_active', true).single()
+             ])
 
-      if (cancelled) return
+  if (cancelled) return
 
-      if (data && !error) {
-        setUser({
-          id: data.id,
-          email: data.email,
-          role: data.role,
-          full_name: data.full_name,
-          branch_id: data.branch_id,
-          org_id: data.org_id,
-        })
-      } else {
-        await supabase.auth.signOut()
-        setUser(null)
-      }
-      setLoading(false)
-    }
+        if (profileResult.data && roleResult.data) {
+          setUser({
+            id: profileResult.data.id,
+            email: profileResult.data.email,
+            full_name: profileResult.data.full_name,
+            org_id: profileResult.data.org_id,
+            role: roleResult.data.role as UserRole,
+            branch_id: roleResult.data.branch_id,
+          })
+        } else {
+          await supabase.auth.signOut()
+          setUser(null)
+        }
+        setLoading(false)
+            }
 
     fetchProfile()
 

@@ -223,7 +223,7 @@ export function DashboardPage() {
     if (!user?.org_id) return
     supabase.from('branches').select('id, name').eq('org_id', user.org_id).order('name')
       .then(({ data }) => { if (data) setBranches(data as Branch[]) })
-    if (user.role === 'pastor' && user.branch_id) setSelectedBranch(user.branch_id)
+   if (user.role !== 'super_admin' && user.branch_id) setSelectedBranch(user.branch_id)
   }, [user?.org_id])
 
   // KPI stats
@@ -473,7 +473,7 @@ export function DashboardPage() {
         </div>
 
         {/* Branch filter */}
-        {user?.role !== 'pastor' && (
+        {user?.role === 'super_admin' && (
           <select
             className="dash-select"
             value={selectedBranch}

@@ -688,7 +688,7 @@ export function GroupDetailPage() {
   const [showAttendanceModal, setShowAttendanceModal] = useState(false)
   const [meetingsThisMonth, setMeetingsThisMonth] = useState(0)
 
-  const canManage = user?.role === 'super_admin' || user?.role === 'pastor'
+  const canManage = user?.role === 'super_admin' || user?.role === 'admin'
   const isGroupLeader = user?.role === 'group_leader'
 
   const fetchGroup = useCallback(async () => {

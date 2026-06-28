@@ -1,10 +1,10 @@
 export type UserRole = 
   | 'super_admin' 
-  | 'pastor' 
+  | 'admin' 
   | 'finance_officer' 
-  | 'group_leader' 
-  | 'member'
+  | 'group_leader'
 
+  
 export interface AuthUser {
   id: string
   email: string
