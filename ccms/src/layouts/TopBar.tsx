@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useSidebar } from '../contexts/SidebarContext'
 import { supabase } from '../lib/supabase'
 import { ThemeToggle } from '../components/ThemeToggle'
 
@@ -121,6 +122,7 @@ export function TopBar() {
   const { pathname } = useLocation()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { toggleMobile, isMobile } = useSidebar()
   const [orgName, setOrgName] = useState('Centry CMS')
 
   // ─── Search state ────────────────────────────────────────────────────────
@@ -229,8 +231,27 @@ export function TopBar() {
         flexShrink: 0,
       }}>
 
-        {/* Breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        {/* Left: sidebar toggle + breadcrumb */}
+        <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+          {isMobile && (
+            <button
+              onClick={toggleMobile}
+              title="Open menu"
+              aria-label="Open menu"
+              style={{
+                width: 36, height: 36, borderRadius: 8,
+                border: '0.5px solid var(--dm-border)',
+                background: 'var(--dm-bg-card)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: 'var(--dm-text-secondary)',
+                marginRight: 12, flexShrink: 0,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+            </button>
+          )}
           <span style={{
             fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
             fontWeight: 400,
