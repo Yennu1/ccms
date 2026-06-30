@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { useSettings } from '../../contexts/SettingsContext'
+import { useSidebar } from '../../contexts/SidebarContext'
 import { ROLE_LABELS } from '../../lib/constants'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -31,7 +33,7 @@ interface BranchOption {
   name: string
 }
 
-type SettingsTab = 'categories' | 'access_control'
+type SettingsTab = 'profile' | 'general' | 'branches' | 'access_control' | 'billing' | 'categories' | 'notifications'
 
 // ─── Access control helpers ───────────────────────────────────────────────────
 
@@ -119,6 +121,13 @@ function ShieldCheckIcon() {
 function BanIcon() {
   return <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.4" fill="none" /><path d="M4.2 4.2l7.6 7.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
 }
+
+function UserIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.8"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> }
+function BuildingIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.8"/><path d="M5 15V9h6v6M2 6h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> }
+function CreditCardIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.8"/><path d="M1 7h14" stroke="currentColor" strokeWidth="1.8"/><path d="M4 10.5h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> }
+function ShieldIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5L2 4v4c0 3.5 2.667 5.833 6 7 3.333-1.167 6-3.5 6-7V4L8 1.5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg> }
+function BranchIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="4" r="2" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="4" r="2" stroke="currentColor" strokeWidth="1.8"/><circle cx="8" cy="13" r="2" stroke="currentColor" strokeWidth="1.8"/><path d="M4 6v2a4 4 0 004 4M12 6v2a4 4 0 01-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> }
+function BellIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2a4.5 4.5 0 0 0-4.5 4.5v3L2 11h12l-1.5-1.5V6.5A4.5 4.5 0 0 0 8 2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M6.5 11.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" strokeWidth="1.8"/></svg> }
 
 // ─── Shared modal input style helper ─────────────────────────────────────────
 
@@ -938,18 +947,39 @@ function AccessControlTab({ orgId }: { orgId: string }) {
 
       {/* Roles legend */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
-        {ROLE_LEGEND.map(item => (
-          <div
-            key={item.role}
-            style={{ flex: '1 1 200px', minWidth: 180, background: '#E8ECF9', borderRadius: 8, borderLeft: `4px solid #4F6BED`, padding: 12, display: 'flex', alignItems: 'flex-start', gap: 10 }}
-          >
-            <span style={{ display: 'inline-flex', color: ROLE_BADGE_COLOR[item.role], marginTop: 1 }}><ShieldCheckIcon /></span>
-            <div>
-              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#1B2352' }}>{item.name}</div>
-              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#3D4B86', marginTop: 2 }}>{item.desc}</div>
+        {ROLE_LEGEND.map(item => {
+          const roleColor = ROLE_BADGE_COLOR[item.role]
+          return (
+            <div
+              key={item.role}
+              style={{
+                flex: 1,
+                minWidth: 0,
+                background: 'var(--dm-bg-card)',
+                border: `2px solid ${roleColor}`,
+                borderRadius: 12,
+                padding: 16,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                gap: 8,
+              }}
+            >
+              <div style={{
+                width: 40, height: 40, borderRadius: '50%',
+                background: `${roleColor}1F`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: roleColor,
+                margin: '0 auto 8px',
+              }}>
+                <ShieldCheckIcon />
+              </div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#1B2352', textAlign: 'center' }}>{item.name}</div>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280', lineHeight: 1.5, textAlign: 'center' }}>{item.desc}</div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Users table */}
@@ -1054,18 +1084,362 @@ function AccessControlTab({ orgId }: { orgId: string }) {
   )
 }
 
+// ─── Profile Tab ──────────────────────────────────────────────────────────────
+
+function ProfileTab() {
+  const { user } = useAuth()
+  const [fullName, setFullName] = useState(user?.full_name ?? '')
+  const [saving, setSaving] = useState(false)
+  const [branchName, setBranchName] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!user) return
+    if (user.branch_id) {
+      supabase.from('branches').select('name').eq('id', user.branch_id).single()
+        .then(({ data }) => { if (data) setBranchName(data.name) })
+    } else {
+      setBranchName('All Branches')
+    }
+  }, [user?.branch_id])
+
+  const handleSave = async () => {
+    if (!user?.id) return
+    const trimmed = fullName.trim()
+    if (!trimmed) return
+    setSaving(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ full_name: trimmed })
+      .eq('id', user.id)
+    setSaving(false)
+    if (error) { toast.error('Failed to update profile') } else { toast.success('Profile updated') }
+  }
+
+  const pal = avatarColor(user?.full_name ?? 'U')
+  const initials = user?.full_name ? initialsOf(user.full_name) : '?'
+
+  return (
+    <div style={{ maxWidth: 480 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
+        <div style={{ width: 72, height: 72, borderRadius: '50%', background: pal.bg, color: pal.color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+          {initials}
+        </div>
+        <button style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#4F6BED', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          Upload photo
+        </button>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={modalLabelStyle()}>Full Name</label>
+        <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} style={modalInputStyle(false)} />
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={modalLabelStyle()}>Email Address</label>
+        <input type="email" value={user?.email ?? ''} readOnly style={{ ...modalInputStyle(false), background: 'var(--dm-bg-muted)', color: 'var(--dm-text-secondary)', cursor: 'not-allowed' }} />
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)', marginTop: 4 }}>Contact your Super Admin to change your email</div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={modalLabelStyle()}>Role</label>
+        <input type="text" value={ROLE_LABELS[user?.role ?? ''] ?? (user?.role ?? '')} readOnly style={{ ...modalInputStyle(false), background: 'var(--dm-bg-muted)', color: 'var(--dm-text-secondary)', cursor: 'not-allowed' }} />
+      </div>
+
+      <div style={{ marginBottom: 28 }}>
+        <label style={modalLabelStyle()}>Branch</label>
+        <input type="text" value={branchName ?? '…'} readOnly style={{ ...modalInputStyle(false), background: 'var(--dm-bg-muted)', color: 'var(--dm-text-secondary)', cursor: 'not-allowed' }} />
+      </div>
+
+      <button onClick={handleSave} disabled={saving} style={{ height: 36, padding: '0 20px', borderRadius: 8, border: 'none', background: saving ? '#A5B4FC' : '#4F6BED', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#fff' }}>
+        {saving ? 'Saving…' : 'Save Changes'}
+      </button>
+    </div>
+  )
+}
+
+// ─── General Tab ──────────────────────────────────────────────────────────────
+
+function GeneralTab({ orgId }: { orgId: string }) {
+  const [orgName, setOrgName] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    supabase.from('organisations').select('name').eq('id', orgId).single()
+      .then(({ data }) => { if (data) setOrgName(data.name) })
+  }, [orgId])
+
+  const handleSave = async () => {
+    const trimmed = orgName.trim()
+    if (!trimmed) return
+    setSaving(true)
+    const { error } = await supabase.from('organisations').update({ name: trimmed }).eq('id', orgId)
+    setSaving(false)
+    if (error) { toast.error('Failed to update organisation') } else { toast.success('Organisation updated') }
+  }
+
+  const readOnly: React.CSSProperties = { ...modalInputStyle(false), background: 'var(--dm-bg-muted)', color: 'var(--dm-text-secondary)', cursor: 'not-allowed' }
+
+  return (
+    <div style={{ maxWidth: 480 }}>
+      <div style={{ marginBottom: 6 }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 2 }}>Organisation Profile</div>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 24 }}>Manage your church's general information</div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={modalLabelStyle()}>Organisation Name</label>
+        <input type="text" value={orgName} onChange={e => setOrgName(e.target.value)} style={modalInputStyle(false)} />
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={modalLabelStyle()}>Country</label>
+        <input type="text" value="Ghana" readOnly style={readOnly} />
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={modalLabelStyle()}>Currency</label>
+        <input type="text" value="GHS — Ghanaian Cedi" readOnly style={readOnly} />
+      </div>
+
+      <div style={{ marginBottom: 28 }}>
+        <label style={modalLabelStyle()}>Timezone</label>
+        <input type="text" value="Africa/Accra (GMT+0)" readOnly style={readOnly} />
+      </div>
+
+      <button onClick={handleSave} disabled={saving} style={{ height: 36, padding: '0 20px', borderRadius: 8, border: 'none', background: saving ? '#A5B4FC' : '#4F6BED', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#fff' }}>
+        {saving ? 'Saving…' : 'Save Changes'}
+      </button>
+    </div>
+  )
+}
+
+// ─── Branches Tab ─────────────────────────────────────────────────────────────
+
+interface BranchRow { id: string; name: string; is_main_branch: boolean; is_active: boolean }
+
+function AddBranchModal({ orgId, onClose, onSuccess }: { orgId: string; onClose: () => void; onSuccess: () => void }) {
+  const [name, setName] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [nameError, setNameError] = useState('')
+
+  const handleSubmit = async () => {
+    const trimmed = name.trim()
+    if (!trimmed) { setNameError('Branch name is required'); return }
+    setSaving(true)
+    const { error } = await supabase.from('branches').insert({ org_id: orgId, name: trimmed, is_active: true })
+    setSaving(false)
+    if (error) { toast.error('Failed to create branch') } else { toast.success('Branch created'); onSuccess(); onClose() }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: 24, width: 420, boxShadow: '0 8px 32px rgba(0,0,0,0.14)' }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 20 }}>Add Branch</div>
+        <div style={{ marginBottom: 24 }}>
+          <label style={modalLabelStyle()}>Branch Name</label>
+          <input type="text" placeholder="e.g. Main Campus" value={name} onChange={e => { setName(e.target.value); setNameError('') }} onKeyDown={e => e.key === 'Enter' && !saving && handleSubmit()} autoFocus style={modalInputStyle(!!nameError)} />
+          {nameError && <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#EF4444', marginTop: 4 }}>{nameError}</div>}
+        </div>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')} onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}>Cancel</button>
+          <button onClick={handleSubmit} disabled={saving} style={{ height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: saving ? '#A5B4FC' : '#4F6BED', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <PlusIcon /> {saving ? 'Creating…' : 'Create Branch'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BranchesTab({ orgId }: { orgId: string }) {
+  const [branches, setBranches] = useState<BranchRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showAdd, setShowAdd] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState('')
+
+  const fetchBranches = useCallback(async () => {
+    setLoading(true)
+    const { data } = await supabase.from('branches').select('id, name, is_main_branch, is_active').eq('org_id', orgId).order('name')
+    setBranches((data ?? []) as BranchRow[])
+    setLoading(false)
+  }, [orgId])
+
+  useEffect(() => { fetchBranches() }, [fetchBranches])
+
+  const startEdit = (branch: BranchRow) => { setEditingId(branch.id); setEditingName(branch.name) }
+
+  const saveEdit = async (id: string) => {
+    const trimmed = editingName.trim()
+    if (!trimmed) return
+    const { error } = await supabase.from('branches').update({ name: trimmed }).eq('id', id)
+    if (error) { toast.error('Failed to update branch') } else { toast.success('Branch updated'); fetchBranches() }
+    setEditingId(null)
+  }
+
+  const handleDelete = async (branch: BranchRow) => {
+    if (branch.is_main_branch) { toast.error('Cannot delete the main branch'); return }
+    if (!window.confirm(`Delete branch "${branch.name}"? This cannot be undone.`)) return
+    const { error } = await supabase.from('branches').delete().eq('id', branch.id)
+    if (error) { toast.error('Failed to delete branch') } else { toast.success('Branch deleted'); fetchBranches() }
+  }
+
+  return (
+    <>
+      {showAdd && <AddBranchModal orgId={orgId} onClose={() => setShowAdd(false)} onSuccess={fetchBranches} />}
+
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 20 }}>
+        <div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 3 }}>Branches</div>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)' }}>Manage your church's locations and campuses</div>
+        </div>
+        <button onClick={() => setShowAdd(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer', flexShrink: 0 }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#3D59DB')} onMouseLeave={e => (e.currentTarget.style.background = '#4F6BED')}>
+          <PlusIcon /> Add Branch
+        </button>
+      </div>
+
+      {loading ? (
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden' }}>
+          {[1, 2].map(i => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderBottom: i < 2 ? '0.5px solid var(--dm-border-soft)' : 'none' }}>
+              <div style={{ height: 13, width: '40%', borderRadius: 4, background: 'var(--dm-bg-muted)', animation: 'cat-pulse 1.5s ease-in-out infinite' }} />
+              <div style={{ flex: 1 }} />
+              <div style={{ height: 22, width: 60, borderRadius: 999, background: 'var(--dm-bg-muted)', animation: 'cat-pulse 1.5s ease-in-out infinite' }} />
+            </div>
+          ))}
+        </div>
+      ) : branches.length === 0 ? (
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '48px 24px', textAlign: 'center' }}>
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No branches yet. Add your first branch.</div>
+        </div>
+      ) : (
+        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 18px', borderBottom: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-subtle)' }}>
+            <div style={{ flex: 1, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, color: 'var(--dm-text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Branch Name</div>
+            <div style={{ width: 90, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, color: 'var(--dm-text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Members</div>
+            <div style={{ width: 80, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, color: 'var(--dm-text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Status</div>
+            <div style={{ width: 64 }} />
+          </div>
+          {branches.map((branch, idx) => (
+            <div key={branch.id} className="cat-row" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', borderBottom: idx < branches.length - 1 ? '0.5px solid var(--dm-border-soft)' : 'none' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {editingId === branch.id ? (
+                  <input
+                    type="text"
+                    value={editingName}
+                    onChange={e => setEditingName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveEdit(branch.id); if (e.key === 'Escape') setEditingId(null) }}
+                    autoFocus
+                    style={{ ...modalInputStyle(false), height: 30, fontSize: 13 }}
+                  />
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)' }}>{branch.name}</span>
+                    {branch.is_main_branch && <span style={{ display: 'inline-flex', padding: '2px 7px', borderRadius: 6, background: '#E8ECF9', color: '#4F6BED', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11 }}>Main</span>}
+                  </div>
+                )}
+              </div>
+              <div style={{ width: 90, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>—</div>
+              <div style={{ width: 80 }}>
+                <span style={{ display: 'inline-flex', padding: '3px 9px', borderRadius: 999, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, background: branch.is_active ? '#DCFCE7' : '#FEF2F2', color: branch.is_active ? '#15803D' : '#EF4444' }}>
+                  {branch.is_active ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              <div style={{ width: 64, display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                {editingId === branch.id ? (
+                  <>
+                    <button onClick={() => saveEdit(branch.id)} title="Save" style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: '#4F6BED', display: 'grid', placeItems: 'center', color: '#fff', cursor: 'pointer', fontSize: 11, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600 }}>✓</button>
+                    <button onClick={() => setEditingId(null)} title="Cancel" style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'transparent', display: 'grid', placeItems: 'center', color: 'var(--dm-text-muted)', cursor: 'pointer' }}>✕</button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => startEdit(branch)} title="Edit branch" style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'transparent', display: 'grid', placeItems: 'center', color: 'var(--dm-text-muted)', cursor: 'pointer' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#C7D0F8'; e.currentTarget.style.color = '#4F6BED'; e.currentTarget.style.background = '#E8ECF9' }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--dm-border)'; e.currentTarget.style.color = 'var(--dm-text-muted)'; e.currentTarget.style.background = 'transparent' }}>
+                      <PencilIcon />
+                    </button>
+                    <button onClick={() => handleDelete(branch)} title={branch.is_main_branch ? 'Cannot delete main branch' : 'Delete branch'} disabled={branch.is_main_branch} style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'transparent', display: 'grid', placeItems: 'center', color: 'var(--dm-text-muted)', cursor: branch.is_main_branch ? 'not-allowed' : 'pointer', opacity: branch.is_main_branch ? 0.38 : 1 }}
+                      onMouseEnter={e => { if (!branch.is_main_branch) { e.currentTarget.style.borderColor = '#FCA5A5'; e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.background = '#FEF2F2' } }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--dm-border)'; e.currentTarget.style.color = 'var(--dm-text-muted)'; e.currentTarget.style.background = 'transparent' }}>
+                      <TrashIcon />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
+// ─── Billing Tab ──────────────────────────────────────────────────────────────
+
+function BillingTab() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 260, gap: 16, textAlign: 'center' }}>
+      <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#E8ECF9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <CreditCardIcon />
+      </div>
+      <div>
+        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 999, background: '#FEF3C7', color: '#C8964A', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.06em', marginBottom: 10 }}>PLANNED</span>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 6 }}>Billing &amp; Subscription</div>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', maxWidth: 380, lineHeight: 1.6 }}>
+          Manage your plan, usage limits, and payment details. Coming in a future update.
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Notifications Tab ────────────────────────────────────────────────────────
+
+function NotificationsTab() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 260, gap: 16, textAlign: 'center' }}>
+      <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#E8ECF9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <BellIcon />
+      </div>
+      <div>
+        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 999, background: '#FEF3C7', color: '#C8964A', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.06em', marginBottom: 10 }}>COMING SOON</span>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 6 }}>Notifications</div>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', maxWidth: 380, lineHeight: 1.6 }}>
+          Configure email and in-app notifications for key events. Coming in a future update.
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Settings Page ────────────────────────────────────────────────────────────
 
-export function SettingsPage() {
+export function SettingsPage({ modal = false }: { modal?: boolean }) {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState<SettingsTab>('categories')
+  const { activeTab, setActiveTab } = useSettings()
+  const { isMobile } = useSidebar()
+
+  const isSuperAdmin = user?.role === 'super_admin'
 
   const tabs: { key: SettingsTab; label: string; icon: React.ReactNode }[] = [
+    { key: 'profile', label: 'My Profile', icon: <UserIcon /> },
+    ...(isSuperAdmin ? [
+      { key: 'general' as const, label: 'General', icon: <BuildingIcon /> },
+      { key: 'branches' as const, label: 'Branches', icon: <BranchIcon /> },
+      { key: 'access_control' as const, label: 'Access Control', icon: <ShieldIcon /> },
+      { key: 'billing' as const, label: 'Billing', icon: <CreditCardIcon /> },
+    ] : []),
     { key: 'categories', label: 'Categories', icon: <TagIcon /> },
-    ...(user?.role === 'super_admin'
-      ? [{ key: 'access_control' as const, label: 'Access Control', icon: <ShieldCheckIcon /> }]
-      : []),
+    { key: 'notifications', label: 'Notifications', icon: <BellIcon /> },
   ]
+
+  const currentTab = activeTab as SettingsTab
+
+  // Mobile + modal: horizontal tab row; otherwise: vertical left nav
+  const mobileTabRow = modal && isMobile
 
   return (
     <>
@@ -1074,62 +1448,92 @@ export function SettingsPage() {
         .cat-row:hover { background: var(--dm-bg-muted) !important; }
       `}</style>
 
-      {/* Page Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 20, color: 'var(--dm-text-ink)', letterSpacing: '-0.02em', margin: '0 0 4px' }}>
-          Settings
-        </h1>
-        <p style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', margin: 0 }}>
-          Configure your organisation
-        </p>
-      </div>
+      <div style={{ display: 'flex', flexDirection: mobileTabRow ? 'column' : 'row', height: modal ? '100%' : 'auto', overflow: modal ? 'hidden' : 'visible' }}>
 
-      {/* Two-column layout */}
-      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-        {/* Sidebar nav */}
-        <div style={{ width: 196, flexShrink: 0, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden', padding: '6px 0' }}>
-          {tabs.map(tab => {
-            const active = activeTab === tab.key
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-                  padding: '9px 14px',
-                  background: active ? '#E8ECF9' : 'transparent',
-                  borderLeft: active ? '2.5px solid #4F6BED' : '2.5px solid transparent',
-                  borderRight: 'none', borderTop: 'none', borderBottom: 'none',
-                  cursor: 'pointer',
-                  color: active ? '#4F6BED' : 'var(--dm-text-secondary)',
-                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                  fontWeight: active ? 600 : 400,
-                  fontSize: 13,
-                  textAlign: 'left',
-                  transition: 'background 0.1s, color 0.1s',
-                }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--dm-bg-muted)' }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
-              >
-                <span style={{ display: 'inline-flex', flexShrink: 0 }}>{tab.icon}</span>
-                {tab.label}
-              </button>
-            )
-          })}
-        </div>
+        {/* Tab navigation */}
+        {mobileTabRow ? (
+          // Mobile: horizontal scrollable row
+          <div style={{ display: 'flex', flexDirection: 'row', overflowX: 'auto', borderBottom: '0.5px solid var(--dm-border-soft)', gap: 0, padding: '0 16px', flexShrink: 0 }}>
+            {tabs.map(tab => {
+              const active = currentTab === tab.key
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '12px 14px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: active ? '3px solid #4F6BED' : '3px solid transparent',
+                    cursor: 'pointer',
+                    color: active ? '#4F6BED' : 'var(--dm-text-secondary)',
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                    fontWeight: active ? 600 : 400,
+                    fontSize: 13,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    transition: 'color 0.1s, border-color 0.1s',
+                  }}
+                >
+                  <span style={{ display: 'inline-flex', flexShrink: 0 }}>{tab.icon}</span>
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          // Desktop: vertical left nav
+          <div style={{
+            width: modal ? 200 : 196,
+            flexShrink: 0,
+            background: modal ? 'var(--dm-bg-subtle)' : 'var(--dm-bg-card)',
+            border: modal ? 'none' : '0.5px solid var(--dm-border)',
+            borderRight: modal ? '0.5px solid var(--dm-border-soft)' : undefined,
+            borderRadius: modal ? 0 : 12,
+            overflowY: 'auto',
+            padding: '8px 0',
+          }}>
+            {tabs.map(tab => {
+              const active = currentTab === tab.key
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 9,
+                    padding: '9px 14px',
+                    background: active ? '#E8ECF9' : 'transparent',
+                    borderLeft: active ? '2.5px solid #4F6BED' : '2.5px solid transparent',
+                    borderRight: 'none', borderTop: 'none', borderBottom: 'none',
+                    cursor: 'pointer',
+                    color: active ? '#4F6BED' : 'var(--dm-text-secondary)',
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                    fontWeight: active ? 600 : 400,
+                    fontSize: 13,
+                    textAlign: 'left',
+                    transition: 'background 0.1s, color 0.1s',
+                  }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--dm-bg-muted)' }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+                >
+                  <span style={{ display: 'inline-flex', flexShrink: 0 }}>{tab.icon}</span>
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
+        )}
 
         {/* Content area */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {user?.org_id && activeTab === 'categories' && (
-            <CategoriesContent orgId={user.org_id} />
-          )}
-          {user?.org_id && activeTab === 'access_control' && (
-            user.role === 'super_admin' ? (
-              <AccessControlTab orgId={user.org_id} />
-            ) : (
-              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>You don't have permission to view this section.</div>
-            )
-          )}
+        <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: modal ? 24 : 0, paddingLeft: modal && !mobileTabRow ? 28 : modal ? 24 : 20 }}>
+          {currentTab === 'profile' && <ProfileTab />}
+          {user?.org_id && currentTab === 'general' && isSuperAdmin && <GeneralTab orgId={user.org_id} />}
+          {user?.org_id && currentTab === 'branches' && isSuperAdmin && <BranchesTab orgId={user.org_id} />}
+          {user?.org_id && currentTab === 'access_control' && isSuperAdmin && <AccessControlTab orgId={user.org_id} />}
+          {currentTab === 'billing' && isSuperAdmin && <BillingTab />}
+          {user?.org_id && currentTab === 'categories' && <CategoriesContent orgId={user.org_id} />}
+          {currentTab === 'notifications' && <NotificationsTab />}
           {!user?.org_id && (
             <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>Loading…</div>
           )}

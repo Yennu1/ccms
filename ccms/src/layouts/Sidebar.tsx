@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useSidebar } from '../contexts/SidebarContext'
+import { useSettings } from '../contexts/SettingsContext'
 import { supabase } from '../lib/supabase'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -113,6 +114,7 @@ export function Sidebar() {
   const { pathname } = useLocation()
   const { user, signOut } = useAuth()
   const { collapsed, mobileOpen, toggleCollapsed, closeMobile, isMobile } = useSidebar()
+  const { openSettings } = useSettings()
 
   // Icons-only rail: collapsed, but only on desktop (on mobile it's a full drawer)
   const iconOnly = collapsed && !isMobile
@@ -294,8 +296,62 @@ export function Sidebar() {
         )}
 
         {NAV_ITEMS.map(item => {
-          const active = isActive(item.path)
+          const isSettings = item.path === '/settings'
+          const active = !isSettings && isActive(item.path)
           const isMembers = item.path === '/members'
+
+          // Settings opens the modal; all other items are router Links
+          if (isSettings) {
+            return (
+              <button
+                key={item.path}
+                title={iconOnly ? item.label : undefined}
+                onClick={() => { openSettings('profile'); if (isMobile) closeMobile() }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: iconOnly ? 'center' : 'flex-start',
+                  gap: iconOnly ? 0 : 10,
+                  height: 40,
+                  width: '100%',
+                  paddingLeft: iconOnly ? 0 : 16,
+                  paddingRight: iconOnly ? 0 : 12,
+                  marginBottom: 2,
+                  borderRadius: 8,
+                  borderLeft: '2px solid transparent',
+                  borderRight: 'none',
+                  borderTop: 'none',
+                  borderBottom: 'none',
+                  background: 'transparent',
+                  color: 'rgba(255,255,255,0.6)',
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                  fontWeight: 500,
+                  fontSize: 13,
+                  textAlign: 'left',
+                  transition: 'all 0.12s ease',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+                  e.currentTarget.style.color = 'rgba(255,255,255,0.9)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.color = 'rgba(255,255,255,0.6)'
+                }}
+              >
+                <span style={{
+                  color: 'rgba(255,255,255,0.4)',
+                  display: 'flex', alignItems: 'center', flexShrink: 0,
+                  transition: 'color 0.12s ease',
+                }}>
+                  {item.icon}
+                </span>
+                {!iconOnly && <span style={{ flex: 1, minWidth: 0 }}>{item.label}</span>}
+              </button>
+            )
+          }
+
           return (
             <Link
               key={item.path}

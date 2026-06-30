@@ -5,6 +5,8 @@ import { TopBar } from './TopBar'
 import { useSessionTimeout } from '../hooks/useSessionTimeout'
 import { SessionTimeoutWarning } from '../components/SessionTimeoutWarning'
 import { SidebarProvider, useSidebar } from '../contexts/SidebarContext'
+import { SettingsProvider } from '../contexts/SettingsContext'
+import { SettingsModal } from '../pages/settings/SettingsModal'
 
 function AppLayoutInner() {
   const { collapsed, mobileOpen, closeMobile, isMobile } = useSidebar()
@@ -53,14 +55,17 @@ function AppLayoutInner() {
           onLogoutNow={logoutNow}
         />
       )}
+      <SettingsModal />
     </>
   )
 }
 
 export function AppLayout() {
   return (
-    <SidebarProvider>
-      <AppLayoutInner />
-    </SidebarProvider>
+    <SettingsProvider>
+      <SidebarProvider>
+        <AppLayoutInner />
+      </SidebarProvider>
+    </SettingsProvider>
   )
 }
