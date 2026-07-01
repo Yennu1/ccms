@@ -340,24 +340,12 @@ export function DonationsPage() {
     [transactions, startOfLastMonth, endOfLastMonth]
   )
 
+  // Fixed calendar-month totals — used only for the trend % indicator
   const totalThisMonth = thisMonthTx.reduce((s, t) => s + t.amount, 0)
   const totalLastMonth = lastMonthTx.reduce((s, t) => s + t.amount, 0)
   const trendPct = totalLastMonth > 0
     ? ((totalThisMonth - totalLastMonth) / totalLastMonth) * 100
     : null
-  const tithesThisMonth = thisMonthTx
-    .filter(t => getCategoryKey(t.transaction_categories?.name ?? '') === 'tithe')
-    .reduce((s, t) => s + t.amount, 0)
-  const offeringsThisMonth = thisMonthTx
-    .filter(t => getCategoryKey(t.transaction_categories?.name ?? '') === 'offering')
-    .reduce((s, t) => s + t.amount, 0)
-  const buildingFundThisMonth = thisMonthTx
-    .filter(t => getCategoryKey(t.transaction_categories?.name ?? '') === 'building')
-    .reduce((s, t) => s + t.amount, 0)
-
-  const tithesPct = totalThisMonth > 0
-    ? Math.round((tithesThisMonth / totalThisMonth) * 100)
-    : 0
 
   // ─── Filtered + paginated ────────────────────────────────────────────────────
 
@@ -418,6 +406,29 @@ export function DonationsPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  // Card totals reflect whatever period the dateRange filter is set to
+  const periodTotal = filtered.reduce((s, t) => s + t.amount, 0)
+  const tithesInPeriod = filtered
+    .filter(t => getCategoryKey(t.transaction_categories?.name ?? '') === 'tithe')
+    .reduce((s, t) => s + t.amount, 0)
+  const offeringsInPeriod = filtered
+    .filter(t => getCategoryKey(t.transaction_categories?.name ?? '') === 'offering')
+    .reduce((s, t) => s + t.amount, 0)
+  const buildingFundInPeriod = filtered
+    .filter(t => getCategoryKey(t.transaction_categories?.name ?? '') === 'building')
+    .reduce((s, t) => s + t.amount, 0)
+  const tithesPct = periodTotal > 0
+    ? Math.round((tithesInPeriod / periodTotal) * 100)
+    : 0
+
+  // Human-readable label for the current period, used in card headers
+  const periodLabel =
+    dateRange === 'this-month' ? 'This Month' :
+    dateRange === 'last-month' ? 'Last Month' :
+    dateRange === 'last-3-months' ? 'Last 3 Months' :
+    dateRange === 'this-year' ? 'This Year' :
+    'Selected Period'
 
   useEffect(() => {
     if (!exportOpen) return
@@ -620,18 +631,18 @@ export function DonationsPage() {
         {/* Total This Month */}
         <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)' }}>Total This Month</span>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)' }}>Total {periodLabel}</span>
             <span style={{ width: 30, height: 30, borderRadius: 8, background: '#EEF1FE', color: '#4F6BED', display: 'grid', placeItems: 'center' }}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5" /><path stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" d="M9.8 6.2A2.2 2.2 0 0 0 8 5.3c-1.2 0-2 .6-2 1.4 0 .9.8 1.2 2 1.5s2 .6 2 1.5-.8 1.4-2 1.4a2.2 2.2 0 0 1-1.8-.9M8 4.3v1M8 11.7v1" /></svg>
             </span>
           </div>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
-            {loading ? '—' : formatAmount(totalThisMonth)}
+            {loading ? '—' : formatAmount(periodTotal)}
           </div>
           {trendPct !== null ? (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: trendPct >= 0 ? '#22C55E' : '#EF4444', background: trendPct >= 0 ? 'rgba(34,197,94,.10)' : 'rgba(239,68,68,.10)', padding: '2px 8px', borderRadius: 999, marginTop: 8 }}>
               {trendPct >= 0 ? <UpIcon /> : <DownIcon />}
-              {trendPct >= 0 ? '+' : ''}{trendPct.toFixed(1)}% vs last month
+              {trendPct >= 0 ? '+' : ''}{trendPct.toFixed(1)}% this month vs last
             </div>
           ) : (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#9CA3AF', padding: '2px 8px', borderRadius: 999, marginTop: 8 }}>
@@ -657,7 +668,7 @@ export function DonationsPage() {
             </span>
           </div>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
-            {loading ? '—' : formatAmount(tithesThisMonth)}
+            {loading ? '—' : formatAmount(tithesInPeriod)}
           </div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#22C55E', background: 'rgba(34,197,94,.10)', padding: '2px 8px', borderRadius: 999, marginTop: 8 }}>
             <UpIcon /> {tithesPct}% of total
@@ -679,10 +690,10 @@ export function DonationsPage() {
             </span>
           </div>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
-            {loading ? '—' : formatAmount(offeringsThisMonth)}
+            {loading ? '—' : formatAmount(offeringsInPeriod)}
           </div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#22C55E', background: 'rgba(34,197,94,.10)', padding: '2px 8px', borderRadius: 999, marginTop: 8 }}>
-            <UpIcon /> This month
+            <UpIcon /> {periodLabel}
           </div>
           <svg style={{ marginTop: 12, height: 36, width: '100%', display: 'block' }} viewBox="0 0 200 36" preserveAspectRatio="none">
             <path d="M0,12 L20,16 L40,14 L60,20 L80,18 L100,22 L120,20 L140,24 L160,22 L180,26 L200,24" fill="none" stroke="#22C55E" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -701,10 +712,10 @@ export function DonationsPage() {
             </span>
           </div>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
-            {loading ? '—' : formatAmount(buildingFundThisMonth)}
+            {loading ? '—' : formatAmount(buildingFundInPeriod)}
           </div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#22C55E', background: 'rgba(34,197,94,.10)', padding: '2px 8px', borderRadius: 999, marginTop: 8 }}>
-            <UpIcon /> This month
+            <UpIcon /> {periodLabel}
           </div>
           <svg style={{ marginTop: 12, height: 36, width: '100%', display: 'block' }} viewBox="0 0 200 36" preserveAspectRatio="none">
             <g fill="#7B93F5" opacity="0.85">
