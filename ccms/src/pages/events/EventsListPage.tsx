@@ -581,11 +581,25 @@ export function EventsListPage() {
                       <path d="M4 18h40M14 4v8M34 4v8" stroke="#E5E7EB" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                     <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 14, color: '#374151', fontWeight: 500 }}>
-                      {events.length === 0 ? 'No events yet' : 'No events match your filters'}
+                      {events.length === 0
+                        ? 'No events yet'
+                        : activeTab === 'upcoming'
+                          ? 'No upcoming events scheduled'
+                          : 'No events match your filters'}
                     </div>
+                    {events.length > 0 && activeTab === 'upcoming' && (
+                      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280', marginTop: -4 }}>
+                        You have {events.length} event{events.length === 1 ? '' : 's'} on record.
+                      </div>
+                    )}
                     {events.length === 0 && (
                       <button onClick={() => navigate('/events/new')} style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
                         <PlusIcon /> Create First Event
+                      </button>
+                    )}
+                    {events.length > 0 && activeTab === 'upcoming' && (
+                      <button onClick={() => setActiveTab('past')} style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px', borderRadius: 8, border: '1px solid #4F6BED', background: '#fff', color: '#4F6BED', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                        View Past Events →
                       </button>
                     )}
                   </div>

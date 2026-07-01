@@ -866,6 +866,27 @@ export function DonationsPage() {
                         <PlusIcon /> Record Giving
                       </button>
                     </div>
+                  ) : dateRange === 'this-month' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 14, color: '#374151', fontWeight: 500 }}>
+                        No transactions recorded this month yet.
+                      </span>
+                      <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+                        You have {transactions.length} transaction{transactions.length === 1 ? '' : 's'} on record from earlier periods.
+                      </span>
+                      <button
+                        onClick={() => setDateRange('last-month')}
+                        style={{
+                          marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8,
+                          height: 36, padding: '0 16px', borderRadius: 8,
+                          border: '1px solid #4F6BED', background: '#fff', color: '#4F6BED',
+                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                          fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                        }}
+                      >
+                        View Last Month →
+                      </button>
+                    </div>
                   ) : (
                     <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
                       No transactions match your filters.

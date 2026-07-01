@@ -668,7 +668,6 @@ function InviteUserModal({ orgId, branches, onClose, onSuccess }: {
   onClose: () => void
   onSuccess: () => void
 }) {
-  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<UserRoleEntry['role']>('admin')
   const [branchId, setBranchId] = useState('')
@@ -719,17 +718,6 @@ function InviteUserModal({ orgId, branches, onClose, onSuccess }: {
     >
       <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: 24, width: 420, boxShadow: '0 8px 32px rgba(0,0,0,0.14)' }}>
         <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 20 }}>Assign Role</div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={modalLabelStyle()}>Full Name</label>
-          <input
-            type="text"
-            placeholder="e.g. Jane Doe"
-            value={fullName}
-            onChange={e => setFullName(e.target.value)}
-            style={modalInputStyle(false)}
-          />
-        </div>
 
         <div style={{ marginBottom: 16 }}>
           <label style={modalLabelStyle()}>Email Address</label>
@@ -1174,7 +1162,7 @@ function GeneralTab({ orgId }: { orgId: string }) {
     setSaving(true)
     const { error } = await supabase.from('organisations').update({ name: trimmed }).eq('id', orgId)
     setSaving(false)
-    if (error) { toast.error('Failed to update organisation') } else { toast.success('Organisation updated') }
+    if (error) { toast.error('Failed to update organisation') } else { toast.success('Organisation updated'); window.dispatchEvent(new CustomEvent('org-name-updated')) }
   }
 
   const readOnly: React.CSSProperties = { ...modalInputStyle(false), background: 'var(--dm-bg-muted)', color: 'var(--dm-text-secondary)', cursor: 'not-allowed' }

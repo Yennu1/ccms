@@ -123,6 +123,7 @@ export function Sidebar() {
   const [userCardHovered, setUserCardHovered] = useState(false)
   const [memberCount, setMemberCount] = useState<number | null>(null)
   const [branchName, setBranchName] = useState<string | null>(null)
+  const [orgName, setOrgName] = useState('')
 
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -136,6 +137,25 @@ export function Sidebar() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Org name — fetched live and refreshed on save from GeneralTab
+  useEffect(() => {
+    if (!user?.org_id) return
+    supabase.from('organisations').select('name')
+      .eq('id', user.org_id).single()
+      .then(({ data }) => { if (data) setOrgName(data.name) })
+  }, [user?.org_id])
+
+  useEffect(() => {
+    const handler = () => {
+      if (!user?.org_id) return
+      supabase.from('organisations').select('name')
+        .eq('id', user.org_id).single()
+        .then(({ data }) => { if (data) setOrgName(data.name) })
+    }
+    window.addEventListener('org-name-updated', handler)
+    return () => window.removeEventListener('org-name-updated', handler)
+  }, [user?.org_id])
 
   // Active member count badge
   useEffect(() => {
@@ -272,7 +292,7 @@ export function Sidebar() {
             marginTop: 6,
             marginLeft: 36,
           }}>
-            HILLTOP
+            {orgName.toUpperCase()}
           </div>
         )}
       </div>
