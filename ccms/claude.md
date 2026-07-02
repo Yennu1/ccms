@@ -2,8 +2,7 @@ Open or create CLAUDE.md in the project root and add this section:
 
 ## Skills
 
-Before building any UI component, page, or layout, read and apply:
-- ~/.claude/skills/frontend-design.md
+Before building or editing any UI, read .claude/skills/ccms-frontend-design/SKILL.md and follow it.
 
 ## CCMS Design System
 
