@@ -5,7 +5,9 @@
       "mcp__claude_ai_Supabase__execute_sql",
       "PowerShell(npx tsc --noEmit)",
       "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 20)",
-      "PowerShell(npx tsc --noEmit 2>&1)"
+      "PowerShell(npx tsc --noEmit 2>&1)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"EXIT:$?\")"
     ]
   }
 }

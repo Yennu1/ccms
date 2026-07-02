@@ -684,30 +684,34 @@ function InviteUserModal({ orgId, branches, onClose, onSuccess }: {
     setSaving(true)
     setErrors({})
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', trimmedEmail)
-      .eq('org_id', orgId)
-      .single()
-
-    if (profileError || !profile) {
-      setErrors({ email: 'No account found with this email. The user must have a CCMS account before being assigned a role.' })
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      toast.error('Your session expired. Please log in again.')
       setSaving(false)
       return
     }
 
-    const { error } = await supabase
-      .from('user_roles')
-      .insert({ user_id: profile.id, org_id: orgId, role, branch_id: role === 'super_admin' ? null : branchId })
+    const { data, error } = await supabase.functions.invoke('invite-user', {
+      body: {
+        email: trimmedEmail,
+        role,
+        branchId: role === 'super_admin' ? null : branchId,
+      },
+    })
 
-    if (error) {
-      toast.error('Failed to assign role')
-      setSaving(false)
+    setSaving(false)
+
+    if (error || data?.error) {
+      const message = data?.error || error?.message || 'Failed to assign role'
+      setErrors({ email: message })
       return
     }
 
-    toast.success('Role assigned successfully')
+    toast.success(
+      data?.wasExisting
+        ? 'Role assigned successfully'
+        : 'Invitation sent — they will receive an email to set up their account'
+    )
     onSuccess()
   }
 
@@ -723,7 +727,7 @@ function InviteUserModal({ orgId, branches, onClose, onSuccess }: {
           <label style={modalLabelStyle()}>Email Address</label>
           <input
             type="email"
-            placeholder="Search by account email"
+            placeholder="team@church.com"
             value={email}
             onChange={e => { setEmail(e.target.value); setErrors(prev => ({ ...prev, email: undefined })) }}
             autoFocus
@@ -742,7 +746,7 @@ function InviteUserModal({ orgId, branches, onClose, onSuccess }: {
         />
 
         <div style={{ background: '#E8ECF9', borderRadius: 8, padding: 12, marginBottom: 24, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#3D4B86', lineHeight: 1.5 }}>
-          The user must already have a CCMS account. Their role will be active immediately.
+          If this email doesn't have an account yet, we'll send them an invite to set one up. If they already have an account, their role is assigned immediately.
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
