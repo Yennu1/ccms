@@ -662,8 +662,7 @@ function RoleBranchFields({ role, branchId, branches, branchError, onRoleChange,
 
 // ─── Invite User Modal ────────────────────────────────────────────────────────
 
-function InviteUserModal({ orgId, branches, onClose, onSuccess }: {
-  orgId: string
+function InviteUserModal({ branches, onClose, onSuccess }: {
   branches: BranchOption[]
   onClose: () => void
   onSuccess: () => void
@@ -915,7 +914,7 @@ function AccessControlTab({ orgId }: { orgId: string }) {
   return (
     <>
       {showInvite && (
-        <InviteUserModal orgId={orgId} branches={branches} onClose={() => setShowInvite(false)} onSuccess={() => { setShowInvite(false); fetchData() }} />
+        <InviteUserModal branches={branches} onClose={() => setShowInvite(false)} onSuccess={() => { setShowInvite(false); fetchData() }} />
       )}
       {editTarget && (
         <EditRoleModal entry={editTarget} branches={branches} onClose={() => setEditTarget(null)} onSuccess={() => { setEditTarget(null); fetchData() }} />
