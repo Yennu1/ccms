@@ -92,6 +92,13 @@ const ROLE_LABELS: Record<string, string> = {
   group_leader:     'Group Leader',
 }
 
+const NAV_VISIBILITY: Record<string, string[]> = {
+  super_admin: ['/dashboard', '/members', '/donations', '/events', '/groups', '/reports', '/settings'],
+  admin: ['/dashboard', '/members', '/donations', '/events', '/groups', '/reports', '/settings'],
+  finance_officer: ['/members', '/donations', '/reports', '/settings'],
+  group_leader: ['/groups', '/settings'],
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getInitials(name: string) {
@@ -190,6 +197,10 @@ export function Sidebar() {
   }
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/')
+
+  const visibleNavItems = NAV_ITEMS.filter(item =>
+    NAV_VISIBILITY[user?.role ?? '']?.includes(item.path)
+  )
 
   const roleLabel = user?.role ? (ROLE_LABELS[user.role] ?? user.role) : ''
   const subtitle = [roleLabel, branchName].filter(Boolean).join(' · ')
@@ -315,7 +326,7 @@ export function Sidebar() {
           </div>
         )}
 
-        {NAV_ITEMS.map(item => {
+        {visibleNavItems.map(item => {
           const isSettings = item.path === '/settings'
           const active = !isSettings && isActive(item.path)
           const isMembers = item.path === '/members'

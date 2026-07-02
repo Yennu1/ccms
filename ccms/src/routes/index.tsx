@@ -1,5 +1,7 @@
 import { createBrowserRouter, Navigate, useParams } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute'
+import { useAuth } from '../contexts/AuthContext'
+import { ROLE_HOME_ROUTE } from '../lib/constants'
 import { LoginPage } from '../pages/auth/LoginPage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { MembersPage } from '../pages/members/MembersPage'
@@ -37,6 +39,12 @@ function HouseholdProfileRedirect() {
   return <Navigate to={`/members/households/${id}`} replace />
 }
 
+// Rendered inside ProtectedRoute, so user is guaranteed to be loaded
+function RoleHomeRedirect() {
+  const { user } = useAuth()
+  return <Navigate to={ROLE_HOME_ROUTE[user?.role ?? ''] ?? '/dashboard'} replace />
+}
+
 export const router = createBrowserRouter([
   {
     element: <AuthLayout />,
@@ -50,7 +58,7 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          { path: '/', element: <DashboardPage /> },
+          { path: '/', element: <RoleHomeRedirect /> },
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/members', element: <MembersPage /> },
           { path: '/members/import', element: <MemberImportPage /> },

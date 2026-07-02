@@ -11,3 +11,12 @@ export const ROLE_LABELS: Record<string, string> = {
   finance_officer: 'Finance Officer',
   group_leader: 'Group Leader',
 }
+
+// Where each role lands after login / on the root path.
+// finance_officer and group_leader cannot see Dashboard.
+export const ROLE_HOME_ROUTE: Record<string, string> = {
+  super_admin: '/dashboard',
+  admin: '/dashboard',
+  finance_officer: '/donations',
+  group_leader: '/groups',
+}

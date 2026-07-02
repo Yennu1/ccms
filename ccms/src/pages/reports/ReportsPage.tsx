@@ -216,7 +216,14 @@ export function ReportsPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const activeTab = (searchParams.get('tab') ?? 'giving') as ReportTab
+  // finance_officer only sees Giving; guard also covers URL manipulation (?tab=members)
+  const role = user?.role
+  const visibleReportTabs: ReportTab[] = role === 'finance_officer'
+    ? ['giving']
+    : ['giving', 'attendance', 'members', 'groups']
+
+  const rawTab = (searchParams.get('tab') ?? 'giving') as ReportTab
+  const activeTab = visibleReportTabs.includes(rawTab) ? rawTab : 'giving'
   function setTab(t: ReportTab) { setSearchParams({ tab: t }) }
 
   // Shared
@@ -483,7 +490,7 @@ export function ReportsPage() {
 
       {/* Tab navigation */}
       <div style={{ display: 'flex', gap: 2, borderBottom: '0.5px solid var(--dm-border-soft)', marginBottom: 28 }}>
-        {(['giving', 'attendance', 'members', 'groups'] as ReportTab[]).map(t => (
+        {visibleReportTabs.map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}

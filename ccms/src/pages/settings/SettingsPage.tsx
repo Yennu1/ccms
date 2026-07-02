@@ -1410,17 +1410,21 @@ export function SettingsPage({ modal = false }: { modal?: boolean }) {
   const { activeTab, setActiveTab } = useSettings()
   const { isMobile } = useSidebar()
 
-  const isSuperAdmin = user?.role === 'super_admin'
+  const role = user?.role
+  const showGeneral = role === 'super_admin'
+  const showBranches = role === 'super_admin'
+  const showAccessControl = role === 'super_admin'
+  const showBilling = role === 'super_admin'
+  const showCategories = role === 'super_admin' || role === 'admin' || role === 'finance_officer'
+  // Profile and Notifications: all roles, no guard needed
 
   const tabs: { key: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { key: 'profile', label: 'My Profile', icon: <UserIcon /> },
-    ...(isSuperAdmin ? [
-      { key: 'general' as const, label: 'General', icon: <BuildingIcon /> },
-      { key: 'branches' as const, label: 'Branches', icon: <BranchIcon /> },
-      { key: 'access_control' as const, label: 'Access Control', icon: <ShieldIcon /> },
-      { key: 'billing' as const, label: 'Billing', icon: <CreditCardIcon /> },
-    ] : []),
-    { key: 'categories', label: 'Categories', icon: <TagIcon /> },
+    ...(showGeneral ? [{ key: 'general' as const, label: 'General', icon: <BuildingIcon /> }] : []),
+    ...(showBranches ? [{ key: 'branches' as const, label: 'Branches', icon: <BranchIcon /> }] : []),
+    ...(showAccessControl ? [{ key: 'access_control' as const, label: 'Access Control', icon: <ShieldIcon /> }] : []),
+    ...(showBilling ? [{ key: 'billing' as const, label: 'Billing', icon: <CreditCardIcon /> }] : []),
+    ...(showCategories ? [{ key: 'categories' as const, label: 'Categories', icon: <TagIcon /> }] : []),
     { key: 'notifications', label: 'Notifications', icon: <BellIcon /> },
   ]
 
@@ -1516,11 +1520,11 @@ export function SettingsPage({ modal = false }: { modal?: boolean }) {
         {/* Content area */}
         <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: modal ? 24 : 0, paddingLeft: modal && !mobileTabRow ? 28 : modal ? 24 : 20 }}>
           {currentTab === 'profile' && <ProfileTab />}
-          {user?.org_id && currentTab === 'general' && isSuperAdmin && <GeneralTab orgId={user.org_id} />}
-          {user?.org_id && currentTab === 'branches' && isSuperAdmin && <BranchesTab orgId={user.org_id} />}
-          {user?.org_id && currentTab === 'access_control' && isSuperAdmin && <AccessControlTab orgId={user.org_id} />}
-          {currentTab === 'billing' && isSuperAdmin && <BillingTab />}
-          {user?.org_id && currentTab === 'categories' && <CategoriesContent orgId={user.org_id} />}
+          {user?.org_id && currentTab === 'general' && showGeneral && <GeneralTab orgId={user.org_id} />}
+          {user?.org_id && currentTab === 'branches' && showBranches && <BranchesTab orgId={user.org_id} />}
+          {user?.org_id && currentTab === 'access_control' && showAccessControl && <AccessControlTab orgId={user.org_id} />}
+          {currentTab === 'billing' && showBilling && <BillingTab />}
+          {user?.org_id && currentTab === 'categories' && showCategories && <CategoriesContent orgId={user.org_id} />}
           {currentTab === 'notifications' && <NotificationsTab />}
           {!user?.org_id && (
             <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>Loading…</div>

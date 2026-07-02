@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { ROLE_HOME_ROUTE } from '../../lib/constants'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -50,7 +51,7 @@ export function LoginPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate('/dashboard', { replace: true })
+      navigate(ROLE_HOME_ROUTE[user.role] ?? '/dashboard', { replace: true })
     }
   }, [user, authLoading, navigate])
 
@@ -99,7 +100,8 @@ export function LoginPage() {
       if (error) {
         setError(error.message)
       } else {
-        navigate('/dashboard')
+        // Root route redirects to the role's home once the auth context loads
+        navigate('/')
       }
     } catch {
       setError('Something went wrong. Please try again.')
