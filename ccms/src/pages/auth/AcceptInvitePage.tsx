@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { toast } from 'sonner'
+import { useAuth } from '../../contexts/AuthContext'
 
 export function AcceptInvitePage() {
   const navigate = useNavigate()
+  const { clearPasswordRecovery } = useAuth()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [saving, setSaving] = useState(false)
@@ -48,6 +50,7 @@ export function AcceptInvitePage() {
     }
 
     toast.success('Welcome to Centry CMS! Your account is ready.')
+    clearPasswordRecovery()
     navigate('/')
   }
 

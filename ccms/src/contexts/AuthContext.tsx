@@ -22,20 +22,25 @@ interface AuthContextValue {
   session: Session | null
   user: AuthUser | null
   loading: boolean
+  passwordRecovery: boolean
   signOut: () => Promise<void>
+  clearPasswordRecovery: () => void
 }
 
 const AuthContext = createContext<AuthContextValue>({
   session: null,
   user: null,
   loading: true,
+  passwordRecovery: false,
   signOut: async () => {},
+  clearPasswordRecovery: () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [passwordRecovery, setPasswordRecovery] = useState(false)
 
   // EFFECT 1: Manage session — official Supabase pattern
   useEffect(() => {
@@ -45,7 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setPasswordRecovery(true)
+        }
         setSession(session)
         if (!session) {
           setUser(null)
@@ -96,8 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  const clearPasswordRecovery = () => setPasswordRecovery(false)
+
   return (
-    <AuthContext.Provider value={{ session, user, loading, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, passwordRecovery, signOut, clearPasswordRecovery }}>
       {children}
     </AuthContext.Provider>
   )
