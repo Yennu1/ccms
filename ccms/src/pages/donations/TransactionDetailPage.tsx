@@ -121,6 +121,7 @@ export function TransactionDetailPage() {
   const [streak,    setStreak]    = useState(0)
   const [history,   setHistory]   = useState<{ month: string; amount: number }[]>([])
   const [deleting,  setDeleting]  = useState(false)
+  const [orgName,   setOrgName]   = useState('')
 
   useEffect(() => {
     if (!id || !user) return
@@ -204,6 +205,12 @@ export function TransactionDetailPage() {
     fetchTransaction()
   }, [id, user])
 
+  useEffect(() => {
+    if (!user?.org_id) return
+    supabase.from('organisations').select('name').eq('id', user.org_id).single()
+      .then(({ data }) => { if (data) setOrgName(data.name) })
+  }, [user?.org_id])
+
   const handleDelete = async () => {
     if (!tx || !window.confirm('Delete this transaction? This cannot be undone.')) return
     setDeleting(true)
@@ -224,7 +231,7 @@ export function TransactionDetailPage() {
       : 'Anonymous'
     const catName = tx.transaction_categories?.name ?? '—'
     const body = encodeURIComponent(
-      `OFFICIAL GIVING RECEIPT\n\nHILLTOP CHURCH\n\nMember: ${memberName}\nCategory: ${catName}\nAmount: ${formatAmount(tx.amount)}\nDate: ${formatDate(tx.transaction_date)}\nReference: ${tx.reference_number ?? tx.id}\n\nGod loves a cheerful giver. Thank you for your faithfulness.`
+      `OFFICIAL GIVING RECEIPT\n\n${orgName}\n\nMember: ${memberName}\nCategory: ${catName}\nAmount: ${formatAmount(tx.amount)}\nDate: ${formatDate(tx.transaction_date)}\nReference: ${tx.reference_number ?? tx.id}\n\nGod loves a cheerful giver. Thank you for your faithfulness.`
     )
     window.location.href = `mailto:?subject=Giving Receipt — ${formatDate(tx.transaction_date)}&body=${body}`
   }
@@ -579,7 +586,7 @@ export function TransactionDetailPage() {
                 textTransform: 'uppercase', color: 'var(--dm-text-muted)', marginBottom: 4,
                 display: 'flex', justifyContent: 'space-between',
               }}>
-                <span>HILLTOP CHURCH</span>
+                <span>{orgName}</span>
                 <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
                   {tx.reference_number ?? tx.id.slice(0, 8).toUpperCase()}
                 </span>
@@ -791,7 +798,7 @@ export function TransactionDetailPage() {
             textTransform: 'uppercase', color: 'var(--dm-text-muted)', marginBottom: 4,
             display: 'flex', justifyContent: 'space-between',
           }}>
-            <span>HILLTOP CHURCH</span>
+            <span>{orgName}</span>
             <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
               {tx.reference_number ?? tx.id.slice(0, 8).toUpperCase()}
             </span>
