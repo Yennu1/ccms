@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { format, formatDistance } from 'date-fns'
 import { MemberAvatar } from '../../components/MemberAvatar'
+import { buildWhatsAppLink } from '../../lib/phone'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1599,6 +1600,16 @@ export function MemberProfilePage() {
   const ytdTotal = transactions.reduce((sum, t) => sum + (t.amount ?? 0), 0)
   const lastGift = transactions[0] ?? null
 
+  const handleWhatsAppWelcome = () => {
+    const message = `Hi ${member.first_name}, welcome to our church family! We're so glad you're here. If you have any questions, feel free to reach out anytime. God bless!`
+    const link = buildWhatsAppLink(member.phone, message)
+    if (!link) {
+      toast.error('No valid phone number on file for this member')
+      return
+    }
+    window.open(link, '_blank')
+  }
+
   return (
     <>
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} } @keyframes photo-spin { to { transform: rotate(360deg) } } .photo-spin { animation: photo-spin 0.8s linear infinite; transform-origin: center; }`}</style>
@@ -2159,6 +2170,24 @@ export function MemberProfilePage() {
             >
               Edit Member
             </button>
+
+            {member.phone && (
+              <button
+                onClick={handleWhatsAppWelcome}
+                style={{
+                  display: 'block', width: '100%', height: 38,
+                  borderRadius: 8, border: '0.5px solid var(--dm-border)',
+                  background: 'var(--dm-bg-card)', cursor: 'pointer',
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                  fontWeight: 500, fontSize: 13, color: 'var(--dm-text-body)',
+                  marginBottom: 8, transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = '#D1D5DB')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
+              >
+                Send Welcome Message (WhatsApp)
+              </button>
+            )}
 
             <div style={{ height: '0.5px', background: '#F3F4F6', margin: '8px 0' }} />
 

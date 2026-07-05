@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { buildWhatsAppLink } from '../../lib/phone'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ interface TxDetail {
   event_id: string | null
   created_at: string
   transaction_categories: { id: string; name: string } | null
-  member: { id: string; first_name: string; last_name: string; member_number: string } | null
+  member: { id: string; first_name: string; last_name: string; member_number: string; phone: string | null } | null
   branches: { id: string; name: string } | null
   events: { id: string; name: string; starts_at: string } | null
   recorder: { id: string; full_name: string } | null
@@ -133,7 +134,7 @@ export function TransactionDetailPage() {
           id, amount, payment_method, transaction_date, reference_number,
           notes, branch_id, member_id, category_id, event_id, created_at,
           transaction_categories(id, name),
-          member:members!transactions_member_id_fkey(id, first_name, last_name, member_number),
+          member:members!transactions_member_id_fkey(id, first_name, last_name, member_number, phone),
           branches(id, name),
           events(id, name, starts_at),
           recorder:profiles!transactions_recorded_by_fkey(id, full_name)
@@ -234,6 +235,19 @@ export function TransactionDetailPage() {
       `OFFICIAL GIVING RECEIPT\n\n${orgName}\n\nMember: ${memberName}\nCategory: ${catName}\nAmount: ${formatAmount(tx.amount)}\nDate: ${formatDate(tx.transaction_date)}\nReference: ${tx.reference_number ?? tx.id}\n\nGod loves a cheerful giver. Thank you for your faithfulness.`
     )
     window.location.href = `mailto:?subject=Giving Receipt — ${formatDate(tx.transaction_date)}&body=${body}`
+  }
+
+  const handleWhatsAppReceipt = () => {
+    if (!tx) return
+    const memberName = tx.member ? `${tx.member.first_name} ${tx.member.last_name}` : 'Friend'
+    const catName = tx.transaction_categories?.name ?? 'Giving'
+    const message = `Hi ${memberName}, thank you for your ${catName.toLowerCase()} of ${formatAmount(tx.amount)} on ${formatDate(tx.transaction_date)} to ${orgName}. Reference: ${tx.reference_number ?? tx.id}. God bless you for your faithfulness!`
+    const link = buildWhatsAppLink(tx.member?.phone, message)
+    if (!link) {
+      toast.error('No valid phone number on file for this member')
+      return
+    }
+    window.open(link, '_blank')
   }
 
   const printStyles = `
@@ -380,6 +394,24 @@ export function TransactionDetailPage() {
               <path d="M1.5 5l6.5 4.5L14.5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
             Send Receipt
+          </button>
+          <button
+            className="td-action"
+            onClick={handleWhatsAppReceipt}
+            style={{
+              height: 34, padding: '0 14px', borderRadius: 8,
+              border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)',
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+              fontWeight: 600, fontSize: 13, color: 'var(--dm-text-body)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+              transition: 'all 0.12s',
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1.5a6.5 6.5 0 00-5.6 9.8L1.5 14.5l3.3-.9A6.5 6.5 0 108 1.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+              <path d="M5.5 6c.2 2 1.8 3.6 3.8 3.8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+            Share via WhatsApp
           </button>
           <button
             className="td-del"
