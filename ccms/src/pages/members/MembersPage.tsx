@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { startOfMonth } from 'date-fns'
@@ -121,6 +121,14 @@ function ImportIcon() {
   )
 }
 
+function ExportIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M8 2.5v8M5 5.5L8 2.5l3 3M3 11v1.5h10V11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 function DotsMenuIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -184,7 +192,18 @@ function SkeletonRow() {
   )
 }
 
-function EmptyState({ onAdd }: { onAdd: () => void }) {
+function EmptyState({ onAdd, onExportCsv, onExportExcel }: { onAdd: () => void; onExportCsv: () => void; onExportExcel: () => void }) {
+  const [exportOpen, setExportOpen] = useState(false)
+  const exportRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const close = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) setExportOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [exportOpen])
+
   return (
     <tr>
       <td colSpan={6}>
@@ -205,17 +224,70 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
           }}>
             Add your first member to get started
           </div>
-          <button onClick={onAdd} style={{
-            marginTop: 4,
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: '#4F6BED', color: '#fff',
-            border: 'none', borderRadius: 8, cursor: 'pointer',
-            height: 38, padding: '0 16px',
-            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontWeight: 500, fontSize: 13,
-          }}>
-            <PlusIcon /> Add Member
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+            <div ref={exportRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => setExportOpen(o => !o)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  height: 36, padding: '0 14px', borderRadius: 8,
+                  border: '0.5px solid var(--dm-border)', background: exportOpen ? 'var(--dm-bg-muted)' : 'var(--dm-bg-card)', color: 'var(--dm-text-body)',
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                  fontWeight: 600, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                <ExportIcon /> Export
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              {exportOpen && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 4px)', right: 0,
+                  background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
+                  borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                  zIndex: 100, minWidth: 180, padding: '4px 0',
+                }}>
+                  <button
+                    onClick={() => { onExportCsv(); setExportOpen(false) }}
+                    style={{
+                      display: 'block', width: '100%', padding: '9px 14px',
+                      background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                      fontSize: 13, color: '#374151',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                  >
+                    Export as CSV
+                  </button>
+                  <button
+                    onClick={() => { onExportExcel(); setExportOpen(false) }}
+                    style={{
+                      display: 'block', width: '100%', padding: '9px 14px',
+                      background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                      fontSize: 13, color: '#374151',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                  >
+                    Export as Excel (.xlsx)
+                  </button>
+                </div>
+              )}
+            </div>
+            <button onClick={onAdd} style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: '#4F6BED', color: '#fff',
+              border: 'none', borderRadius: 8, cursor: 'pointer',
+              height: 38, padding: '0 16px',
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+              fontWeight: 500, fontSize: 13,
+            }}>
+              <PlusIcon /> Add Member
+            </button>
+          </div>
         </div>
       </td>
     </tr>
@@ -234,6 +306,8 @@ export function MembersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [newThisMonth, setNewThisMonth] = useState<number>(0)
+  const [exportOpen, setExportOpen] = useState(false)
+  const exportRef = useRef<HTMLDivElement>(null)
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | MemberStatus>('all')
@@ -321,6 +395,14 @@ export function MembersPage() {
     return () => document.removeEventListener('click', close)
   }, [menuPos])
 
+  useEffect(() => {
+    const close = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) setExportOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [exportOpen])
+
   const filtered = members.filter(m => {
     const q = search.toLowerCase()
     const fullName = `${m.first_name} ${m.last_name}`.toLowerCase()
@@ -358,6 +440,63 @@ export function MembersPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  const handleExportCsv = () => {
+    if (!filtered || filtered.length === 0) {
+      toast.error('No members to export')
+      return
+    }
+    const headers = [
+      'First Name', 'Last Name', 'Member No', 'Email', 'Phone',
+      'Gender', 'Date of Birth', 'Status', 'Branch'
+    ]
+    const rows = filtered.map(m => [
+      m.first_name,
+      m.last_name,
+      m.member_number ?? '—',
+      m.email ?? '—',
+      m.phone ?? '—',
+      m.gender ?? '—',
+      m.date_of_birth ?? '—',
+      m.membership_status,
+      m.branches?.name ?? '—',
+    ])
+    const csv = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `ccms-members-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Exported as CSV successfully')
+  }
+
+  const handleExportExcel = async () => {
+    if (!filtered || filtered.length === 0) {
+      toast.error('No members to export')
+      return
+    }
+    const XLSX = await import('xlsx')
+    const rows = filtered.map(m => ({
+      'First Name': m.first_name,
+      'Last Name': m.last_name,
+      'Member No': m.member_number ?? '—',
+      'Email': m.email ?? '—',
+      'Phone': m.phone ?? '—',
+      'Gender': m.gender ?? '—',
+      'Date of Birth': m.date_of_birth ?? '—',
+      'Status': m.membership_status,
+      'Branch': m.branches?.name ?? '—',
+    }))
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Members')
+    XLSX.writeFile(wb, `ccms-members-${new Date().toISOString().split('T')[0]}.xlsx`)
+    toast.success('Exported as Excel successfully')
+  }
 
   const formatMemberNumber = (n: string | null) => n ?? '—'
 
@@ -487,6 +626,58 @@ export function MembersPage() {
           >
             <ImportIcon /> Import
           </button>
+          <div ref={exportRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setExportOpen(o => !o)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                height: 36, padding: '0 14px', borderRadius: 8,
+                border: '0.5px solid var(--dm-border)', background: exportOpen ? 'var(--dm-bg-muted)' : 'var(--dm-bg-card)', color: 'var(--dm-text-body)',
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontWeight: 600, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              <ExportIcon /> Export
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            {exportOpen && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 4px)', right: 0,
+                background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
+                borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                zIndex: 100, minWidth: 180, padding: '4px 0',
+              }}>
+                <button
+                  onClick={() => { handleExportCsv(); setExportOpen(false) }}
+                  style={{
+                    display: 'block', width: '100%', padding: '9px 14px',
+                    background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                    fontSize: 13, color: '#374151',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  Export as CSV
+                </button>
+                <button
+                  onClick={() => { handleExportExcel(); setExportOpen(false) }}
+                  style={{
+                    display: 'block', width: '100%', padding: '9px 14px',
+                    background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                    fontSize: 13, color: '#374151',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-muted)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  Export as Excel (.xlsx)
+                </button>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => navigate('/members/new')}
             style={{
@@ -661,7 +852,11 @@ export function MembersPage() {
             {loading ? (
               <><SkeletonRow /><SkeletonRow /><SkeletonRow /></>
             ) : paginated.length === 0 ? (
-              <EmptyState onAdd={() => navigate('/members/new')} />
+              <EmptyState
+                onAdd={() => navigate('/members/new')}
+                onExportCsv={handleExportCsv}
+                onExportExcel={handleExportExcel}
+              />
             ) : (
               paginated.map(member => (
                 <tr
