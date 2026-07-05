@@ -7,7 +7,8 @@
       "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 20)",
       "PowerShell(npx tsc --noEmit 2>&1)",
       "Bash(npx tsc *)",
-      "Bash(echo \"EXIT:$?\")"
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npm run *)"
     ]
   }
 }
