@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { startOfMonth } from 'date-fns'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { useSidebar } from '../../contexts/SidebarContext'
 import { MemberAvatar } from '../../components/MemberAvatar'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -299,6 +300,7 @@ function EmptyState({ onAdd, onExportCsv, onExportExcel }: { onAdd: () => void; 
 export function MembersPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { isMobile, isTablet } = useSidebar()
 
   const [members, setMembers] = useState<Member[]>([])
   const [ministries, setMinistries] = useState<Ministry[]>([])
@@ -837,7 +839,8 @@ export function MembersPage() {
         background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
         borderRadius: 12, overflow: 'hidden',
       }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: (isMobile || isTablet) ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: (isMobile || isTablet) ? 640 : 'auto' }}>
           <thead>
             <tr>
               <th style={th}>Member</th>
@@ -977,6 +980,7 @@ export function MembersPage() {
             )}
           </tbody>
         </table>
+        </div>
 
         {/* Pagination */}
         {!loading && filtered.length > 0 && (

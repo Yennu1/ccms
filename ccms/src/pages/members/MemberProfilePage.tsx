@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { useSidebar } from '../../contexts/SidebarContext'
 import { format, formatDistance } from 'date-fns'
 import { MemberAvatar } from '../../components/MemberAvatar'
 import { buildWhatsAppLink } from '../../lib/phone'
@@ -314,6 +315,7 @@ function SkeletonBar({ width, height = 14 }: { width: number | string; height?: 
 }
 
 function LoadingSkeleton() {
+  const { isMobile } = useSidebar()
   const skField = (w = 120) => (
     <div>
       <SkeletonBar width={60} height={10} />
@@ -331,13 +333,13 @@ function LoadingSkeleton() {
         <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={cardStyle}>
             <SkeletonBar width={160} height={14} />
-            <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
               {[...Array(6)].map((_, i) => <div key={i}>{skField([100, 100, 80, 60, 100, 120][i])}</div>)}
             </div>
           </div>
           <div style={cardStyle}>
             <SkeletonBar width={140} height={14} />
-            <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
               {skField(160)}{skField(100)}
             </div>
           </div>
@@ -1383,6 +1385,7 @@ export function MemberProfilePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { isMobile } = useSidebar()
 
   const [member, setMember] = useState<Member | null>(null)
   const [loading, setLoading] = useState(true)
@@ -1624,7 +1627,7 @@ export function MemberProfilePage() {
       )}
 
       {/* Page Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: isMobile ? 12 : 0, marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <button
             onClick={() => navigate('/members')}
@@ -1800,7 +1803,7 @@ export function MemberProfilePage() {
           {/* Personal Information */}
           <div style={cardStyle}>
             <div style={cardHeaderStyle}>Personal Information</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0 24px' }}>
               <Field label="First Name">{member.first_name || '—'}</Field>
               <Field label="Last Name">{member.last_name || '—'}</Field>
               <Field label="Date of Birth">{formatDate(member.date_of_birth)}</Field>
@@ -1818,7 +1821,7 @@ export function MemberProfilePage() {
           {/* Contact Information */}
           <div style={cardStyle}>
             <div style={cardHeaderStyle}>Contact Information</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0 24px' }}>
               <Field label="Email Address">
                 {member.email ? (
                   <a

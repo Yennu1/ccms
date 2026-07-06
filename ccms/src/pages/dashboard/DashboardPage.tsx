@@ -8,6 +8,7 @@ import {
 } from 'recharts'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { useSidebar } from '../../contexts/SidebarContext'
 
 function useElementWidth(ref: React.RefObject<HTMLDivElement | null>): number {
   const [width, setWidth] = React.useState(0)
@@ -162,6 +163,7 @@ function AttTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
 
 export function DashboardPage() {
   const { user } = useAuth()
+  const { isMobile, isTablet } = useSidebar()
   const navigate = useNavigate()
   const today = now()
 
@@ -456,7 +458,7 @@ export function DashboardPage() {
       `}</style>
 
       {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-start', justifyContent: 'space-between', gap: isMobile ? 12 : 0, marginBottom: 22 }}>
         <div>
           <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 22, color: 'var(--dm-text-ink)', letterSpacing: '-0.015em', margin: '0 0 3px' }}>
             {greeting(user?.full_name ?? 'there')}
@@ -478,7 +480,7 @@ export function DashboardPage() {
             className="dash-select"
             value={selectedBranch}
             onChange={e => handleBranchChange(e.target.value)}
-            style={{ height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', background: 'var(--dm-bg-card)', padding: '0 12px', cursor: 'pointer' }}
+            style={{ height: 36, width: isMobile ? '100%' : undefined, borderRadius: 8, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', background: 'var(--dm-bg-card)', padding: '0 12px', cursor: 'pointer' }}
           >
             <option value="">All Branches (Org-Wide)</option>
             {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -487,7 +489,7 @@ export function DashboardPage() {
       </div>
 
       {/* ── KPI Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 22 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 14, marginBottom: 22 }}>
         {loadingKpi ? (
           Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} h={100} />)
         ) : (
@@ -503,7 +505,7 @@ export function DashboardPage() {
       </div>
 
       {/* ── Charts Row 1: Giving Trend + Donut ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: (isMobile || isTablet) ? '1fr' : '3fr 1fr', gap: 16, marginBottom: 16 }}>
 
         {/* Giving Trend */}
         <div ref={givingTrendRef} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
@@ -563,7 +565,7 @@ export function DashboardPage() {
       </div>
 
       {/* ── Charts Row 2: Member Growth + Attendance ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: (isMobile || isTablet) ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 16 }}>
 
         {/* Membership Growth */}
         <div ref={memberGrowthRef} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '18px 20px' }}>
@@ -608,7 +610,8 @@ export function DashboardPage() {
           {loadingCharts ? <Skeleton h={80} /> : branchComp.length === 0 ? (
             <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)', textAlign: 'center', padding: '20px 0' }}>No branch data</div>
           ) : (
-            <div>
+            <div style={{ overflowX: (isMobile || isTablet) ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
+              <div style={{ minWidth: (isMobile || isTablet) ? 480 : 'auto' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 1fr 1fr', gap: 8, marginBottom: 6 }}>
                 {['Branch', 'Members', 'Giving (this month)', 'Attendance %'].map(h => (
                   <div key={h} style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, fontWeight: 500, color: 'var(--dm-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
@@ -643,13 +646,14 @@ export function DashboardPage() {
                   </div>
                 </div>
               ))}
+              </div>
             </div>
           )}
         </div>
       )}
 
       {/* ── Quick Reports ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 16 }}>
 
         {/* Members at Risk */}
         <div className="qr-card" onClick={() => navigate('/reports?tab=attendance')} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 12, padding: '16px 18px', cursor: 'pointer', transition: 'border-color 0.15s' }}>
