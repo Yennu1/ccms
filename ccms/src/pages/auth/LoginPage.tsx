@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { ROLE_HOME_ROUTE } from '../../lib/constants'
@@ -58,6 +59,10 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [mode, setMode] = useState<'login' | 'forgot'>('login')
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetSending, setResetSending] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -108,6 +113,20 @@ export function LoginPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handlePasswordReset = async () => {
+    if (!resetEmail.trim()) return
+    setResetSending(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+      redirectTo: 'https://ccms-inky.vercel.app/accept-invite',
+    })
+    setResetSending(false)
+    if (error) {
+      toast.error(error.message)
+      return
+    }
+    setResetSent(true)
   }
 
   return (
@@ -703,6 +722,7 @@ export function LoginPage() {
               Sign in to your organisation
             </p>
 
+            {mode === 'login' && (
             <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
               {/* Email */}
@@ -744,7 +764,12 @@ export function LoginPage() {
                   >
                     Password
                   </label>
-                  <a href="#" className="ccms-link" style={{ fontSize: '12px' }}>
+                  <a
+                    href="#"
+                    className="ccms-link"
+                    style={{ fontSize: '12px' }}
+                    onClick={(e) => { e.preventDefault(); setMode('forgot') }}
+                  >
                     Forgot password?
                   </a>
                 </div>
@@ -798,6 +823,60 @@ export function LoginPage() {
                 </button>
               </div>
             </form>
+            )}
+
+            {mode === 'forgot' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {!resetSent ? (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <label
+                        htmlFor="reset-email"
+                        className="ccms-field-label"
+                        style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: '12px', fontWeight: 500, color: 'var(--dm-text-body)' }}
+                      >
+                        Email
+                      </label>
+                      <input
+                        id="reset-email"
+                        type="email"
+                        placeholder="Enter your account email"
+                        className="ccms-input"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                      />
+                      <p style={{ fontSize: '12px', color: 'var(--dm-text-secondary)', margin: '2px 0 0', fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+                        We'll send a link to reset your password.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handlePasswordReset}
+                      disabled={resetSending || !resetEmail.trim()}
+                      className="ccms-btn"
+                      style={{ opacity: resetSending ? 0.7 : 1 }}
+                    >
+                      {resetSending ? <Spinner /> : null}
+                      {resetSending ? 'Sending…' : 'Send Reset Link'}
+                    </button>
+                  </>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '8px 0' }}>
+                    <p style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: '14px', color: 'var(--dm-text-body)', margin: 0 }}>
+                      Check <strong>{resetEmail}</strong> for a link to reset your password.
+                    </p>
+                  </div>
+                )}
+                <a
+                  href="#"
+                  className="ccms-link"
+                  style={{ fontSize: '13px', textAlign: 'center' }}
+                  onClick={(e) => { e.preventDefault(); setMode('login'); setResetSent(false); setResetEmail('') }}
+                >
+                  ← Back to sign in
+                </a>
+              </div>
+            )}
 
             {/* Divider */}
             <div
