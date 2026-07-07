@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { useSidebar } from '../../contexts/SidebarContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -271,6 +272,7 @@ function CollectiveBadge() {
 export function DonationsPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { isMobile } = useSidebar()
 
   const [transactions, setTransactions] = useState<TxRow[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
@@ -541,7 +543,7 @@ export function DonationsPage() {
       `}</style>
 
       {/* Page Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, marginBottom: 20 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-end', justifyContent: 'space-between', gap: isMobile ? 12 : 20, marginBottom: 20 }}>
         <div>
           <h1 style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",

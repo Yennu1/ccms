@@ -595,7 +595,7 @@ export function MembersPage() {
       )}
 
       {/* Page Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-start', justifyContent: 'space-between', gap: isMobile ? 12 : 0, marginBottom: 16 }}>
         <div>
           <h1 style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
@@ -611,7 +611,7 @@ export function MembersPage() {
             {loading ? 'Loading…' : `${members.length} members · ${newThisMonth} new this month`}
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
           <button
             onClick={() => navigate('/members/import')}
             style={{

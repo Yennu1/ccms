@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { useSidebar } from '../../contexts/SidebarContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -175,6 +176,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 export function HouseholdsPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { isMobile } = useSidebar()
 
   const [households, setHouseholds] = useState<Household[]>([])
   const [countMap, setCountMap] = useState<Record<string, number>>({})
@@ -300,7 +302,7 @@ export function HouseholdsPage() {
       `}</style>
 
       {/* Page Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-start', justifyContent: 'space-between', gap: isMobile ? 12 : 0, marginBottom: 16 }}>
         <div>
           <h1 style={{
             fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",

@@ -8,6 +8,7 @@ import {
 } from 'recharts'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { useSidebar } from '../../contexts/SidebarContext'
 import { ExportModal } from '../../components/ExportModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -213,6 +214,7 @@ function AttTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
 
 export function ReportsPage() {
   const { user } = useAuth()
+  const { isMobile } = useSidebar()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -467,9 +469,9 @@ export function ReportsPage() {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ padding: '28px 32px', maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? 0 : '28px 32px', maxWidth: 1200, margin: '0 auto' }}>
       {/* Page header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-start', gap: isMobile ? 12 : 0, marginBottom: 24 }}>
         <div>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 20, color: 'var(--dm-text-ink)', letterSpacing: '-0.02em' }}>
             Reports

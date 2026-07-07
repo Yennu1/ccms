@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { useSidebar } from '../../contexts/SidebarContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -109,6 +110,7 @@ function DeleteModal({ name, onConfirm, onCancel, deleting }: { name: string; on
 export function MinistriesPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { isMobile } = useSidebar()
 
   const [ministries, setMinistries] = useState<Ministry[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
@@ -223,7 +225,7 @@ const canManage = user?.role === 'super_admin' || user?.role === 'admin'
       )}
 
       {/* Page Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, marginBottom: 20 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-end', justifyContent: 'space-between', gap: isMobile ? 12 : 20, marginBottom: 20 }}>
         <div>
           <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 22, color: 'var(--dm-text-ink)', letterSpacing: '-0.015em', margin: '0 0 4px' }}>Ministries & Groups</h1>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280' }}>

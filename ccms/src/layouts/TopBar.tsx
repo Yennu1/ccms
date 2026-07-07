@@ -130,6 +130,7 @@ export function TopBar() {
   const [members, setMembers] = useState<MemberResult[]>([])
   const [events, setEvents] = useState<EventResult[]>([])
   const [open, setOpen] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -200,10 +201,16 @@ export function TopBar() {
     }
   }, [open])
 
+  // Leave mobile search mode when the viewport grows back to desktop
+  useEffect(() => {
+    if (!isMobile) setMobileSearchOpen(false)
+  }, [isMobile])
+
   function goTo(path: string) {
     navigate(path)
     setQuery('')
     setOpen(false)
+    setMobileSearchOpen(false)
   }
 
   const breadcrumbs = getBreadcrumbs(pathname)
@@ -227,11 +234,12 @@ export function TopBar() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 24px',
+        padding: isMobile ? '0 12px' : '0 24px',
         flexShrink: 0,
       }}>
 
-        {/* Left: sidebar toggle + breadcrumb */}
+        {/* Left: sidebar toggle + breadcrumb — hidden while mobile search is open */}
+        {!(isMobile && mobileSearchOpen) && (
         <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
           {isMobile && (
             <button
@@ -239,56 +247,93 @@ export function TopBar() {
               title="Open menu"
               aria-label="Open menu"
               style={{
-                width: 36, height: 36, borderRadius: 8,
+                width: 40, height: 40, borderRadius: 8,
                 border: '0.5px solid var(--dm-border)',
                 background: 'var(--dm-bg-card)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', color: 'var(--dm-text-secondary)',
-                marginRight: 12, flexShrink: 0,
+                marginRight: 10, flexShrink: 0,
               }}
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                 <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
               </svg>
             </button>
           )}
-          <span style={{
-            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontWeight: 400,
-            fontSize: 13,
-            color: 'hsl(var(--muted-foreground))',
-          }}>
-            {orgName}
-          </span>
-
-          {breadcrumbs.map((crumb, i) => (
-            <span key={i} style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{
-                color: '#D1D5DB',
-                margin: '0 6px',
-                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontSize: 13,
-                userSelect: 'none',
-              }}>
-                /
-              </span>
-              <span style={{
-                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontWeight: crumb.isLast ? 600 : 400,
-                fontSize: 13,
-                color: crumb.isLast ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))',
-              }}>
-                {crumb.label}
-              </span>
+          {isMobile ? (
+            /* Mobile: current page title only — the org name + full trail don't fit */
+            <span style={{
+              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+              fontWeight: 600,
+              fontSize: 15,
+              letterSpacing: '-0.01em',
+              color: 'hsl(var(--foreground))',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {breadcrumbs[breadcrumbs.length - 1]?.label}
             </span>
-          ))}
+          ) : (
+            <>
+              <span style={{
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontWeight: 400,
+                fontSize: 13,
+                color: 'hsl(var(--muted-foreground))',
+              }}>
+                {orgName}
+              </span>
+
+              {breadcrumbs.map((crumb, i) => (
+                <span key={i} style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{
+                    color: '#D1D5DB',
+                    margin: '0 6px',
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                    fontSize: 13,
+                    userSelect: 'none',
+                  }}>
+                    /
+                  </span>
+                  <span style={{
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                    fontWeight: crumb.isLast ? 600 : 400,
+                    fontSize: 13,
+                    color: crumb.isLast ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))',
+                  }}>
+                    {crumb.label}
+                  </span>
+                </span>
+              ))}
+            </>
+          )}
         </div>
+        )}
 
         {/* Right actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 10, flex: (isMobile && mobileSearchOpen) ? 1 : undefined, minWidth: 0 }}>
 
-          {/* Search */}
-          <div ref={searchRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          {/* Search — collapses to an icon on mobile, expands to a full-width input */}
+          {isMobile && !mobileSearchOpen && (
+            <button
+              className="topbar-icon-btn"
+              aria-label="Search"
+              title="Search"
+              onClick={() => setMobileSearchOpen(true)}
+              style={{
+                width: 40, height: 40, borderRadius: 8,
+                background: 'none', border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: '#9CA3AF',
+                padding: 0, flexShrink: 0, transition: 'color 0.12s',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                <path d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10ZM14 14l-2.9-2.9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
+          {(!isMobile || mobileSearchOpen) && (
+          <div ref={searchRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: isMobile ? 1 : undefined, minWidth: 0 }}>
             <svg
               width="15" height="15" viewBox="0 0 16 16" fill="none"
               style={{ position: 'absolute', left: 10, pointerEvents: 'none', flexShrink: 0, color: 'hsl(var(--muted-foreground))' }}
@@ -300,13 +345,14 @@ export function TopBar() {
               type="text"
               placeholder="Search members, events..."
               value={query}
+              autoFocus={isMobile}
               onChange={e => setQuery(e.target.value)}
               onFocus={() => {
                 if (members.length > 0 || events.length > 0) setOpen(true)
               }}
               style={{
-                width: 280,
-                height: 34,
+                width: isMobile ? '100%' : 280,
+                height: isMobile ? 38 : 34,
                 borderRadius: 8,
                 border: '0.5px solid hsl(var(--border))',
                 background: 'hsl(var(--muted))',
@@ -314,22 +360,24 @@ export function TopBar() {
                 fontSize: 13,
                 color: 'hsl(var(--foreground))',
                 paddingLeft: 32,
-                paddingRight: 40,
+                paddingRight: isMobile ? 12 : 40,
                 boxSizing: 'border-box',
                 transition: 'border-color 0.15s',
               }}
             />
-            <span style={{
-              position: 'absolute',
-              right: 10,
-              pointerEvents: 'none',
-              fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: 11,
-              color: 'hsl(var(--muted-foreground))',
-              letterSpacing: '0.02em',
-            }}>
-              ⌘K
-            </span>
+            {!isMobile && (
+              <span style={{
+                position: 'absolute',
+                right: 10,
+                pointerEvents: 'none',
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: 11,
+                color: 'hsl(var(--muted-foreground))',
+                letterSpacing: '0.02em',
+              }}>
+                ⌘K
+              </span>
+            )}
 
             {/* Results dropdown */}
             {open && (
@@ -337,7 +385,7 @@ export function TopBar() {
                 position: 'absolute',
                 top: 'calc(100% + 6px)',
                 left: 0,
-                width: 280,
+                width: isMobile ? '100%' : 280,
                 maxHeight: 360,
                 overflowY: 'auto',
                 background: 'hsl(var(--card))',
@@ -446,11 +494,28 @@ export function TopBar() {
               </div>
             )}
           </div>
+          )}
+
+          {/* Cancel — exits mobile search mode */}
+          {isMobile && mobileSearchOpen && (
+            <button
+              onClick={() => { setMobileSearchOpen(false); setQuery(''); setOpen(false) }}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontWeight: 500, fontSize: 13, color: '#4F6BED',
+                padding: '4px 2px', flexShrink: 0,
+              }}
+            >
+              Cancel
+            </button>
+          )}
 
           {/* Theme toggle */}
-          <ThemeToggle />
+          {!isMobile && <ThemeToggle />}
 
           {/* Help icon */}
+          {!isMobile && (
           <button
             className="topbar-icon-btn"
             title="Help"
@@ -473,8 +538,10 @@ export function TopBar() {
               <circle cx="10" cy="14" r="0.75" fill="currentColor" />
             </svg>
           </button>
+          )}
 
           {/* Bell */}
+          {!isMobile && (
           <button
             className="topbar-icon-btn"
             style={{
@@ -498,8 +565,10 @@ export function TopBar() {
               <path d="M8 14.5a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.5" fill="none" />
             </svg>
           </button>
+          )}
 
-          {/* Avatar */}
+          {/* Avatar — hidden while mobile search is open */}
+          {!(isMobile && mobileSearchOpen) && (
           <div style={{
             width: 32,
             height: 32,
@@ -520,6 +589,7 @@ export function TopBar() {
               {user?.full_name ? getInitials(user.full_name) : '?'}
             </span>
           </div>
+          )}
         </div>
       </header>
     </>

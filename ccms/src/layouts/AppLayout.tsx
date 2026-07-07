@@ -40,6 +40,7 @@ function AppLayoutInner() {
           <main style={{
             flex: 1,
             overflowY: 'auto',
+            overflowX: 'hidden',
             background: 'var(--dm-bg-page)',
             padding: isMobile ? 16 : 24,
           }}>

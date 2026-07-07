@@ -7,6 +7,7 @@ import listPlugin from '@fullcalendar/list'
 import type { EventClickArg, DatesSetArg } from '@fullcalendar/core'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { useSidebar } from '../../contexts/SidebarContext'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,6 +63,7 @@ function PlusIcon() {
 export function CalendarViewPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { isMobile } = useSidebar()
   const calendarRef = useRef<InstanceType<typeof FullCalendar>>(null)
 
   const [branches, setBranches] = useState<Branch[]>([])
@@ -144,7 +146,7 @@ export function CalendarViewPage() {
       `}</style>
 
       {/* Page Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, marginBottom: 20 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-end', justifyContent: 'space-between', gap: isMobile ? 12 : 20, marginBottom: 20 }}>
         <div>
           <h1 style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 22, color: '#111827', letterSpacing: '-0.015em', margin: '0 0 4px' }}>
             Events Calendar
