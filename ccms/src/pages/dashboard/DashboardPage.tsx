@@ -610,8 +610,34 @@ export function DashboardPage() {
           {loadingCharts ? <Skeleton h={80} /> : branchComp.length === 0 ? (
             <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)', textAlign: 'center', padding: '20px 0' }}>No branch data</div>
           ) : (
-            <div style={{ overflowX: (isMobile || isTablet) ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
-              <div style={{ minWidth: (isMobile || isTablet) ? 480 : 'auto' }}>
+            isMobile ? (
+              /* Mobile: one stacked card per branch — no side-scrolling */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {branchComp.map(b => (
+                  <div key={b.branch_id} style={{ background: 'var(--dm-bg-tint, var(--dm-bg-muted))', borderRadius: 10, padding: 12 }}>
+                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, fontWeight: 600, color: 'var(--dm-text-ink)', marginBottom: 8 }}>
+                      {b.branch_name}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-muted)', textTransform: 'uppercase' }}>Members</span>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-secondary)' }}>{b.member_count}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-muted)', textTransform: 'uppercase' }}>Giving (this month)</span>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-secondary)' }}>{fGHS(Number(b.monthly_giving))}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-muted)', textTransform: 'uppercase' }}>Attendance</span>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-secondary)' }}>{b.attendance_rate}%</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+            <div style={{ overflowX: isTablet ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
+              <div style={{ minWidth: isTablet ? 480 : 'auto' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 1fr 1fr', gap: 8, marginBottom: 6 }}>
                 {['Branch', 'Members', 'Giving (this month)', 'Attendance %'].map(h => (
                   <div key={h} style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, fontWeight: 500, color: 'var(--dm-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
@@ -648,6 +674,7 @@ export function DashboardPage() {
               ))}
               </div>
             </div>
+            )
           )}
         </div>
       )}

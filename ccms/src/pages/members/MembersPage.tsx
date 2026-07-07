@@ -839,8 +839,8 @@ export function MembersPage() {
         background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
         borderRadius: 12, overflow: 'hidden',
       }}>
-        <div style={{ overflowX: (isMobile || isTablet) ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: (isMobile || isTablet) ? 640 : 'auto' }}>
+        <div style={{ overflowX: isTablet ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: isTablet ? 640 : 'auto', display: isMobile ? 'none' : undefined }}>
           <thead>
             <tr>
               <th style={th}>Member</th>
@@ -981,6 +981,88 @@ export function MembersPage() {
           </tbody>
         </table>
         </div>
+
+        {/* Mobile card list — replaces the table on phones */}
+        {isMobile && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {loading ? (
+              <>{[1, 2, 3].map(i => (
+                <div key={i} style={{
+                  height: 84, borderRadius: 10,
+                  background: 'linear-gradient(90deg, var(--dm-bg-muted) 25%, var(--dm-bg-surface) 50%, var(--dm-bg-muted) 75%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'skeleton-pulse 1.4s ease infinite',
+                }} />
+              ))}</>
+            ) : paginated.length === 0 ? (
+              /* EmptyState renders a <tr>, so give it a table context */
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <tbody>
+                  <EmptyState
+                    onAdd={() => navigate('/members/new')}
+                    onExportCsv={handleExportCsv}
+                    onExportExcel={handleExportExcel}
+                  />
+                </tbody>
+              </table>
+            ) : (
+              paginated.map(member => (
+                <div
+                  key={member.id}
+                  onClick={() => navigate(`/members/${member.id}`)}
+                  style={{
+                    background: 'var(--dm-bg-card)',
+                    border: '0.5px solid var(--dm-border-soft)',
+                    borderRadius: 10,
+                    padding: 14,
+                    cursor: 'pointer',
+                    minHeight: 44,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                      <MemberAvatar firstName={member.first_name} lastName={member.last_name} photoUrl={member.photo_url} size={40} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>
+                          {member.first_name} {member.last_name}
+                        </div>
+                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)', marginTop: 2 }}>
+                          {formatMemberNumber(member.member_number)}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                      <StatusBadge status={member.membership_status} />
+                      <button
+                        onClick={e => {
+                          e.stopPropagation()
+                          const rect = e.currentTarget.getBoundingClientRect()
+                          setMenuPos(
+                            menuPos?.memberId === member.id
+                              ? null
+                              : { memberId: member.id, memberStatus: member.membership_status, top: rect.bottom + 4, left: rect.right - 160 }
+                          )
+                        }}
+                        style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dm-text-secondary)' }}
+                        aria-label="More actions"
+                      >
+                        <DotsMenuIcon />
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: '0.5px solid var(--dm-border-subtle)', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12.5, color: 'var(--dm-text-body)' }}>
+                      {member.email ?? '—'} {member.phone ? `· ${member.phone}` : ''}
+                    </div>
+                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>
+                      {member.branches?.name ?? '—'}{member.group_memberships?.[0]?.groups?.ministries?.name ? ` · ${member.group_memberships[0].groups.ministries.name}` : ''}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Pagination */}
         {!loading && filtered.length > 0 && (
