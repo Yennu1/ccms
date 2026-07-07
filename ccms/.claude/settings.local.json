@@ -14,7 +14,8 @@
       "Bash(npx playwright *)",
       "Bash(node mobile-check.mjs)",
       "PowerShell(npm run *)",
-      "PowerShell(git add *)"
+      "PowerShell(git add *)",
+      "PowerShell(git push *)"
     ]
   }
 }
