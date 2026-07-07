@@ -512,7 +512,7 @@ export function TopBar() {
           )}
 
           {/* Theme toggle */}
-          {!isMobile && <ThemeToggle />}
+          <ThemeToggle />
 
           {/* Help icon */}
           {!isMobile && (

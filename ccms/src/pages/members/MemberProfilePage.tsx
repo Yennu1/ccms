@@ -993,8 +993,9 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
   const paginated = historyRecords.slice((page - 1) * ATT_PAGE, page * ATT_PAGE)
 
   const statCardStyle: React.CSSProperties = {
-    background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 10,
-    padding: '14px 16px', flex: 1, position: 'relative', overflow: 'hidden',
+    background: 'var(--dm-bg-card)', border: '1px solid var(--dm-border-soft)', borderRadius: 16,
+    padding: '18px 20px', flex: 1, position: 'relative',
+    boxShadow: '0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04)',
   }
 
   if (loading) return (
@@ -1012,19 +1013,19 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 4 }}>Attendance Rate</div>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{last3MonthsRecords.length === 0 ? '—' : `${attendanceRate}%`}</div>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>last 3 months</div>
-          <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#4F6BED' }} />
+          <div style={{ position: 'absolute', top: 16, right: 16, width: 8, height: 8, borderRadius: '50%', background: '#4F6BED' }} />
         </div>
         <div style={statCardStyle}>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 4 }}>Current Streak</div>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{streak} <span style={{ fontSize: 14, fontWeight: 500, color: '#6B7280' }}>wks</span></div>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>consecutive weeks</div>
-          <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#22C55E' }} />
+          <div style={{ position: 'absolute', top: 16, right: 16, width: 8, height: 8, borderRadius: '50%', background: '#22C55E' }} />
         </div>
         <div style={statCardStyle}>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 4 }}>Services YTD</div>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{ytdTotal}</div>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>{currentYear} year-to-date</div>
-          <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#C8964A' }} />
+          <div style={{ position: 'absolute', top: 16, right: 16, width: 8, height: 8, borderRadius: '50%', background: '#C8964A' }} />
         </div>
       </div>
 
@@ -1178,8 +1179,9 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
   const paginatedPast = past.slice((page - 1) * GROUPS_PAGE, page * GROUPS_PAGE)
 
   const statCardStyle: React.CSSProperties = {
-    background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 10,
-    padding: '14px 16px', flex: 1, position: 'relative', overflow: 'hidden',
+    background: 'var(--dm-bg-card)', border: '1px solid var(--dm-border-soft)', borderRadius: 16,
+    padding: '18px 20px', flex: 1, position: 'relative',
+    boxShadow: '0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04)',
   }
 
   if (loading) return (
@@ -1216,19 +1218,19 @@ function MemberGroupsTab({ memberId, orgId }: { memberId: string; orgId: string 
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 4 }}>Total Groups Joined</div>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{memberships.length}</div>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>all time</div>
-          <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#4F6BED' }} />
+          <div style={{ position: 'absolute', top: 16, right: 16, width: 8, height: 8, borderRadius: '50%', background: '#4F6BED' }} />
         </div>
         <div style={statCardStyle}>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 4 }}>Active Groups</div>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{active.length}</div>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>currently active</div>
-          <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#22C55E' }} />
+          <div style={{ position: 'absolute', top: 16, right: 16, width: 8, height: 8, borderRadius: '50%', background: '#22C55E' }} />
         </div>
         <div style={statCardStyle}>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', marginBottom: 4 }}>Leadership Roles</div>
           <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 28, color: 'var(--dm-text-ink)', lineHeight: 1.1 }}>{leaderCount}</div>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: '#9CA3AF', marginTop: 3 }}>group leader positions</div>
-          <div style={{ position: 'absolute', left: 0, bottom: 0, right: 0, height: 3, background: '#C8964A' }} />
+          <div style={{ position: 'absolute', top: 16, right: 16, width: 8, height: 8, borderRadius: '50%', background: '#C8964A' }} />
         </div>
       </div>
 

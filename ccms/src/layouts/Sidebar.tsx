@@ -208,7 +208,7 @@ export function Sidebar() {
   const sidebarStyle: CSSProperties = {
     width: iconOnly ? 60 : 220,
     minWidth: iconOnly ? 60 : 220,
-    height: '100vh',
+    height: '100dvh',
     background: '#1B2352',
     display: 'flex',
     flexDirection: 'column',
@@ -611,6 +611,7 @@ export function Sidebar() {
       <div style={{
         borderTop: '0.5px solid rgba(255,255,255,0.08)',
         padding: '8px',
+        paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
       }}>
         <div
           ref={dropdownRef}

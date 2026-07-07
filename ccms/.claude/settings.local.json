@@ -12,7 +12,9 @@
       "Bash(node -e \"require.resolve\\('playwright'\\)\")",
       "Bash(break)",
       "Bash(npx playwright *)",
-      "Bash(node mobile-check.mjs)"
+      "Bash(node mobile-check.mjs)",
+      "PowerShell(npm run *)",
+      "PowerShell(git add *)"
     ]
   }
 }
