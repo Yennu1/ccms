@@ -531,6 +531,55 @@ export function DonationsPage() {
     background: 'var(--dm-bg-surface)', whiteSpace: 'nowrap',
   }
 
+  // Shared by the desktop table's empty row and the mobile card list
+  const emptyState = transactions.length === 0 ? (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 14, color: '#374151', fontWeight: 500 }}>
+        No transactions recorded yet.
+      </div>
+      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+        Click Record Giving to add the first contribution.
+      </div>
+      <button
+        onClick={() => navigate('/donations/new')}
+        style={{
+          marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8,
+          height: 36, padding: '0 16px', borderRadius: 8,
+          border: 'none', background: '#4F6BED', color: '#fff',
+          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+          fontWeight: 600, fontSize: 13, cursor: 'pointer',
+        }}
+      >
+        <PlusIcon /> Record Giving
+      </button>
+    </div>
+  ) : dateRange === 'this-month' ? (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+      <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 14, color: '#374151', fontWeight: 500 }}>
+        No transactions recorded this month yet.
+      </span>
+      <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+        You have {transactions.length} transaction{transactions.length === 1 ? '' : 's'} on record from earlier periods.
+      </span>
+      <button
+        onClick={() => setDateRange('last-month')}
+        style={{
+          marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8,
+          height: 36, padding: '0 16px', borderRadius: 8,
+          border: '1px solid #4F6BED', background: '#fff', color: '#4F6BED',
+          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+          fontWeight: 600, fontSize: 13, cursor: 'pointer',
+        }}
+      >
+        View Last Month →
+      </button>
+    </div>
+  ) : (
+    <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
+      No transactions match your filters.
+    </span>
+  )
+
   return (
     <>
       <style>{`
@@ -628,7 +677,7 @@ export function DonationsPage() {
       </div>
 
       {/* Stat Cards 2×2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
 
         {/* Total This Month */}
         <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
@@ -764,11 +813,13 @@ export function DonationsPage() {
 
       {/* Filter Bar */}
       <div style={{
-        display: 'grid', gridTemplateColumns: '1.7fr repeat(4, 1fr)', gap: 10,
+        display: isMobile ? 'flex' : 'grid',
+        flexWrap: isMobile ? 'wrap' : undefined,
+        gridTemplateColumns: isMobile ? undefined : '1.7fr repeat(4, 1fr)', gap: 10,
         padding: 14, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
         borderRadius: 12, marginBottom: 16,
       }}>
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: isMobile ? '100%' : undefined }}>
           <span style={{ position: 'absolute', left: 11, pointerEvents: 'none', display: 'inline-flex' }}>
             <SearchIcon />
           </span>
@@ -785,7 +836,7 @@ export function DonationsPage() {
           className="filter-select-d"
           value={dateRange}
           onChange={e => { setDateRange(e.target.value as DateRange); setPage(1) }}
-          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', width: isMobile ? '100%' : undefined }}
         >
           <option value="this-month">This month</option>
           <option value="last-month">Last month</option>
@@ -797,7 +848,7 @@ export function DonationsPage() {
           className="filter-select-d"
           value={combinedFilter}
           onChange={e => { setCombinedFilter(e.target.value as CombinedFilter); setPage(1) }}
-          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', width: isMobile ? '100%' : undefined }}
         >
           <option value="all">All Types</option>
           <option value="individual">Individual Only</option>
@@ -817,7 +868,7 @@ export function DonationsPage() {
           className="filter-select-d"
           value={methodFilter}
           onChange={e => { setMethodFilter(e.target.value); setPage(1) }}
-          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', width: isMobile ? '100%' : undefined }}
         >
           <option value="all">All Methods</option>
           <option value="cash">Cash</option>
@@ -829,7 +880,7 @@ export function DonationsPage() {
           className="filter-select-d"
           value={branchFilter}
           onChange={e => { setBranchFilter(e.target.value); setPage(1) }}
-          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', width: isMobile ? '100%' : undefined }}
         >
           <option value="">All Branches</option>
           {branches.map(b => (
@@ -840,7 +891,7 @@ export function DonationsPage() {
 
       {/* Table Card */}
       <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5, display: isMobile ? 'none' : undefined }}>
           <thead>
             <tr>
               <th style={{ ...th, width: '24%' }}>Member</th>
@@ -858,53 +909,7 @@ export function DonationsPage() {
             ) : paginated.length === 0 ? (
               <tr>
                 <td colSpan={7} style={{ padding: '60px 0', textAlign: 'center' }}>
-                  {transactions.length === 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 14, color: '#374151', fontWeight: 500 }}>
-                        No transactions recorded yet.
-                      </div>
-                      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
-                        Click Record Giving to add the first contribution.
-                      </div>
-                      <button
-                        onClick={() => navigate('/donations/new')}
-                        style={{
-                          marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8,
-                          height: 36, padding: '0 16px', borderRadius: 8,
-                          border: 'none', background: '#4F6BED', color: '#fff',
-                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                        }}
-                      >
-                        <PlusIcon /> Record Giving
-                      </button>
-                    </div>
-                  ) : dateRange === 'this-month' ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 14, color: '#374151', fontWeight: 500 }}>
-                        No transactions recorded this month yet.
-                      </span>
-                      <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
-                        You have {transactions.length} transaction{transactions.length === 1 ? '' : 's'} on record from earlier periods.
-                      </span>
-                      <button
-                        onClick={() => setDateRange('last-month')}
-                        style={{
-                          marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8,
-                          height: 36, padding: '0 16px', borderRadius: 8,
-                          border: '1px solid #4F6BED', background: '#fff', color: '#4F6BED',
-                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                        }}
-                      >
-                        View Last Month →
-                      </button>
-                    </div>
-                  ) : (
-                    <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF' }}>
-                      No transactions match your filters.
-                    </span>
-                  )}
+                  {emptyState}
                 </td>
               </tr>
             ) : paginated.map(t => {
@@ -986,6 +991,72 @@ export function DonationsPage() {
             })}
           </tbody>
         </table>
+
+        {/* Mobile card list — replaces the table on phones */}
+        {isMobile && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {loading ? (
+              <>{[1, 2, 3].map(i => (
+                <div key={i} style={{ height: 84, borderRadius: 10, background: 'var(--dm-bg-muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              ))}</>
+            ) : paginated.length === 0 ? (
+              <div style={{ padding: '48px 16px', textAlign: 'center' }}>
+                {emptyState}
+              </div>
+            ) : (
+              paginated.map(t => {
+                const isCollective = t.is_collective === true
+                const firstName = t.member?.first_name ?? 'Anonymous'
+                const lastName = t.member?.last_name ?? ''
+                const memberNumber = t.member?.member_number ?? '—'
+                const catName = t.transaction_categories?.name ?? ''
+                return (
+                  <div
+                    key={t.id}
+                    onClick={() => navigate(`/donations/${t.id}`)}
+                    style={{
+                      background: 'var(--dm-bg-card)',
+                      border: '0.5px solid var(--dm-border-soft)',
+                      borderRadius: 10,
+                      padding: 14,
+                      cursor: 'pointer',
+                      minHeight: 44,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                        {isCollective
+                          ? <CollectiveAvatar />
+                          : <Avatar firstName={firstName} lastName={lastName || 'A'} />
+                        }
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {isCollective ? 'Collective Offering' : t.member ? `${firstName} ${lastName}` : 'Anonymous'}
+                          </div>
+                          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)', marginTop: 2 }}>
+                            {isCollective ? '—' : memberNumber}
+                          </div>
+                        </div>
+                      </div>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 14, fontWeight: 600, color: 'var(--dm-text-ink)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                        {formatAmount(t.amount)}
+                      </span>
+                    </div>
+                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: '0.5px solid var(--dm-border-soft)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {isCollective ? <CollectiveBadge /> : <CategoryPill categoryName={catName} />}
+                        <MethodPill method={t.payment_method} />
+                      </div>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)' }}>
+                        {formatDate(t.transaction_date)} · {t.reference_number ?? t.id.slice(0, 8).toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        )}
 
         {/* Pagination */}
         <div style={{

@@ -214,7 +214,7 @@ function AttTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
 
 export function ReportsPage() {
   const { user } = useAuth()
-  const { isMobile } = useSidebar()
+  const { isMobile, isTablet } = useSidebar()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -482,7 +482,7 @@ export function ReportsPage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {user?.role === 'super_admin' && branches.length > 0 && (
-            <select value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)} style={selectSt}>
+            <select value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)} style={{ ...selectSt, width: isMobile ? '100%' : undefined }}>
               <option value="">All Branches</option>
               {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
@@ -516,7 +516,7 @@ export function ReportsPage() {
       {activeTab === 'giving' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* Stat cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 12 }}>
             <StatCard label="Total Given" value={fGHS(givingTotal)} sub={`${givingPeriod} period`} accent="#4F6BED" />
             <StatCard label="Top Givers (Total)" value={topGivers.length > 0 ? fGHS(topGivers.reduce((s, g) => s + Number(g.total_given), 0)) : '—'} sub="Top 10 contributors" accent="#C8964A" />
             <StatCard label="Categories" value={catBreakdown.length} sub="Giving categories with activity" accent="#7B93F5" />
@@ -556,7 +556,7 @@ export function ReportsPage() {
           </div>
 
           {/* Category donut + By branch */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: (isMobile || isTablet) ? '1fr' : '1fr 1fr', gap: 16 }}>
             {/* Category donut */}
             <div style={card}>
               <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 16 }}>By Category</div>
@@ -660,7 +660,7 @@ export function ReportsPage() {
       {activeTab === 'attendance' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* Stat cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 12 }}>
             <StatCard label="Avg Attendance Rate" value={weeklyAtt.length > 0 ? `${avgAtt.toFixed(1)}%` : '—'} sub={`Last ${attWeeks} weeks`} accent="#4F6BED" />
             <StatCard label="Total Headcount" value={totalHeadcount.toLocaleString()} sub="Sum of all weekly present" accent="#7B93F5" />
             <StatCard label="Best Week" value={weeklyAtt.length > 0 ? `${bestWeek.toFixed(1)}%` : '—'} sub="Peak attendance rate" accent="#22C55E" />
@@ -765,7 +765,7 @@ export function ReportsPage() {
       {activeTab === 'members' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* Stat cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 12 }}>
             <StatCard label="Total Members" value={totalMembersCount.toLocaleString()} sub="Cumulative (12 months)" accent="#4F6BED" />
             <StatCard label="New This Month" value={newThisMonth} sub="Joined in current month" accent="#22C55E" />
             <StatCard label="Birthdays This Month" value={birthdays.length} sub="Active members" accent="#C8964A" />
@@ -790,7 +790,7 @@ export function ReportsPage() {
           </div>
 
           {/* Gender donut + Age breakdown */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: (isMobile || isTablet) ? '1fr' : '1fr 1.6fr', gap: 16 }}>
             {/* Gender */}
             <div style={card}>
               <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 16 }}>Gender Breakdown</div>
@@ -942,7 +942,7 @@ export function ReportsPage() {
       {activeTab === 'groups' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* Stat cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 12 }}>
             <StatCard label="Total Groups" value={groups.length} sub="All groups" accent="#4F6BED" />
             <StatCard label="Active Groups" value={groups.filter(g => g.is_active).length} sub="Currently active" accent="#22C55E" />
             <StatCard label="Total Members in Groups" value={groups.reduce((s, g) => s + g.member_count, 0).toLocaleString()} sub="Across all groups" accent="#7B93F5" />

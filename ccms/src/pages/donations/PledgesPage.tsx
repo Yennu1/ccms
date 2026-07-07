@@ -117,7 +117,7 @@ function SkeletonRow() {
 export function PledgesPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { isMobile } = useSidebar()
+  const { isMobile, isTablet } = useSidebar()
 
   const [pledges,  setPledges]  = useState<PledgeRow[]>([])
   const [loading,  setLoading]  = useState(true)
@@ -187,6 +187,29 @@ export function PledgesPage() {
     borderBottom: '0.5px solid var(--dm-border-soft)',
     background: 'var(--dm-bg-surface)', whiteSpace: 'nowrap',
   }
+
+  // Shared by the desktop table's empty row and the mobile card list
+  const emptyState = pledges.length === 0 ? (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+      <div style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>
+        No pledges recorded yet.
+      </div>
+      <button
+        onClick={() => navigate('/donations/pledges/new')}
+        style={{
+          marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 8,
+          height: 36, padding: '0 16px', borderRadius: 8,
+          border: 'none', background: '#4F6BED', color: '#fff',
+          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+          fontWeight: 600, fontSize: 13, cursor: 'pointer',
+        }}
+      >
+        Add Pledge
+      </button>
+    </div>
+  ) : (
+    <span style={{ color: '#9CA3AF' }}>No pledges match your filters.</span>
+  )
 
   return (
     <>
@@ -258,7 +281,7 @@ export function PledgesPage() {
       </div>
 
       {/* Summary cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : isTablet ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
         {[
           { label: 'Total Pledged',  value: loading ? '—' : formatAmount(totalPledged),  sub: `${pledges.length} pledges`,                              color: '#4F6BED', bgIcon: '#EEF1FE' },
           { label: 'Total Paid',     value: loading ? '—' : formatAmount(totalPaid),     sub: totalPledged > 0 ? `${Math.round((totalPaid / totalPledged) * 100)}% of pledges` : '—',  color: '#22C55E', bgIcon: '#DCFCE7' },
@@ -293,11 +316,13 @@ export function PledgesPage() {
 
       {/* Filter bar */}
       <div style={{
-        display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: 10,
+        display: isMobile ? 'flex' : 'grid',
+        flexWrap: isMobile ? 'wrap' : undefined,
+        gridTemplateColumns: isMobile ? undefined : '1.5fr 1fr 1fr', gap: 10,
         padding: 14, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
         borderRadius: 12, marginBottom: 16,
       }}>
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: isMobile ? '100%' : undefined }}>
           <span style={{ position: 'absolute', left: 11, pointerEvents: 'none', display: 'inline-flex' }}>
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
               <path d="M11 11l3 3M12 7a5 5 0 1 1-10 0 5 5 0 0 1 10 0z" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
@@ -316,7 +341,7 @@ export function PledgesPage() {
           className="pl-filter-select"
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
-          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}
+          style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', width: isMobile ? '100%' : undefined }}
         >
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
@@ -324,7 +349,7 @@ export function PledgesPage() {
           <option value="overdue">Overdue</option>
           <option value="cancelled">Cancelled</option>
         </select>
-        <select className="pl-filter-select" style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}>
+        <select className="pl-filter-select" style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', width: isMobile ? '100%' : undefined }}>
           <option>All Categories</option>
         </select>
       </div>
@@ -334,7 +359,7 @@ export function PledgesPage() {
         background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
         borderRadius: 12, overflow: 'hidden',
       }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, display: isMobile ? 'none' : undefined }}>
           <thead>
             <tr>
               <th style={{ ...th, width: '22%' }}>Member</th>
@@ -355,27 +380,7 @@ export function PledgesPage() {
                   fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                   fontSize: 13,
                 }}>
-                  {pledges.length === 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                      <div style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>
-                        No pledges recorded yet.
-                      </div>
-                      <button
-                        onClick={() => navigate('/donations/pledges/new')}
-                        style={{
-                          marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 8,
-                          height: 36, padding: '0 16px', borderRadius: 8,
-                          border: 'none', background: '#4F6BED', color: '#fff',
-                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                        }}
-                      >
-                        Add Pledge
-                      </button>
-                    </div>
-                  ) : (
-                    <span style={{ color: '#9CA3AF' }}>No pledges match your filters.</span>
-                  )}
+                  {emptyState}
                 </td>
               </tr>
             ) : filtered.map(p => {
@@ -471,6 +476,94 @@ export function PledgesPage() {
             })}
           </tbody>
         </table>
+
+        {/* Mobile card list — replaces the table on phones */}
+        {isMobile && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {loading ? (
+              <>{[1, 2, 3].map(i => (
+                <div key={i} style={{ height: 110, borderRadius: 10, background: 'var(--dm-bg-muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              ))}</>
+            ) : filtered.length === 0 ? (
+              <div style={{ padding: '48px 16px', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13 }}>
+                {emptyState}
+              </div>
+            ) : (
+              filtered.map(p => {
+                const firstName = p.member?.first_name ?? '—'
+                const lastName  = p.member?.last_name ?? ''
+                const memberNum = p.member?.member_number ?? '—'
+                const { bg: avBg, color: avColor } = getAvatarColor(firstName, lastName)
+                const st = STATUS_STYLES[p.status] ?? STATUS_STYLES.active
+                return (
+                  <div key={p.id} style={{
+                    background: 'var(--dm-bg-card)',
+                    border: '0.5px solid var(--dm-border-soft)',
+                    borderRadius: 10,
+                    padding: 14,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                        <div style={{
+                          width: 40, height: 40, borderRadius: '50%',
+                          background: avBg, color: avColor,
+                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                          fontWeight: 700, fontSize: 12,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>
+                          {firstName[0]}{lastName[0]}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>
+                            {firstName} {lastName}
+                          </div>
+                          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)', marginTop: 2 }}>
+                            {memberNum}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          padding: '3px 9px', borderRadius: 999,
+                          background: st.bg, color: st.color,
+                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                          fontWeight: 600, fontSize: 11.5,
+                        }}>
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: st.dot }} />
+                          {st.label}
+                        </span>
+                        <button
+                          aria-label="Edit pledge"
+                          onClick={() => navigate(`/donations/pledges/${p.id}/edit`)}
+                          style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dm-text-secondary)' }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path d="M9.5 2.5L11.5 4.5L4.5 11.5H2.5V9.5L9.5 2.5Z"
+                              stroke="currentColor" strokeWidth="1.3"
+                              strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 10 }}>
+                      <ProgressBar paid={p.amount_paid} total={p.total_amount} status={p.status} />
+                    </div>
+                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: '0.5px solid var(--dm-border-soft)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-body)' }}>
+                        {p.transaction_categories?.name ?? '—'}
+                      </span>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)' }}>
+                        {formatDueDate(p.due_date)}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        )}
 
         {/* Footer */}
         <div style={{

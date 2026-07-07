@@ -246,7 +246,7 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string 
 export function EventsListPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { isMobile } = useSidebar()
+  const { isMobile, isTablet } = useSidebar()
 
   const [events, setEvents] = useState<Event[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
@@ -423,6 +423,38 @@ export function EventsListPage() {
     { key: 'recurring', label: 'Recurring' },
   ]
 
+  // Shared by the desktop table's empty row and the mobile card list
+  const emptyState = (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <rect x="4" y="8" width="40" height="36" rx="4" stroke="#E5E7EB" strokeWidth="2" fill="none" />
+        <path d="M4 18h40M14 4v8M34 4v8" stroke="#E5E7EB" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 14, color: '#374151', fontWeight: 500 }}>
+        {events.length === 0
+          ? 'No events yet'
+          : activeTab === 'upcoming'
+            ? 'No upcoming events scheduled'
+            : 'No events match your filters'}
+      </div>
+      {events.length > 0 && activeTab === 'upcoming' && (
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280', marginTop: -4 }}>
+          You have {events.length} event{events.length === 1 ? '' : 's'} on record.
+        </div>
+      )}
+      {events.length === 0 && (
+        <button onClick={() => navigate('/events/new')} style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+          <PlusIcon /> Create First Event
+        </button>
+      )}
+      {events.length > 0 && activeTab === 'upcoming' && (
+        <button onClick={() => setActiveTab('past')} style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px', borderRadius: 8, border: '1px solid #4F6BED', background: '#fff', color: '#4F6BED', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+          View Past Events →
+        </button>
+      )}
+    </div>
+  )
+
   return (
     <>
       <style>{`
@@ -492,7 +524,7 @@ export function EventsListPage() {
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 22 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : isTablet ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 14, marginBottom: 22 }}>
         <StatCard label="Events This Month" value={statsLoading ? '—' : countThisMonth} sub="calendar month" accent="#4F6BED" />
         <StatCard label="Upcoming (14 days)" value={statsLoading ? '—' : countUpcoming} sub="next 2 weeks" accent="#8B5CF6" />
         <StatCard label="Avg Attendance Rate" value={statsLoading || avgAttendanceRate === null ? '—' : `${avgAttendanceRate}%`} sub="completed events" accent="#22C55E" />
@@ -528,8 +560,8 @@ export function EventsListPage() {
       </div>
 
       {/* Filter Bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 10, padding: 14, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, marginBottom: 16 }}>
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+      <div style={{ display: isMobile ? 'flex' : 'grid', flexWrap: isMobile ? 'wrap' : undefined, gridTemplateColumns: isMobile ? undefined : '2fr 1fr 1fr 1fr', gap: 10, padding: 14, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, marginBottom: 16 }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: isMobile ? '100%' : undefined }}>
           <span style={{ position: 'absolute', left: 11, pointerEvents: 'none', display: 'inline-flex' }}><SearchIcon /></span>
           <input
             className="ev-filter-input"
@@ -540,19 +572,19 @@ export function EventsListPage() {
             style={{ ...inputStyle, width: '100%', paddingLeft: 34, paddingRight: 12 }}
           />
         </div>
-        <select className="ev-filter-select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}>
+        <select className="ev-filter-select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', width: isMobile ? '100%' : undefined }}>
           <option value="">All Types</option>
           {Object.entries(EVENT_TYPE_STYLES).map(([k, v]) => (
             <option key={k} value={k}>{v.label}</option>
           ))}
         </select>
-        <select className="ev-filter-select" value={branchFilter} onChange={e => setBranchFilter(e.target.value)} style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}>
+        <select className="ev-filter-select" value={branchFilter} onChange={e => setBranchFilter(e.target.value)} style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', width: isMobile ? '100%' : undefined }}>
           <option value="">All Branches</option>
           {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
         <button
           onClick={() => { setSearch(''); setBranchFilter(''); setTypeFilter('') }}
-          style={{ ...inputStyle, padding: '0 12px', cursor: 'pointer', color: '#6B7280', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500 }}
+          style={{ ...inputStyle, padding: '0 12px', cursor: 'pointer', color: '#6B7280', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, width: isMobile ? '100%' : undefined }}
         >
           Clear Filters
         </button>
@@ -560,7 +592,7 @@ export function EventsListPage() {
 
       {/* Table */}
       <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5, display: isMobile ? 'none' : undefined }}>
           <thead>
             <tr>
               <th style={{ ...th, width: '30%' }}>Event</th>
@@ -577,34 +609,7 @@ export function EventsListPage() {
             ) : paginated.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{ padding: '60px 0', textAlign: 'center' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                      <rect x="4" y="8" width="40" height="36" rx="4" stroke="#E5E7EB" strokeWidth="2" fill="none" />
-                      <path d="M4 18h40M14 4v8M34 4v8" stroke="#E5E7EB" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                    <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 14, color: '#374151', fontWeight: 500 }}>
-                      {events.length === 0
-                        ? 'No events yet'
-                        : activeTab === 'upcoming'
-                          ? 'No upcoming events scheduled'
-                          : 'No events match your filters'}
-                    </div>
-                    {events.length > 0 && activeTab === 'upcoming' && (
-                      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280', marginTop: -4 }}>
-                        You have {events.length} event{events.length === 1 ? '' : 's'} on record.
-                      </div>
-                    )}
-                    {events.length === 0 && (
-                      <button onClick={() => navigate('/events/new')} style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-                        <PlusIcon /> Create First Event
-                      </button>
-                    )}
-                    {events.length > 0 && activeTab === 'upcoming' && (
-                      <button onClick={() => setActiveTab('past')} style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px', borderRadius: 8, border: '1px solid #4F6BED', background: '#fff', color: '#4F6BED', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-                        View Past Events →
-                      </button>
-                    )}
-                  </div>
+                  {emptyState}
                 </td>
               </tr>
             ) : paginated.map(ev => (
@@ -672,6 +677,74 @@ export function EventsListPage() {
             ))}
           </tbody>
         </table>
+
+        {/* Mobile card list — replaces the table on phones */}
+        {isMobile && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {loading ? (
+              <>{[1, 2, 3].map(i => (
+                <div key={i} style={{ height: 92, borderRadius: 10, background: 'var(--dm-bg-muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              ))}</>
+            ) : paginated.length === 0 ? (
+              <div style={{ padding: '48px 16px', textAlign: 'center' }}>
+                {emptyState}
+              </div>
+            ) : (
+              paginated.map(ev => (
+                <div
+                  key={ev.id}
+                  onClick={() => navigate(`/events/${ev.id}`)}
+                  style={{
+                    background: 'var(--dm-bg-card)',
+                    border: '0.5px solid var(--dm-border-soft)',
+                    borderRadius: 10,
+                    padding: 14,
+                    cursor: 'pointer',
+                    minHeight: 44,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>
+                        {ev.name}
+                      </div>
+                      {ev.speaker && (
+                        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+                          {ev.speaker}
+                        </div>
+                      )}
+                      {ev.parent_event_id && (
+                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: '#7B93F5', marginTop: 2 }}>
+                          Occurrence #{ev.occurrence_number}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation()
+                        const rect = e.currentTarget.getBoundingClientRect()
+                        setMenuPos(menuPos?.eventId === ev.id ? null : { eventId: ev.id, top: rect.bottom + 4, left: rect.right - 160 })
+                      }}
+                      style={{ width: 44, height: 44, marginTop: -8, marginRight: -8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dm-text-secondary)', flexShrink: 0 }}
+                      aria-label="More actions"
+                    >
+                      <DotsIcon />
+                    </button>
+                  </div>
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: '0.5px solid var(--dm-border-soft)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <EventTypeBadge type={ev.event_type} />
+                      <StatusBadge status={ev.status} />
+                    </div>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)' }}>
+                      {formatDate(ev.starts_at)} · {formatTime(ev.starts_at)} · {ev.branches?.name ?? '—'}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Pagination */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 18px', color: '#6B7280', fontSize: 12.5, borderTop: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-surface)' }}>

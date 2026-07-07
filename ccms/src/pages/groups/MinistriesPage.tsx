@@ -110,7 +110,7 @@ function DeleteModal({ name, onConfirm, onCancel, deleting }: { name: string; on
 export function MinistriesPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { isMobile } = useSidebar()
+  const { isMobile, isTablet } = useSidebar()
 
   const [ministries, setMinistries] = useState<Ministry[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
@@ -240,7 +240,7 @@ const canManage = user?.role === 'super_admin' || user?.role === 'admin'
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 22 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : isTablet ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 14, marginBottom: 22 }}>
         <StatCard label="Total Ministries" value={loading ? '—' : ministries.length} sub="active ministries" accent="#4F6BED" />
         <StatCard label="Total Groups" value={loading ? '—' : totalGroups} sub="across all ministries" accent="#8B5CF6" />
         <StatCard label="Total Members" value={loading ? '—' : totalMembers} sub="across all groups" accent="#22C55E" />
@@ -257,21 +257,21 @@ const canManage = user?.role === 'super_admin' || user?.role === 'admin'
       </div>
 
       {/* Filter Bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10, padding: 14, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, marginBottom: 20 }}>
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+      <div style={{ display: isMobile ? 'flex' : 'grid', flexWrap: isMobile ? 'wrap' : undefined, gridTemplateColumns: isMobile ? undefined : '2fr 1fr 1fr', gap: 10, padding: 14, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, marginBottom: 20 }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: isMobile ? '100%' : undefined }}>
           <span style={{ position: 'absolute', left: 11, pointerEvents: 'none', display: 'inline-flex' }}><SearchIcon /></span>
           <input className="min-filter-input" type="text" placeholder="Search ministries or leader..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputStyle, width: '100%', paddingLeft: 34, paddingRight: 12 }} />
         </div>
-        <select className="min-filter-select" value={branchFilter} onChange={e => setBranchFilter(e.target.value)} style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer' }}>
+        <select className="min-filter-select" value={branchFilter} onChange={e => setBranchFilter(e.target.value)} style={{ ...inputStyle, padding: '0 10px', cursor: 'pointer', width: isMobile ? '100%' : undefined }}>
           <option value="">All Branches</option>
           {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
-        <button onClick={() => { setSearch(''); setBranchFilter('') }} style={{ ...inputStyle, padding: '0 12px', cursor: 'pointer', color: '#6B7280', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500 }}>Clear Filters</button>
+        <button onClick={() => { setSearch(''); setBranchFilter('') }} style={{ ...inputStyle, padding: '0 12px', cursor: 'pointer', color: '#6B7280', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, width: isMobile ? '100%' : undefined }}>Clear Filters</button>
       </div>
 
       {/* Ministry Cards Grid */}
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 16 }}>
           {[1,2,3].map(i => (
             <div key={i} style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: 20 }}>
               <div style={{ height: 14, width: '60%', borderRadius: 4, background: '#F3F4F6', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: 12 }} />
@@ -291,7 +291,7 @@ const canManage = user?.role === 'super_admin' || user?.role === 'admin'
           )}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 16 }}>
           {filtered.map(ministry => {
             const groupCount = ministry.groups?.length ?? 0
             const memberCount = (ministry.group_memberships as unknown as { group_memberships: { id: string }[] }[])?.reduce((s, g) => s + (g.group_memberships?.length ?? 0), 0) ?? 0
