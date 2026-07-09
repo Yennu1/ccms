@@ -20,6 +20,9 @@ import { PledgesPage } from '../pages/donations/PledgesPage'
 import { AddPledgePage } from '../pages/donations/AddPledgePage'
 import { EditTransactionPage } from '../pages/donations/EditTransactionPage'
 import { EditPledgePage } from '../pages/donations/EditPledgePage'
+import { ExpensesPage } from '../pages/donations/ExpensesPage'
+import { AddExpensePage } from '../pages/donations/AddExpensePage'
+import { EditExpensePage } from '../pages/donations/EditExpensePage'
 import { EventsListPage } from '../pages/events/EventsListPage'
 import { CreateEventPage } from '../pages/events/CreateEventPage'
 import { EditEventPage } from '../pages/events/EditEventPage'
@@ -79,6 +82,9 @@ export const router = createBrowserRouter([
           { path: '/donations/pledges', element: <PledgesPage /> },
           { path: '/donations/pledges/new', element: <AddPledgePage /> },
           { path: '/donations/pledges/:id/edit', element: <EditPledgePage /> },
+          { path: '/donations/expenses', element: <ExpensesPage /> },
+          { path: '/donations/expenses/new', element: <AddExpensePage /> },
+          { path: '/donations/expenses/:id/edit', element: <EditExpensePage /> },
           { path: '/donations/:id/edit', element: <EditTransactionPage /> },
           { path: '/donations/:id', element: <TransactionDetailPage /> },
           { path: '/events', element: <EventsListPage /> },

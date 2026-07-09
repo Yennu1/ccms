@@ -258,6 +258,7 @@ export function PledgesPage() {
         {[
           { label: 'Transactions', active: false, onClick: () => navigate('/donations') },
           { label: 'Pledges', active: true, onClick: () => {} },
+          { label: 'Expenses', active: false, onClick: () => navigate('/donations/expenses') },
         ].map(tab => (
           <button
             key={tab.label}

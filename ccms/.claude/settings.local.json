@@ -15,7 +15,15 @@
       "Bash(node mobile-check.mjs)",
       "PowerShell(npm run *)",
       "PowerShell(git add *)",
-      "PowerShell(git push *)"
+      "PowerShell(git push *)",
+      "Skill(run)",
+      "Bash(chromium-cli --help)",
+      "Bash(npx --no-install playwright --version)",
+      "Bash(npm ls *)",
+      "Bash(npx -y playwright@1.61.1 --version)",
+      "Bash(npx -y playwright@1.61.1 install chromium)",
+      "Bash(npx -y playwright@1.61.1 install chromium --with-deps)",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

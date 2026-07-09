@@ -31,7 +31,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    label: 'Donations',
+    label: 'Finance',
     path: '/donations',
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

@@ -75,23 +75,43 @@ function getBreadcrumbs(pathname: string): BreadcrumbSegment[] {
     return [{ label: 'Settings', isLast: true }]
   }
   if (pathname === '/donations') {
-    return [{ label: 'Donations', isLast: true }]
+    return [{ label: 'Finance', isLast: true }]
   }
   if (pathname === '/donations/new') {
     return [
-      { label: 'Donations', isLast: false },
+      { label: 'Finance', isLast: false },
       { label: 'Record Giving', isLast: true },
     ]
   }
   if (pathname === '/donations/pledges') {
     return [
-      { label: 'Donations', isLast: false },
+      { label: 'Finance', isLast: false },
       { label: 'Pledges', isLast: true },
+    ]
+  }
+  if (pathname === '/donations/expenses') {
+    return [
+      { label: 'Finance', isLast: false },
+      { label: 'Expenses', isLast: true },
+    ]
+  }
+  if (pathname === '/donations/expenses/new') {
+    return [
+      { label: 'Finance', isLast: false },
+      { label: 'Expenses', isLast: false },
+      { label: 'Record Expense', isLast: true },
+    ]
+  }
+  if (/^\/donations\/expenses\/[^/]+\/edit$/.test(pathname)) {
+    return [
+      { label: 'Finance', isLast: false },
+      { label: 'Expenses', isLast: false },
+      { label: 'Edit Expense', isLast: true },
     ]
   }
   if (/^\/donations\/[^/]+$/.test(pathname)) {
     return [
-      { label: 'Donations', isLast: false },
+      { label: 'Finance', isLast: false },
       { label: 'Transaction', isLast: true },
     ]
   }

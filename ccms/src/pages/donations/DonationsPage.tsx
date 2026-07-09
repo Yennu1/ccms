@@ -599,7 +599,7 @@ export function DonationsPage() {
             fontWeight: 700, fontSize: 22, color: 'var(--dm-text-ink)',
             letterSpacing: '-0.015em', margin: '0 0 4px',
           }}>
-            Donations
+            Finance
           </h1>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#6B7280' }}>
             {loading
@@ -789,6 +789,7 @@ export function DonationsPage() {
         {[
           { label: 'Transactions', active: true, onClick: () => {} },
           { label: 'Pledges', active: false, onClick: () => navigate('/donations/pledges') },
+          { label: 'Expenses', active: false, onClick: () => navigate('/donations/expenses') },
         ].map(tab => (
           <button
             key={tab.label}
