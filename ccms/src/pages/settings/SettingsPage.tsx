@@ -122,6 +122,14 @@ function BanIcon() {
   return <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.4" fill="none" /><path d="M4.2 4.2l7.6 7.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
 }
 
+function RefreshIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+      <path d="M13.5 8a5.5 5.5 0 11-1.6-3.9M13.5 2v3.5H10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
 function UserIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.8"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> }
 function BuildingIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.8"/><path d="M5 15V9h6v6M2 6h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> }
 function CreditCardIcon() { return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.8"/><path d="M1 7h14" stroke="currentColor" strokeWidth="1.8"/><path d="M4 10.5h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg> }
@@ -911,6 +919,23 @@ function AccessControlTab({ orgId }: { orgId: string }) {
     fetchData()
   }
 
+  const handleReactivate = async (entry: UserRoleEntry) => {
+    if (!window.confirm("Restore this user's access?")) return
+
+    const { error } = await supabase
+      .from('user_roles')
+      .update({ is_active: true })
+      .eq('id', entry.id)
+
+    if (error) {
+      toast.error('Failed to reactivate access')
+      return
+    }
+
+    toast.success('Access restored')
+    fetchData()
+  }
+
   return (
     <>
       {showInvite && (
@@ -1055,16 +1080,27 @@ function AccessControlTab({ orgId }: { orgId: string }) {
                   >
                     <PencilIcon />
                   </button>
-                  <button
-                    onClick={() => handleRevoke(entry)}
-                    title={entry.is_active ? 'Revoke access' : 'Access already revoked'}
-                    disabled={!entry.is_active}
-                    style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'transparent', display: 'grid', placeItems: 'center', color: 'var(--dm-text-muted)', cursor: entry.is_active ? 'pointer' : 'not-allowed', opacity: entry.is_active ? 1 : 0.38 }}
-                    onMouseEnter={e => { if (entry.is_active) { e.currentTarget.style.borderColor = '#FCA5A5'; e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.background = '#FEF2F2' } }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--dm-border)'; e.currentTarget.style.color = 'var(--dm-text-muted)'; e.currentTarget.style.background = 'transparent' }}
-                  >
-                    <BanIcon />
-                  </button>
+                  {entry.is_active ? (
+                    <button
+                      onClick={() => handleRevoke(entry)}
+                      title="Revoke access"
+                      style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'transparent', display: 'grid', placeItems: 'center', color: 'var(--dm-text-muted)', cursor: 'pointer' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#FCA5A5'; e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.background = '#FEF2F2' }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--dm-border)'; e.currentTarget.style.color = 'var(--dm-text-muted)'; e.currentTarget.style.background = 'transparent' }}
+                    >
+                      <BanIcon />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleReactivate(entry)}
+                      title="Reactivate access"
+                      style={{ width: 28, height: 28, borderRadius: 6, border: '0.5px solid var(--dm-border)', background: 'transparent', display: 'grid', placeItems: 'center', color: 'var(--dm-text-muted)', cursor: 'pointer' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#86EFAC'; e.currentTarget.style.color = '#22C55E'; e.currentTarget.style.background = '#F0FDF4' }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--dm-border)'; e.currentTarget.style.color = 'var(--dm-text-muted)'; e.currentTarget.style.background = 'transparent' }}
+                    >
+                      <RefreshIcon />
+                    </button>
+                  )}
                 </div>
               </div>
             )
