@@ -275,6 +275,7 @@ export function DonationsPage() {
   const { isMobile } = useSidebar()
 
   const [transactions, setTransactions] = useState<TxRow[]>([])
+  const [expenses, setExpenses] = useState<{ amount: number; expense_date: string }[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
   const [loading, setLoading] = useState(true)
   const [exportOpen, setExportOpen] = useState(false)
@@ -291,7 +292,7 @@ export function DonationsPage() {
     if (!user?.org_id) return
     const fetchData = async () => {
       setLoading(true)
-      const [txResult, branchResult] = await Promise.all([
+      const [txResult, branchResult, expResult] = await Promise.all([
         supabase
           .from('transactions')
           .select(`
@@ -309,6 +310,10 @@ export function DonationsPage() {
           .from('branches')
           .select('id, name')
           .eq('org_id', user.org_id),
+        supabase
+          .from('expenses')
+          .select('amount, expense_date')
+          .eq('org_id', user.org_id),
       ])
 
       if (txResult.error) {
@@ -319,6 +324,10 @@ export function DonationsPage() {
 
       if (!branchResult.error) {
         setBranches((branchResult.data ?? []) as Branch[])
+      }
+
+      if (!expResult.error) {
+        setExpenses((expResult.data ?? []) as { amount: number; expense_date: string }[])
       }
 
       setLoading(false)
@@ -348,6 +357,16 @@ export function DonationsPage() {
   const trendPct = totalLastMonth > 0
     ? ((totalThisMonth - totalLastMonth) / totalLastMonth) * 100
     : null
+
+  const thisMonthExpenses = useMemo(() =>
+    expenses.filter(e => e.expense_date >= startOfMonth),
+    [expenses, startOfMonth]
+  )
+
+  const expensesThisMonth = thisMonthExpenses.reduce((s, e) => s + Number(e.amount), 0)
+
+  const netCashFlow = totalThisMonth - expensesThisMonth
+  const isSurplus = netCashFlow >= 0
 
   // ─── Filtered + paginated ────────────────────────────────────────────────────
 
@@ -673,6 +692,59 @@ export function DonationsPage() {
           >
             <PlusIcon /> Record Giving
           </button>
+        </div>
+      </div>
+
+      {/* Net Cash Flow */}
+      <div style={{
+        background: isSurplus ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+        border: `1px solid ${isSurplus ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+        borderRadius: 14,
+        padding: '20px 24px',
+        marginBottom: 16,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: isMobile ? 'wrap' : 'nowrap',
+        gap: 12,
+      }}>
+        <div>
+          <div style={{
+            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+            fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase',
+            color: isSurplus ? '#15803D' : '#B91C1C', fontWeight: 600, marginBottom: 6,
+          }}>
+            Net Cash Flow · {periodLabel}
+          </div>
+          <div style={{
+            fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+            fontWeight: 700, fontSize: 34, letterSpacing: '-0.02em',
+            color: isSurplus ? '#15803D' : '#B91C1C',
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+            {isSurplus ? '+' : '−'}{formatAmount(Math.abs(netCashFlow))}
+          </div>
+          <div style={{
+            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+            fontSize: 12.5, color: isSurplus ? '#15803D' : '#B91C1C', marginTop: 4, opacity: 0.85,
+          }}>
+            {formatAmount(totalThisMonth)} income − {formatAmount(expensesThisMonth)} expenses
+          </div>
+        </div>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: isSurplus ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+          display: 'grid', placeItems: 'center', flexShrink: 0,
+        }}>
+          {isSurplus ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 19V5M5 12l7-7 7 7" stroke="#15803D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14M5 12l7 7 7-7" stroke="#B91C1C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
         </div>
       </div>
 
