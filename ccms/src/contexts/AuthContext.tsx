@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
@@ -23,8 +23,10 @@ interface AuthContextValue {
   user: AuthUser | null
   loading: boolean
   passwordRecovery: boolean
+  mustSetPassword: boolean
   signOut: () => Promise<void>
   clearPasswordRecovery: () => void
+  clearMustSetPassword: () => void
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -32,8 +34,10 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   loading: true,
   passwordRecovery: false,
+  mustSetPassword: false,
   signOut: async () => {},
   clearPasswordRecovery: () => {},
+  clearMustSetPassword: () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -41,6 +45,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [passwordRecovery, setPasswordRecovery] = useState(false)
+  const [mustSetPassword, setMustSetPassword] = useState(false)
+  // Once the user completes password setup we latch this ON for the rest of the
+  // session, so a late profile refetch (e.g. the USER_UPDATED that updateUser
+  // fires) can never re-derive mustSetPassword=true and trap them in a loop.
+  const passwordSetupDone = useRef(false)
 
   // EFFECT 1: Manage session — official Supabase pattern
   useEffect(() => {
@@ -73,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const fetchProfile = async () => {
       const [profileResult, roleResult] = await Promise.all([
-           supabase.from('profiles').select('id, email, full_name, org_id').eq('id', session.user.id).single(),
+           supabase.from('profiles').select('id, email, full_name, org_id, password_set').eq('id', session.user.id).single(),
            supabase.from('user_roles').select('role, branch_id').eq('user_id', session.user.id).eq('is_active', true).single()
              ])
 
@@ -88,6 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: roleResult.data.role as UserRole,
             branch_id: roleResult.data.branch_id,
           })
+          // Server-truth gate: an invited user whose profile has never had a
+          // password set (password_set = false) must be routed to /accept-invite,
+          // regardless of what the invite URL did or didn't contain. Latched off
+          // once setup completes so a refetch can't re-trap the user.
+          setMustSetPassword(!passwordSetupDone.current && profileResult.data.password_set === false)
         } else {
           await supabase.auth.signOut()
           setUser(null)
@@ -105,9 +119,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const clearPasswordRecovery = () => setPasswordRecovery(false)
+  const clearMustSetPassword = () => {
+    passwordSetupDone.current = true
+    setMustSetPassword(false)
+  }
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, passwordRecovery, signOut, clearPasswordRecovery }}>
+    <AuthContext.Provider value={{ session, user, loading, passwordRecovery, mustSetPassword, signOut, clearPasswordRecovery, clearMustSetPassword }}>
       {children}
     </AuthContext.Provider>
   )

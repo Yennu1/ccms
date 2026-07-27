@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext'
 
 export function AcceptInvitePage() {
   const navigate = useNavigate()
-  const { clearPasswordRecovery } = useAuth()
+  const { clearPasswordRecovery, clearMustSetPassword } = useAuth()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [saving, setSaving] = useState(false)
@@ -42,15 +42,32 @@ export function AcceptInvitePage() {
     setError('')
 
     const { error: updateError } = await supabase.auth.updateUser({ password })
-    setSaving(false)
 
     if (updateError) {
+      setSaving(false)
       setError(updateError.message)
       return
     }
 
+    // Server-truth gate: mark this profile as onboarded so the user reaches the
+    // dashboard now and on every future login. RLS (profiles_update) lets a user
+    // update their own row. Non-fatal if it fails — the password IS set, and the
+    // session-level clear below still lets them through this visit.
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ password_set: true })
+        .eq('id', session.user.id)
+      if (profileError) {
+        console.error('Could not mark password_set=true:', profileError.message)
+      }
+    }
+
+    setSaving(false)
     toast.success('Welcome to Centry CMS! Your account is ready.')
     clearPasswordRecovery()
+    clearMustSetPassword()
     navigate('/')
   }
 
