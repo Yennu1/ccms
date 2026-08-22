@@ -422,6 +422,64 @@ export function ReportsPage() {
 
   const givingTotal = givingByCat.reduce((s, r) => s + Number(r.tithe) + Number(r.offering) + Number(r.building) + Number(r.other_amount), 0)
 
+  // Narrative insights for the Giving by Category PDF export. Built from the
+  // already-loaded givingByCat rows — no extra fetch.
+  const givingCatInsights = (() => {
+    if (!givingByCat || givingByCat.length === 0) return undefined
+
+    const rows = givingByCat.map(r => ({
+      month: r.month,
+      tithe: Number(r.tithe), offering: Number(r.offering),
+      building: Number(r.building), other: Number(r.other_amount),
+      total: Number(r.tithe) + Number(r.offering) + Number(r.building) + Number(r.other_amount),
+    }))
+
+    const periodTotal = rows.reduce((s, r) => s + r.total, 0)
+    const avgMonthly = periodTotal / rows.length
+    const last = rows[rows.length - 1]
+    const prev = rows.length > 1 ? rows[rows.length - 2] : null
+
+    // Category totals + share of period
+    const catTotals: Record<'tithe' | 'offering' | 'building' | 'other', number> = {
+      tithe: rows.reduce((s, r) => s + r.tithe, 0),
+      offering: rows.reduce((s, r) => s + r.offering, 0),
+      building: rows.reduce((s, r) => s + r.building, 0),
+      other: rows.reduce((s, r) => s + r.other, 0),
+    }
+    const catLabels: Record<string, string> = { tithe: 'Tithe', offering: 'Offering', building: 'Building Fund', other: 'Other' }
+    const topCategory = (Object.entries(catTotals) as [string, number][])
+      .sort((a, b) => b[1] - a[1])[0]
+
+    const summary = `Total giving across ${monthLabel(rows[0].month)} to ${monthLabel(last.month)} was ${fGHS(periodTotal)}, averaging ${fGHS(Math.round(avgMonthly))} per month. ${catLabels[topCategory[0]]} was the largest contributor at ${fGHS(topCategory[1])} (${Math.round((topCategory[1] / periodTotal) * 100)}% of total giving).`
+
+    // Trend line: last month vs previous month, and vs period average
+    let trend = ''
+    if (prev && prev.total > 0) {
+      const momChange = Math.round(((last.total - prev.total) / prev.total) * 100)
+      const vsAvg = Math.round(((last.total - avgMonthly) / avgMonthly) * 100)
+      trend = `${monthLabel(last.month)} giving was ${fGHS(last.total)}, ${momChange >= 0 ? 'up' : 'down'} ${Math.abs(momChange)}% from ${monthLabel(prev.month)} and ${vsAvg >= 0 ? 'above' : 'below'} the period average by ${Math.abs(vsAvg)}%.`
+    }
+
+    // Anomaly flags: flag any category-month value more than 2.5x that
+    // category's own average across the period (simple, explainable rule —
+    // not a statistical model, easy for a non-technical reader to trust)
+    const flags: string[] = []
+    ;(['tithe', 'offering', 'building', 'other'] as const).forEach(cat => {
+      const values = rows.map(r => r[cat])
+      const catAvg = values.reduce((s, v) => s + v, 0) / values.length
+      if (catAvg <= 0) return
+      rows.forEach(r => {
+        const v = r[cat]
+        if (v > catAvg * 2.5 && v > 100) {
+          const multiple = (v / catAvg).toFixed(1)
+          flags.push(`${catLabels[cat]} in ${monthLabel(r.month)} was ${fGHS(v)} — about ${multiple}x this category's typical monthly amount. Worth confirming this reflects a real event (e.g. a special offering) rather than a recording error.`)
+        }
+      })
+    })
+
+    return { summary, trend, flags: flags.slice(0, 4) } // cap at 4 flags to keep the PDF readable
+  })()
+
   const avgAtt = weeklyAtt.length > 0
     ? (weeklyAtt.reduce((s, w) => s + Number(w.rate), 0) / weeklyAtt.length)
     : 0
@@ -1025,6 +1083,7 @@ export function ReportsPage() {
             fGHSFull(Number(r.tithe) + Number(r.offering) + Number(r.building) + Number(r.other_amount)),
           ])}
           filename={`giving-by-category-${givingPeriod.toLowerCase()}`}
+          insights={givingCatInsights}
           onClose={() => setExportGiving(null)}
         />
       )}

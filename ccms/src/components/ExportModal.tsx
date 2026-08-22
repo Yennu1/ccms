@@ -12,6 +12,11 @@ interface ExportModalProps {
   rows: (string | number | null | undefined)[][]
   filename: string
   onClose: () => void
+  insights?: {
+    summary: string
+    trend?: string
+    flags?: string[]
+  }
 }
 
 type ExportFormat = 'csv' | 'excel' | 'pdf'
@@ -93,7 +98,7 @@ function ExportOption({ icon, label, sub, loading, onClick }: {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function ExportModal({ title, columns, rows, filename, onClose }: ExportModalProps) {
+export function ExportModal({ title, columns, rows, filename, onClose, insights }: ExportModalProps) {
   const [loading, setLoading] = useState<ExportFormat | null>(null)
 
   function exportCsv() {
@@ -128,10 +133,59 @@ export function ExportModal({ title, columns, rows, filename, onClose }: ExportM
     doc.setFontSize(8.5)
     doc.setTextColor(107, 114, 128)
     doc.text(`Generated ${new Date().toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' })}`, 14, 23)
+
+    let cursorY = 28
+
+    if (insights) {
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(10)
+      doc.setTextColor(27, 35, 82)
+      doc.text('Summary', 14, cursorY)
+      cursorY += 6
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(55, 65, 81)
+      const summaryLines = doc.splitTextToSize(insights.summary.replace(/₵/g, 'GHS '), 180)
+      doc.text(summaryLines, 14, cursorY)
+      cursorY += summaryLines.length * 4.5 + 3
+
+      if (insights.trend) {
+        doc.setFont('helvetica', 'italic')
+        doc.setFontSize(9)
+        doc.setTextColor(79, 107, 237)
+        const trendLines = doc.splitTextToSize(insights.trend.replace(/₵/g, 'GHS '), 180)
+        doc.text(trendLines, 14, cursorY)
+        cursorY += trendLines.length * 4.5 + 4
+      }
+
+      if (insights.flags && insights.flags.length > 0) {
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(9)
+        doc.setTextColor(180, 83, 9)
+        doc.text('Worth Reviewing', 14, cursorY)
+        cursorY += 5
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8.5)
+        doc.setTextColor(120, 53, 15)
+        insights.flags.forEach(flag => {
+          const flagLines = doc.splitTextToSize(`•  ${flag.replace(/₵/g, 'GHS ')}`, 178)
+          doc.text(flagLines, 16, cursorY)
+          cursorY += flagLines.length * 4.2 + 1.5
+        })
+        cursorY += 3
+      }
+
+      doc.setDrawColor(229, 231, 235)
+      doc.setLineWidth(0.3)
+      doc.line(14, cursorY, 196, cursorY)
+      cursorY += 6
+    }
+
     autoTable(doc, {
-      startY: 28,
+      startY: cursorY,
       head: [columns],
-      body: rows.map(r => r.map(v => v === null || v === undefined ? '' : String(v))),
+      body: rows.map(r => r.map(v => v === null || v === undefined ? '' : String(v).replace(/₵/g, 'GHS '))),
       styles: { fontSize: 8, cellPadding: 3, font: 'helvetica' },
       headStyles: { fillColor: [27, 35, 82], textColor: 255, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [249, 250, 251] },
