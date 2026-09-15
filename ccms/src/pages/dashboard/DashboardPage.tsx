@@ -186,7 +186,8 @@ export function DashboardPage() {
 
   // Charts
   const [givingTrend, setGivingTrend] = useState<MonthlyGiving[]>([])
-  const [givingPeriod, setGivingPeriod] = useState<'3M' | '6M' | '12M' | 'YTD'>('12M')
+  const [givingPeriod, setGivingPeriod] = useState<'3M' | '6M' | '12M' | 'YTD' | 'CUSTOM'>('12M')
+  const [customMonth, setCustomMonth] = useState<string>('')
   const [memberGrowth, setMemberGrowth] = useState<MemberGrowth[]>([])
   const [attTrend, setAttTrend] = useState<WeeklyAtt[]>([])
   const [catBreakdown, setCatBreakdown] = useState<CatBreakdown[]>([])
@@ -421,6 +422,9 @@ export function DashboardPage() {
 
   // Filtered giving trend by period
   const filteredGiving = (() => {
+    if (givingPeriod === 'CUSTOM') {
+      return customMonth ? givingTrend.filter(d => d.month === customMonth) : []
+    }
     if (givingPeriod === 'YTD') {
       const yr = today.getFullYear().toString()
       return givingTrend.filter(d => d.month.startsWith(yr))
@@ -432,7 +436,14 @@ export function DashboardPage() {
   const givingCeiling = roundUpToNiceNumber(givingMax)
   const givingTicks = [0, givingCeiling / 4, givingCeiling / 2, (givingCeiling * 3) / 4, givingCeiling]
 
-  const givingTotal12 = givingTrend.reduce((s, d) => s + Number(d.total), 0)
+const givingTotal = filteredGiving.reduce((s, d) => s + Number(d.total), 0)
+const givingPeriodLabel = givingPeriod === 'CUSTOM'
+  ? (customMonth ? monthLabel(customMonth) : 'select a month')
+  : givingPeriod === 'YTD' ? 'year to date' : `${givingPeriod.replace('M', '-month')} total`
+  // CUSTOM before a month is picked is not "no data" — it is "nothing selected yet".
+  const givingAwaitingMonth = filteredGiving.length === 0 && givingPeriod === 'CUSTOM' && !customMonth
+  // Period is genuinely empty: every zero-filled row is 0 (vacuously true when there are no rows).
+  const givingIsEmpty = !givingAwaitingMonth && filteredGiving.every(d => Number(d.total) === 0)
 
   // Donut data
   const donutTotal = catBreakdown.reduce((s, c) => s + Number(c.total), 0)
@@ -512,21 +523,31 @@ export function DashboardPage() {
           <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: isMobile ? 10 : 0, marginBottom: 14 }}>
             <div>
               <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>Giving Trend</div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-muted)', marginTop: 2 }}>{fGHSFull(givingTotal12)} · 12-month total</div>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-muted)', marginTop: 2 }}>{fGHSFull(givingTotal)} · {givingPeriodLabel}</div>
             </div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {(['3M', '6M', '12M', 'YTD'] as const).map(p => (
-                <button key={p} className="period-btn" onClick={() => setGivingPeriod(p)} style={{ height: 28, padding: '0 10px', borderRadius: 6, border: `1px solid ${givingPeriod === p ? '#4F6BED' : 'var(--dm-border)'}`, background: givingPeriod === p ? 'var(--dm-bg-tint)' : 'var(--dm-bg-card)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11.5, color: givingPeriod === p ? '#4F6BED' : 'var(--dm-text-secondary)', cursor: 'pointer' }}>{p}</button>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {(['3M', '6M', '12M', 'YTD', 'CUSTOM'] as const).map(p => (
+                <button key={p} className="period-btn" onClick={() => { setGivingPeriod(p); if (p === 'CUSTOM' && !customMonth && givingTrend.length > 0) setCustomMonth(givingTrend[givingTrend.length - 1].month) }} style={{ height: 28, padding: '0 10px', borderRadius: 6, border: `1px solid ${givingPeriod === p ? '#4F6BED' : 'var(--dm-border)'}`, background: givingPeriod === p ? 'var(--dm-bg-tint)' : 'var(--dm-bg-card)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11.5, color: givingPeriod === p ? '#4F6BED' : 'var(--dm-text-secondary)', cursor: 'pointer' }}>{p === 'CUSTOM' ? 'Custom' : p}</button>
               ))}
+              {givingPeriod === 'CUSTOM' && (
+                <select className="dash-select" value={customMonth} onChange={e => setCustomMonth(e.target.value)} style={{ height: 28, borderRadius: 6, border: '0.5px solid var(--dm-border)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: 'var(--dm-text-body)', background: 'var(--dm-bg-card)', padding: '0 8px', cursor: 'pointer' }}>
+                  <option value="">Select month…</option>
+                  {givingTrend.map(d => <option key={d.month} value={d.month}>{monthLabel(d.month)}</option>)}
+                </select>
+              )}
             </div>
           </div>
-          {loadingCharts || givingTrendWidth <= 0 ? <Skeleton h={200} /> : (
+          {loadingCharts || givingTrendWidth <= 0 ? <Skeleton h={200} /> : givingAwaitingMonth ? (
+            <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>Select a month to view</div>
+          ) : givingIsEmpty ? (
+            <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)' }}>No giving recorded for this timeframe.</div>
+          ) : (
             <LineChart width={givingTrendWidth} height={200} data={filteredGiving} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
               <CartesianGrid stroke="var(--dm-chart-grid)" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
               <YAxis domain={[0, givingCeiling]} ticks={givingTicks} tickFormatter={(v: number) => `₵${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={48} />
               <Tooltip content={<GivingTooltip />} />
-              <Line type="monotone" dataKey="total" stroke="#4F6BED" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#4F6BED' }} isAnimationActive={false} />
+              <Line type="monotone" dataKey="total" stroke="#4F6BED" strokeWidth={2} dot={givingPeriod === 'CUSTOM' ? { r: 4, fill: '#4F6BED' } : false} activeDot={{ r: 4, fill: '#4F6BED' }} isAnimationActive={false} />
             </LineChart>
           )}
         </div>
