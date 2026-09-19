@@ -779,7 +779,6 @@ export function DonationsPage() {
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280', padding: '8px 0 16px' }}>
             Last month · {loading ? '—' : formatAmount(totalLastMonth)}
           </div>
-          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, background: '#4F6BED' }} />
         </div>
 
         {/* Tithes */}
@@ -801,7 +800,6 @@ export function DonationsPage() {
             <path d="M0,26 L20,24 L40,22 L60,18 L80,20 L100,14 L120,16 L140,10 L160,12 L180,8 L200,6 L200,36 L0,36 Z" fill="#C8964A" opacity="0.10" />
           </svg>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280', padding: '8px 0 16px' }}>{tithesPct}% of total contributions</div>
-          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, background: '#C8964A' }} />
         </div>
 
         {/* Offerings */}
@@ -823,7 +821,6 @@ export function DonationsPage() {
             <path d="M0,12 L20,16 L40,14 L60,20 L80,18 L100,22 L120,20 L140,24 L160,22 L180,26 L200,24 L200,36 L0,36 Z" fill="#22C55E" opacity="0.10" />
           </svg>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280', padding: '8px 0 16px' }}>Sunday &amp; midweek combined</div>
-          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, background: '#22C55E' }} />
         </div>
 
         {/* Building Fund */}
@@ -852,7 +849,6 @@ export function DonationsPage() {
             </g>
           </svg>
           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280', padding: '8px 0 16px' }}>Building fund contributions</div>
-          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, background: '#7B93F5' }} />
         </div>
       </div>
 
