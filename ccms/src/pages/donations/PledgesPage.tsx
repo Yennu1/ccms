@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { useSidebar } from '../../contexts/SidebarContext'
+import { MemberAvatar } from '../../components/MemberAvatar'
+import { PledgeDetailPanel, type PledgePanelData } from '../../components/PledgeDetailPanel'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -15,48 +17,40 @@ interface PledgeRow {
   amount_paid: number
   due_date: string | null
   status: PledgeStatus
+  notes: string | null
   created_at: string
   transaction_categories: { id: string; name: string } | null
-  member: { id: string; first_name: string; last_name: string; member_number: string } | null
+  member: {
+    id: string
+    first_name: string
+    last_name: string
+    member_number: string
+    photo_url: string | null
+  } | null
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STATUS_STYLES: Record<PledgeStatus, { bg: string; color: string; dot: string; label: string }> = {
-  active:    { bg: '#DBEAFE', color: '#1E40AF', dot: '#60A5FA', label: 'Active' },
-  fulfilled: { bg: '#DCFCE7', color: '#166534', dot: '#22C55E', label: 'Fulfilled' },
-  overdue:   { bg: '#FEE2E2', color: '#991B1B', dot: '#F87171', label: 'Overdue' },
-  cancelled: { bg: '#F3F4F6', color: '#6B7280', dot: '#9CA3AF', label: 'Cancelled' },
+// Single grey tray + a small coloured dot per state.
+const STATUS_META: Record<PledgeStatus, { label: string; dot: string }> = {
+  active:    { label: 'Active',    dot: '#6B7280' },
+  fulfilled: { label: 'Fulfilled', dot: '#22C55E' },
+  overdue:   { label: 'Overdue',   dot: '#DC2626' },
+  cancelled: { label: 'Cancelled', dot: '#9CA3AF' },
 }
-
-const AVATAR_PALETTE = [
-  { bg: '#E8ECF9', color: '#4F6BED' },
-  { bg: '#DCFCE7', color: '#15803D' },
-  { bg: '#FEF3C7', color: '#B45309' },
-  { bg: '#FCE7F3', color: '#BE185D' },
-  { bg: '#EEF2FF', color: '#4338CA' },
-  { bg: '#FFF7ED', color: '#C2410C' },
-  { bg: '#F0FDFA', color: '#0F766E' },
-  { bg: '#F5F3FF', color: '#7C3AED' },
-]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getAvatarColor(firstName: string, lastName: string) {
-  const str = (firstName + lastName).toLowerCase()
-  let hash = 0
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash)
-  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length]
-}
 
 function formatAmount(n: number) {
   return `₵${n.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-function formatDueDate(dateStr: string | null) {
+function formatFullDate(dateStr: string | null) {
   if (!dateStr) return '—'
   try {
-    return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-GH', { month: 'short', year: 'numeric' })
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-GH', {
+      day: '2-digit', month: 'short', year: 'numeric',
+    })
   } catch {
     return dateStr
   }
@@ -64,36 +58,55 @@ function formatDueDate(dateStr: string | null) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function ProgressBar({ paid, total, status }: { paid: number; total: number; status: PledgeStatus }) {
-  const pct = total > 0 ? Math.min(100, (paid / total) * 100) : 0
-  const color = status === 'fulfilled' || pct >= 100
-    ? '#22C55E'
-    : status === 'overdue'
-      ? '#EF4444'
-      : '#4F6BED'
+/**
+ * Two colours only:
+ *  - green while paid ≤ total
+ *  - red when paid > total (overflow)
+ * The bar itself caps visually at 100%.
+ */
+function ProgressBar({ paid, total }: { paid: number; total: number }) {
+  const rawPct = total > 0 ? (paid / total) * 100 : 0
+  const displayPct = Math.min(100, rawPct)
+  const isOverflow = rawPct > 100
+  const color = isOverflow ? '#DC2626' : '#22C55E'
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{
+        height: 6, borderRadius: 999,
+        background: 'var(--dm-bg-muted)', overflow: 'hidden',
+      }}>
         <div style={{
-          flex: 1, height: 5, borderRadius: 999,
-          background: '#F3F4F6', overflow: 'hidden',
-        }}>
-          <div style={{
-            height: '100%', width: `${pct}%`, borderRadius: 999,
-            background: color, transition: 'width 0.3s ease',
-          }} />
-        </div>
-        <span style={{
-          fontFamily: "'IBM Plex Mono', monospace",
-          fontSize: 11, color: '#6B7280', flexShrink: 0,
-        }}>
-          {Math.round(pct)}%
-        </span>
+          height: '100%', width: `${displayPct}%`, borderRadius: 999,
+          background: color, transition: 'width 0.3s ease',
+        }} />
       </div>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>
-        {formatAmount(paid)} / {formatAmount(total)}
+      <div style={{
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 12, color: 'var(--dm-text-ink)', fontWeight: 500,
+      }}>
+        {formatAmount(paid)} / {formatAmount(total)} · {Math.round(rawPct)}%
       </div>
     </div>
+  )
+}
+
+function StatusPill({ status }: { status: PledgeStatus }) {
+  const meta = STATUS_META[status] ?? STATUS_META.active
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '4px 10px', borderRadius: 6,
+      background: '#EEF0F5', color: '#111827',
+      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+      fontWeight: 500, fontSize: 12,
+    }}>
+      <span style={{
+        width: 6, height: 6, borderRadius: '50%',
+        background: meta.dot, flexShrink: 0,
+      }} />
+      {meta.label}
+    </span>
   )
 }
 
@@ -104,12 +117,83 @@ function SkeletonRow() {
         <td key={i} style={{ padding: '0 18px' }}>
           <div style={{
             height: 12, width: `${w * 4}px`, borderRadius: 6,
-            background: '#F3F4F6', animation: 'pulse 1.5s ease-in-out infinite',
+            background: 'var(--dm-bg-muted)', animation: 'pulse 1.5s ease-in-out infinite',
           }} />
         </td>
       ))}
     </tr>
   )
+}
+
+// ─── Row-level overflow menu (Edit / Delete) ─────────────────────────────────
+
+function RowMenu({
+  onEdit, onDelete,
+}: {
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    const close = () => setOpen(false)
+    window.addEventListener('click', close)
+    return () => window.removeEventListener('click', close)
+  }, [open])
+
+  return (
+    <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+      <button
+        aria-label="More actions"
+        onClick={() => setOpen(v => !v)}
+        style={{
+          width: 30, height: 30, borderRadius: 6,
+          border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
+          display: 'grid', placeItems: 'center',
+          color: 'var(--dm-text-secondary)', cursor: 'pointer',
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="3" r="1.2" fill="currentColor" />
+          <circle cx="7" cy="7" r="1.2" fill="currentColor" />
+          <circle cx="7" cy="11" r="1.2" fill="currentColor" />
+        </svg>
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 40,
+          minWidth: 140, background: 'var(--dm-bg-card)',
+          border: '0.5px solid var(--dm-border)', borderRadius: 8,
+          boxShadow: '0 4px 16px rgba(15, 23, 42, 0.08)',
+          padding: 4, fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+        }}>
+          <button
+            onClick={() => { setOpen(false); onEdit() }}
+            style={menuItemStyle()}
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => { setOpen(false); onDelete() }}
+            style={{ ...menuItemStyle(), color: '#DC2626' }}
+          >
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function menuItemStyle(): React.CSSProperties {
+  return {
+    display: 'block', width: '100%', textAlign: 'left',
+    padding: '8px 10px', borderRadius: 6, border: 'none',
+    background: 'transparent', cursor: 'pointer',
+    fontSize: 13, color: 'var(--dm-text-ink)',
+    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+  }
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -125,29 +209,40 @@ export function PledgesPage() {
   const [search,       setSearch]       = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | PledgeStatus>('all')
 
-  useEffect(() => {
-    if (!user?.org_id) return
-    const fetchPledges = async () => {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('pledges')
-        .select(`
-          id, total_amount, amount_paid, due_date, status, created_at,
-          transaction_categories(id, name),
-          member:members!pledges_member_id_fkey(id, first_name, last_name, member_number)
-        `)
-        .eq('org_id', user.org_id)
-        .order('created_at', { ascending: false })
+  const [activePledge, setActivePledge]     = useState<PledgePanelData | null>(null)
+  const [autoDeletePrompt, setAutoDeletePrompt] = useState(false)
 
-      if (error) {
-        toast.error('Failed to load pledges')
-      } else {
-        setPledges((data ?? []) as unknown as PledgeRow[])
-      }
-      setLoading(false)
+  const fetchPledges = useCallback(async () => {
+    if (!user?.org_id) return
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('pledges')
+      .select(`
+        id, total_amount, amount_paid, due_date, status, notes, created_at,
+        transaction_categories(id, name),
+        member:members!pledges_member_id_fkey(id, first_name, last_name, member_number, photo_url)
+      `)
+      .eq('org_id', user.org_id)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      toast.error('Failed to load pledges')
+    } else {
+      setPledges((data ?? []) as unknown as PledgeRow[])
     }
-    fetchPledges()
+    setLoading(false)
   }, [user?.org_id])
+
+  useEffect(() => { fetchPledges() }, [fetchPledges])
+
+  // Keep the open panel's data in sync when the list refreshes
+  useEffect(() => {
+    if (!activePledge) return
+    const fresh = pledges.find(p => p.id === activePledge.id)
+    if (!fresh) { setActivePledge(null); return }
+    setActivePledge(rowToPanelData(fresh))
+     
+  }, [pledges])
 
   const filtered = pledges.filter(p => {
     const firstName = p.member?.first_name ?? ''
@@ -171,6 +266,16 @@ export function PledgesPage() {
   const overduePledges = pledges.filter(p => p.status === 'active' && p.due_date && p.due_date < today).length
   const fulfilledPledges = pledges.filter(p => p.status === 'fulfilled').length
 
+  const openPledge = (p: PledgeRow) => {
+    setAutoDeletePrompt(false)
+    setActivePledge(rowToPanelData(p))
+  }
+
+  const askDelete = (p: PledgeRow) => {
+    setActivePledge(rowToPanelData(p))
+    setAutoDeletePrompt(true)
+  }
+
   const inputStyle: React.CSSProperties = {
     height: 36, borderRadius: 8, border: '0.5px solid var(--dm-border)',
     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
@@ -188,7 +293,6 @@ export function PledgesPage() {
     background: 'var(--dm-bg-surface)', whiteSpace: 'nowrap',
   }
 
-  // Shared by the desktop table's empty row and the mobile card list
   const emptyState = pledges.length === 0 ? (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
       <div style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>
@@ -215,11 +319,10 @@ export function PledgesPage() {
     <>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+        .pl-row { cursor: pointer; }
         .pl-row:hover { background: var(--dm-bg-muted) !important; }
-        .pl-row:hover .pl-actions { opacity: 1 !important; }
         .pl-filter-select:focus { border-color: #4F6BED !important; outline: none; }
         .pl-filter-input:focus { border-color: #4F6BED !important; }
-        .pl-icon:hover { background: var(--dm-bg-muted) !important; color: var(--dm-text-ink) !important; }
       `}</style>
 
       {/* Page Header */}
@@ -284,10 +387,10 @@ export function PledgesPage() {
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : isTablet ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
         {[
-          { label: 'Total Pledged',  value: loading ? '—' : formatAmount(totalPledged),  sub: `${pledges.length} pledges`,                              color: '#4F6BED', bgIcon: '#EEF1FE' },
-          { label: 'Total Paid',     value: loading ? '—' : formatAmount(totalPaid),     sub: totalPledged > 0 ? `${Math.round((totalPaid / totalPledged) * 100)}% of pledges` : '—',  color: '#22C55E', bgIcon: '#DCFCE7' },
-          { label: 'Active Pledges', value: loading ? '—' : String(activePledges),        sub: 'In progress',                                             color: '#3B82F6', bgIcon: '#DBEAFE' },
-          { label: 'Overdue',        value: loading ? '—' : String(overduePledges),       sub: 'Need follow-up',                                          color: '#EF4444', bgIcon: '#FEE2E2' },
+          { label: 'Total Pledged',  value: loading ? '—' : formatAmount(totalPledged),  sub: `${pledges.length} pledges` },
+          { label: 'Total Paid',     value: loading ? '—' : formatAmount(totalPaid),     sub: totalPledged > 0 ? `${Math.round((totalPaid / totalPledged) * 100)}% of pledges` : '—' },
+          { label: 'Active Pledges', value: loading ? '—' : String(activePledges),        sub: 'In progress' },
+          { label: 'Overdue',        value: loading ? '—' : String(overduePledges),       sub: 'Need follow-up' },
         ].map(c => (
           <div key={c.label} style={{
             background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
@@ -388,35 +491,30 @@ export function PledgesPage() {
               const firstName = p.member?.first_name ?? '—'
               const lastName  = p.member?.last_name ?? ''
               const memberNum = p.member?.member_number ?? '—'
-              const { bg: avBg, color: avColor } = getAvatarColor(firstName, lastName)
-              const st = STATUS_STYLES[p.status] ?? STATUS_STYLES.active
               return (
                 <tr
                   key={p.id}
                   className="pl-row"
+                  onClick={() => openPledge(p)}
                   style={{
                     borderBottom: '0.5px solid var(--dm-border-soft)',
-                    height: 60, background: 'var(--dm-bg-card)',
-                    transition: 'background 0.1s', cursor: 'default',
+                    height: 68, background: 'var(--dm-bg-card)',
+                    transition: 'background 0.1s',
                   }}
                 >
                   <td style={{ padding: '0 18px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{
-                        width: 32, height: 32, borderRadius: '50%',
-                        background: avBg, color: avColor,
-                        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                        fontWeight: 700, fontSize: 11,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        flexShrink: 0,
-                      }}>
-                        {firstName[0]}{lastName[0]}
-                      </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <MemberAvatar
+                        firstName={firstName}
+                        lastName={lastName}
+                        photoUrl={p.member?.photo_url ?? null}
+                        size={36}
+                      />
                       <div>
                         <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)' }}>
                           {firstName} {lastName}
                         </div>
-                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>
+                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-secondary)', marginTop: 2 }}>
                           {memberNum}
                         </div>
                       </div>
@@ -426,50 +524,24 @@ export function PledgesPage() {
                     <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)' }}>
                       {p.transaction_categories?.name ?? '—'}
                     </div>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-body)', marginTop: 2 }}>
-                      {p.id.slice(0, 8).toUpperCase()}
-                    </div>
                   </td>
                   <td style={{ padding: '0 18px' }}>
-                    <ProgressBar paid={p.amount_paid} total={p.total_amount} status={p.status} />
+                    <ProgressBar paid={p.amount_paid} total={p.total_amount} />
                   </td>
                   <td style={{ padding: '0 18px' }}>
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: '#6B7280' }}>
-                      {formatDueDate(p.due_date)}
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, color: 'var(--dm-text-body)' }}>
+                      {formatFullDate(p.due_date)}
                     </span>
                   </td>
                   <td style={{ padding: '0 18px' }}>
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 5,
-                      padding: '3px 9px', borderRadius: 999,
-                      background: st.bg, color: st.color,
-                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                      fontWeight: 600, fontSize: 11.5,
-                    }}>
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: st.dot }} />
-                      {st.label}
-                    </span>
+                    <StatusPill status={p.status} />
                   </td>
                   <td style={{ padding: '0 12px' }}>
-                    <div className="pl-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, opacity: 1 }}>
-                      <button
-                        className="pl-icon"
-                        aria-label="Edit pledge"
-                        onClick={e => { e.stopPropagation(); navigate(`/donations/pledges/${p.id}/edit`) }}
-                        style={{
-                          width: 28, height: 28, borderRadius: 6,
-                          border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)',
-                          display: 'grid', placeItems: 'center',
-                          color: 'var(--dm-text-secondary)', cursor: 'pointer',
-                          transition: 'all 0.1s',
-                        }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path d="M9.5 2.5L11.5 4.5L4.5 11.5H2.5V9.5L9.5 2.5Z" 
-                            stroke="currentColor" strokeWidth="1.3" 
-                            strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <RowMenu
+                        onEdit={() => navigate(`/donations/pledges/${p.id}/edit`)}
+                        onDelete={() => askDelete(p)}
+                      />
                     </div>
                   </td>
                 </tr>
@@ -478,12 +550,12 @@ export function PledgesPage() {
           </tbody>
         </table>
 
-        {/* Mobile card list — replaces the table on phones */}
+        {/* Mobile card list */}
         {isMobile && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {loading ? (
               <>{[1, 2, 3].map(i => (
-                <div key={i} style={{ height: 110, borderRadius: 10, background: 'var(--dm-bg-muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                <div key={i} style={{ height: 118, borderRadius: 10, background: 'var(--dm-bg-muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
               ))}</>
             ) : filtered.length === 0 ? (
               <div style={{ padding: '48px 16px', textAlign: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13 }}>
@@ -494,69 +566,46 @@ export function PledgesPage() {
                 const firstName = p.member?.first_name ?? '—'
                 const lastName  = p.member?.last_name ?? ''
                 const memberNum = p.member?.member_number ?? '—'
-                const { bg: avBg, color: avColor } = getAvatarColor(firstName, lastName)
-                const st = STATUS_STYLES[p.status] ?? STATUS_STYLES.active
                 return (
-                  <div key={p.id} style={{
-                    background: 'var(--dm-bg-card)',
-                    border: '0.5px solid var(--dm-border-soft)',
-                    borderRadius: 10,
-                    padding: 14,
-                  }}>
+                  <div
+                    key={p.id}
+                    onClick={() => openPledge(p)}
+                    style={{
+                      background: 'var(--dm-bg-card)',
+                      border: '0.5px solid var(--dm-border-soft)',
+                      borderRadius: 10,
+                      padding: 14,
+                      cursor: 'pointer',
+                    }}
+                  >
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                        <div style={{
-                          width: 40, height: 40, borderRadius: '50%',
-                          background: avBg, color: avColor,
-                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontWeight: 700, fontSize: 12,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          flexShrink: 0,
-                        }}>
-                          {firstName[0]}{lastName[0]}
-                        </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                        <MemberAvatar
+                          firstName={firstName}
+                          lastName={lastName}
+                          photoUrl={p.member?.photo_url ?? null}
+                          size={40}
+                        />
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>
                             {firstName} {lastName}
                           </div>
-                          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)', marginTop: 2 }}>
+                          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-secondary)', marginTop: 2 }}>
                             {memberNum}
                           </div>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 5,
-                          padding: '3px 9px', borderRadius: 999,
-                          background: st.bg, color: st.color,
-                          fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                          fontWeight: 600, fontSize: 11.5,
-                        }}>
-                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: st.dot }} />
-                          {st.label}
-                        </span>
-                        <button
-                          aria-label="Edit pledge"
-                          onClick={() => navigate(`/donations/pledges/${p.id}/edit`)}
-                          style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dm-text-secondary)' }}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                            <path d="M9.5 2.5L11.5 4.5L4.5 11.5H2.5V9.5L9.5 2.5Z"
-                              stroke="currentColor" strokeWidth="1.3"
-                              strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </button>
-                      </div>
+                      <StatusPill status={p.status} />
                     </div>
-                    <div style={{ marginTop: 10 }}>
-                      <ProgressBar paid={p.amount_paid} total={p.total_amount} status={p.status} />
+                    <div style={{ marginTop: 12 }}>
+                      <ProgressBar paid={p.amount_paid} total={p.total_amount} />
                     </div>
                     <div style={{ marginTop: 10, paddingTop: 10, borderTop: '0.5px solid var(--dm-border-soft)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                       <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-body)' }}>
                         {p.transaction_categories?.name ?? '—'}
                       </span>
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--dm-text-muted)' }}>
-                        {formatDueDate(p.due_date)}
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-body)' }}>
+                        {formatFullDate(p.due_date)}
                       </span>
                     </div>
                   </div>
@@ -575,6 +624,29 @@ export function PledgesPage() {
           {filtered.length} pledge{filtered.length !== 1 ? 's' : ''} shown
         </div>
       </div>
+
+      {/* Side panel */}
+      <PledgeDetailPanel
+        pledge={activePledge}
+        openDeletePrompt={autoDeletePrompt}
+        onClose={() => { setActivePledge(null); setAutoDeletePrompt(false) }}
+        onChanged={fetchPledges}
+      />
     </>
   )
+}
+
+// ─── Row → Panel data mapping ────────────────────────────────────────────────
+
+function rowToPanelData(p: PledgeRow): PledgePanelData {
+  return {
+    id: p.id,
+    total_amount: p.total_amount,
+    amount_paid: p.amount_paid,
+    due_date: p.due_date,
+    status: p.status,
+    notes: p.notes,
+    category: p.transaction_categories,
+    member: p.member,
+  }
 }
