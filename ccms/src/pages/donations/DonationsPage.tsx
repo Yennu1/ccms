@@ -23,7 +23,7 @@ interface TxRow {
   created_at: string
   is_collective: boolean
   transaction_categories: { id: string; name: string } | null
-  member: { id: string; first_name: string; last_name: string; member_number: string } | null
+  member: { id: string; first_name: string; last_name: string; member_number: string; photo_url: string | null } | null
   branches: { id: string; name: string } | null
   recorder: { full_name: string } | null
 }
@@ -169,9 +169,23 @@ function ChevronIcon({ dir }: { dir: 'left' | 'right' }) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function Avatar({ firstName, lastName, size = 32 }: { firstName: string; lastName: string; size?: number }) {
+function Avatar({ firstName, lastName, photoUrl, size = 32 }: { firstName: string; lastName: string; photoUrl?: string | null; size?: number }) {
   const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase()
   const { bg, color } = getAvatarColor(firstName, lastName)
+  const [imgFailed, setImgFailed] = useState(false)
+  if (photoUrl && !imgFailed) {
+    return (
+      <img
+        src={photoUrl}
+        alt={`${firstName} ${lastName}`}
+        onError={() => setImgFailed(true)}
+        style={{
+          width: size, height: size, borderRadius: '50%',
+          objectFit: 'cover', flexShrink: 0,
+        }}
+      />
+    )
+  }
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
@@ -299,7 +313,7 @@ export function DonationsPage() {
             id, member_id, category_id, amount, payment_method,
             transaction_date, reference_number, branch_id, created_at, is_collective,
             transaction_categories(id, name),
-            member:members!transactions_member_id_fkey(id, first_name, last_name, member_number),
+            member:members!transactions_member_id_fkey(id, first_name, last_name, member_number, photo_url),
             branches(id, name),
             recorder:profiles!transactions_recorded_by_fkey(full_name)
           `)
@@ -986,6 +1000,7 @@ export function DonationsPage() {
               const firstName = t.member?.first_name ?? 'Anonymous'
               const lastName = t.member?.last_name ?? ''
               const memberNumber = t.member?.member_number ?? '—'
+              const photoUrl = t.member?.photo_url ?? null
               const catName = t.transaction_categories?.name ?? ''
               return (
                 <tr
@@ -1002,7 +1017,7 @@ export function DonationsPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                       {isCollective
                         ? <CollectiveAvatar />
-                        : <Avatar firstName={firstName} lastName={lastName || 'A'} />
+                        : <Avatar firstName={firstName} lastName={lastName || 'A'} photoUrl={photoUrl} />
                       }
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: 'var(--dm-text-ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -1078,6 +1093,7 @@ export function DonationsPage() {
                 const firstName = t.member?.first_name ?? 'Anonymous'
                 const lastName = t.member?.last_name ?? ''
                 const memberNumber = t.member?.member_number ?? '—'
+                const photoUrl = t.member?.photo_url ?? null
                 const catName = t.transaction_categories?.name ?? ''
                 return (
                   <div
@@ -1096,7 +1112,7 @@ export function DonationsPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                         {isCollective
                           ? <CollectiveAvatar />
-                          : <Avatar firstName={firstName} lastName={lastName || 'A'} />
+                          : <Avatar firstName={firstName} lastName={lastName || 'A'} photoUrl={photoUrl} />
                         }
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
