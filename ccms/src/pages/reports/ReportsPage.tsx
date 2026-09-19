@@ -10,6 +10,11 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { useSidebar } from '../../contexts/SidebarContext'
 import { ExportModal } from '../../components/ExportModal'
+import { generateIncomeExpenditurePdf } from '../../lib/exportIncomeExpenditurePdf'
+import type {
+  IncomeExpenditureReportData,
+  ReportLineItem,
+} from '../../lib/exportIncomeExpenditurePdf'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,6 +28,11 @@ interface MonthlyGivingCat {
   month: string; tithe: number; offering: number; building: number; other_amount: number
 }
 interface CatBreakdown { category: string; total: number }
+interface ExpenseRow {
+  amount: number
+  expense_date: string
+  transaction_categories: { name: string } | null
+}
 interface TopGiver {
   member_id: string; first_name: string; last_name: string
   member_number: string; branch_name: string
@@ -84,6 +94,17 @@ function monthLabel(m: string) {
   if (!m) return ''
   const [y, mo] = m.split('-')
   return new Date(+y, +mo - 1, 1).toLocaleDateString('en', { month: 'short', year: '2-digit' })
+}
+// "2026-01" → "JANUARY" / "JANUARY 2026" — the Income & Expenditure sheet uses
+// full upper-case month names, not the short labels the charts use.
+function monthFullLabel(m: string) {
+  if (!m) return ''
+  const [y, mo] = m.split('-')
+  return new Date(+y, +mo - 1, 1).toLocaleDateString('en', { month: 'long' }).toUpperCase()
+}
+function monthYearLabel(m: string) {
+  if (!m) return ''
+  return `${monthFullLabel(m)} ${m.split('-')[0]}`
 }
 function fEventType(t: string) {
   return t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
@@ -232,6 +253,8 @@ export function ReportsPage() {
   const [branches, setBranches] = useState<Branch[]>([])
   const [selectedBranch, setSelectedBranch] = useState('')
   const branchId = selectedBranch || null
+  // Church name printed at the top of the Income & Expenditure account
+  const [orgName, setOrgName] = useState('')
 
   // Giving tab
   const [givingPeriod, setGivingPeriod] = useState<GivingPeriod>('12M')
@@ -239,6 +262,8 @@ export function ReportsPage() {
   const [catBreakdown, setCatBreakdown] = useState<CatBreakdown[]>([])
   const [topGivers, setTopGivers] = useState<TopGiver[]>([])
   const [givingByBranch, setGivingByBranch] = useState<GivingByBranch[]>([])
+  // Expense rows for the selected period — feeds the Income & Expenditure PDF
+  const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([])
   const [loadingGiving, setLoadingGiving] = useState(false)
   const [exportGiving, setExportGiving] = useState<'trend' | 'givers' | null>(null)
 
@@ -272,6 +297,8 @@ export function ReportsPage() {
     if (!user?.org_id) return
     supabase.from('branches').select('id, name').eq('org_id', user.org_id).order('name')
       .then(({ data }) => { if (data) setBranches(data as Branch[]) })
+    supabase.from('organisations').select('name').eq('id', user.org_id).single()
+      .then(({ data }) => { if (data) setOrgName(data.name) })
   if (user.role !== 'super_admin' && user.branch_id) setSelectedBranch(user.branch_id)
   }, [user?.org_id])
 
@@ -286,16 +313,29 @@ export function ReportsPage() {
     const end = todayStr()
     setLoadingGiving(true)
     try {
-      const [byCat, byBranch, top, cat] = await Promise.all([
+      // Expenses are read straight from the table (there is no expense RPC);
+      // same org/branch/period scoping as the giving side. RLS is still the
+      // enforcement layer.
+      let expQ = supabase
+        .from('expenses')
+        .select('amount, expense_date, transaction_categories(name)')
+        .eq('org_id', orgId)
+        .gte('expense_date', start)
+        .lte('expense_date', end)
+      if (bId) expQ = expQ.eq('branch_id', bId)
+
+      const [byCat, byBranch, top, cat, exp] = await Promise.all([
         supabase.rpc('get_monthly_giving_by_category', { p_org_id: orgId, p_branch_id: bId, p_months: months }),
         !bId ? supabase.rpc('get_giving_by_branch', { p_org_id: orgId, p_start: start, p_end: end }) : Promise.resolve({ data: [] }),
         supabase.rpc('get_top_givers', { p_org_id: orgId, p_branch_id: bId, p_start: start, p_end: end, p_limit: 10 }),
         supabase.rpc('get_category_breakdown', { p_org_id: orgId, p_branch_id: bId, p_start: start, p_end: end }),
+        expQ,
       ])
       setGivingByCat((byCat.data ?? []) as MonthlyGivingCat[])
       setGivingByBranch((byBranch.data ?? []) as GivingByBranch[])
       setTopGivers((top.data ?? []) as TopGiver[])
       setCatBreakdown((cat.data ?? []) as CatBreakdown[])
+      setExpenseRows((exp.data ?? []) as unknown as ExpenseRow[])
     } finally {
       setLoadingGiving(false)
     }
@@ -480,6 +520,117 @@ export function ReportsPage() {
     return { summary, trend, flags: flags.slice(0, 4) } // cap at 4 flags to keep the PDF readable
   })()
 
+  // ── Income & Expenditure account (PDF) ──────────────────────────────────────
+  //
+  // Renders the church's real accounting layout via
+  // src/lib/exportIncomeExpenditurePdf.ts. Additive — the generic ExportModal
+  // above is untouched.
+  //
+  // INCOME is mapped from the real `givingByCat` rows already loaded for the
+  // selected 3M / 6M / 12M range, so it needs no extra fetch.
+  //
+  // EXPENDITURE is bucketed from the real `expenseRows` loaded above, by
+  // category × month. `transaction_categories` has no parent/grouping column,
+  // so expense categories are a flat list — rendered with groupName: null (no
+  // sub-headers, no sub-totals). If category groups are added later, split the
+  // rows into one ExpenditureGroup per group and the PDF picks up sub-headers
+  // and per-group TOTAL rows automatically.
+  //
+  // TODO(broughtForward): `broughtForward` stays null — there is no opening
+  // balance in the schema, and the real B/F predates the system. Pass the
+  // figure here once the church records it.
+
+  function buildIncomeExpenditureData(): IncomeExpenditureReportData | null {
+    if (givingByCat.length === 0) return null
+
+    const months = givingByCat.map(r => r.month)
+    const monthLabels = months.map(monthFullLabel)
+
+    // A zero month means no activity, which the sheet shows as a blank cell —
+    // never a "0". null carries that through to the PDF.
+    const blankIfZero = (v: number) => (Number(v) > 0 ? Number(v) : null)
+
+    const line = (particulars: string, pick: (r: MonthlyGivingCat) => number): ReportLineItem => {
+      const monthlyActuals = givingByCat.map(r => blankIfZero(pick(r)))
+      const total = monthlyActuals.reduce<number | null>(
+        (s, v) => (v === null ? s : (s ?? 0) + v), null,
+      )
+      return { particulars, monthlyActuals, total }
+    }
+
+    const incomeCategories = [
+      line('TITHE', r => r.tithe),
+      line('OFFERING', r => r.offering),
+      line('BUILDING FUND', r => r.building),
+      line('OTHER', r => r.other_amount),
+    ]
+
+    const sumRows = (rows: ReportLineItem[], label: string): ReportLineItem => {
+      const monthlyActuals = monthLabels.map((_, i) =>
+        rows.reduce<number | null>((s, row) => {
+          const v = row.monthlyActuals[i]
+          return v === null || v === undefined ? s : (s ?? 0) + v
+        }, null),
+      )
+      const total = monthlyActuals.reduce<number | null>(
+        (s, v) => (v === null ? s : (s ?? 0) + v), null,
+      )
+      return { particulars: label, monthlyActuals, total }
+    }
+
+    // Bucket each expense into [category][month]. Months outside the selected
+    // range are ignored; a category with nothing in a month keeps its null, so
+    // the cell prints blank rather than 0.00.
+    const monthIndex = new Map(months.map((m, i) => [m, i]))
+    const byCategory = new Map<string, (number | null)[]>()
+    expenseRows.forEach(e => {
+      const idx = monthIndex.get(String(e.expense_date).slice(0, 7))
+      if (idx === undefined) return
+      const name = (e.transaction_categories?.name ?? 'Uncategorised').toUpperCase()
+      if (!byCategory.has(name)) byCategory.set(name, months.map(() => null))
+      const cells = byCategory.get(name)!
+      cells[idx] = Math.round(((cells[idx] ?? 0) + Number(e.amount)) * 100) / 100
+    })
+
+    const expenditureCategories: ReportLineItem[] = [...byCategory.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([particulars, monthlyActuals]) => ({
+        particulars,
+        monthlyActuals,
+        total: monthlyActuals.reduce<number | null>(
+          (s, v) => (v === null ? s : (s ?? 0) + v), null,
+        ),
+      }))
+
+    const first = monthYearLabel(months[0])
+    const last = monthYearLabel(months[months.length - 1])
+    const period = first === last ? first : `${first} TO ${last}`
+    const branchName = branches.find(b => b.id === selectedBranch)?.name
+
+    return {
+      churchName: [orgName || 'CHURCH', branchName].filter(Boolean).join(' — ').toUpperCase(),
+      reportTitle: `INCOME AND EXPENDITURE ACCOUNT FOR ${period}`,
+      monthLabels,
+      broughtForward: null, // see TODO(broughtForward) above
+      income: { categories: incomeCategories, grandTotal: sumRows(incomeCategories, 'GRAND TOTAL') },
+      expenditure: {
+        // Flat list — no category groups in the schema, so no sub-headers.
+        groups: [{
+          groupName: null,
+          categories: expenditureCategories,
+          groupTotal: sumRows(expenditureCategories, 'TOTAL'),
+        }],
+        grandTotal: sumRows(expenditureCategories, 'GRAND TOTAL'),
+      },
+    }
+  }
+
+  function handleExportIncomeExpenditure() {
+    const data = buildIncomeExpenditureData()
+    if (!data) return
+    generateIncomeExpenditurePdf(data, `income-expenditure-${givingPeriod.toLowerCase()}`)
+  }
+
   const avgAtt = weeklyAtt.length > 0
     ? (weeklyAtt.reduce((s, w) => s + Number(w.rate), 0) / weeklyAtt.length)
     : 0
@@ -595,6 +746,25 @@ export function ReportsPage() {
                   style={{ ...periodBtn(false), marginLeft: 4, display: 'inline-flex', alignItems: 'center', gap: 5 }}
                 >
                   <DownloadIcon /> Export
+                </button>
+                {/* Income & Expenditure account — the church's own accounting
+                    layout, separate from the generic CSV / Excel / PDF export */}
+                <button
+                  onClick={handleExportIncomeExpenditure}
+                  disabled={loadingGiving || givingByCat.length === 0}
+                  title={
+                    givingByCat.length === 0
+                      ? 'No giving data for this period'
+                      : 'Download the Income & Expenditure account for this period (PDF)'
+                  }
+                  style={{
+                    ...periodBtn(false),
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    cursor: (loadingGiving || givingByCat.length === 0) ? 'not-allowed' : 'pointer',
+                    opacity: (loadingGiving || givingByCat.length === 0) ? 0.5 : 1,
+                  }}
+                >
+                  <DownloadIcon /> I&amp;E Account
                 </button>
               </div>
             </div>
