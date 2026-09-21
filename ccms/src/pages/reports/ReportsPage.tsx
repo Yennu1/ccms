@@ -11,6 +11,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useSidebar } from '../../contexts/SidebarContext'
 import { ExportModal } from '../../components/ExportModal'
 import { generateIncomeExpenditurePdf } from '../../lib/exportIncomeExpenditurePdf'
+import { generateIncomeExpenditureExcel } from '../../lib/exportIncomeExpenditureExcel'
 import type {
   IncomeExpenditureReportData,
   ReportLineItem,
@@ -55,10 +56,6 @@ type AttWeeks = 4 | 8 | 12 | 24
 
 interface Branch { id: string; name: string }
 
-interface MonthlyGivingCat {
-  month: string; tithe: number; offering: number; building: number; other_amount: number
-}
-interface CatBreakdown { category: string; total: number }
 interface ExpenseRow {
   amount: number
   expense_date: string
@@ -102,7 +99,6 @@ interface GroupRow {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const DONUT_COLORS = ['#C8964A', '#4F6BED', '#7B93F5', '#22C55E', '#9CA3AF']
 const GENDER_COLORS = ['#4F6BED', '#EC4899']
 const AP = [
   { bg: 'var(--avatar-1-bg)', color: 'var(--avatar-1-fg)' },
@@ -233,25 +229,6 @@ function AlertIcon() {
 
 // ─── Tooltip components ───────────────────────────────────────────────────────
 
-function GivingTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string; fill: string }>; label?: string }) {
-  if (!active || !payload?.length) return null
-  const total = payload.reduce((s, p) => s + (p.value ?? 0), 0)
-  return (
-    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 8, padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-secondary)', marginBottom: 6 }}>{monthLabel(label ?? '')}</div>
-      {payload.map(p => (
-        <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: 'var(--dm-text-body)', marginBottom: 2 }}>
-          <span style={{ color: 'var(--dm-text-secondary)' }}>{p.name}</span>
-          <span>{fGHSFull(p.value)}</span>
-        </div>
-      ))}
-      <div style={{ borderTop: '0.5px solid var(--dm-border-subtle)', marginTop: 6, paddingTop: 6, display: 'flex', justifyContent: 'space-between', gap: 16, fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: 'var(--dm-text-ink)' }}>
-        <span>Total</span><span>{fGHSFull(total)}</span>
-      </div>
-    </div>
-  )
-}
-
 function ExpenseTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string; fill: string }>; label?: string }) {
   if (!active || !payload?.length) return null
   const rows = payload.filter(p => (p.value ?? 0) > 0)
@@ -322,13 +299,10 @@ export function ReportsPage() {
   const [orgName, setOrgName] = useState('')
 
   // Giving tab
-  const [givingPeriod, setGivingPeriod] = useState<GivingPeriod>('12M')
-  const [givingByCat, setGivingByCat] = useState<MonthlyGivingCat[]>([])
-  const [catBreakdown, setCatBreakdown] = useState<CatBreakdown[]>([])
+  const [givingPeriod] = useState<GivingPeriod>('12M')
   const [topGivers, setTopGivers] = useState<TopGiver[]>([])
   const [givingByBranch, setGivingByBranch] = useState<GivingByBranch[]>([])
   // Expense rows for the selected period — feeds the Income & Expenditure PDF
-  const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([])
 
   // Expense report tab
   const nowDate = new Date()
@@ -340,6 +314,26 @@ export function ReportsPage() {
   const [exportExpense, setExportExpense] = useState<'trend' | 'cats' | null>(null)
   const expYearOptions = Array.from({ length: 6 }, (_, i) => nowDate.getFullYear() + i) // this year + next 5
   const sortedExpMonths = [...expMonths].sort((a, b) => a - b)
+
+  // Income (giving) chart filter — mirrors the expense chart's month/year picker
+  const [incYear, setIncYear] = useState<number>(nowDate.getFullYear())
+  const [incMonths, setIncMonths] = useState<number[]>([nowDate.getMonth() + 1])
+  const [incMenuOpen, setIncMenuOpen] = useState(false)
+  const [incRows, setIncRows] = useState<ExpenseRow[]>([])
+  const sortedIncMonths = [...incMonths].sort((a, b) => a - b)
+  function toggleIncMonth(m: number) {
+    setIncMonths(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m])
+  }
+  // I&E account export filter — independent of the chart, drives only the PDF
+  const [ieYear, setIeYear] = useState<number>(nowDate.getFullYear())
+  const [ieMonths, setIeMonths] = useState<number[]>([nowDate.getMonth() + 1])
+  const [ieMenuOpen, setIeMenuOpen] = useState(false)
+  const [ieExportMenuOpen, setIeExportMenuOpen] = useState(false)
+  const [ieRows, setIeRows] = useState<{ income: ExpenseRow[]; expense: ExpenseRow[] }>({ income: [], expense: [] })
+  const sortedIeMonths = [...ieMonths].sort((a, b) => a - b)
+  function toggleIeMonth(m: number) {
+    setIeMonths(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m])
+  }
   function toggleExpMonth(m: number) {
     setExpMonths(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m])
   }
@@ -392,33 +386,57 @@ export function ReportsPage() {
     const end = todayStr()
     setLoadingGiving(true)
     try {
-      // Expenses are read straight from the table (there is no expense RPC);
-      // same org/branch/period scoping as the giving side. RLS is still the
-      // enforcement layer.
-      let expQ = supabase
-        .from('expenses')
-        .select('amount, expense_date, transaction_categories(name)')
-        .eq('org_id', orgId)
-        .gte('expense_date', start)
-        .lte('expense_date', end)
-      if (bId) expQ = expQ.eq('branch_id', bId)
-
-      const [byCat, byBranch, top, cat, exp] = await Promise.all([
-        supabase.rpc('get_monthly_giving_by_category', { p_org_id: orgId, p_branch_id: bId, p_months: months }),
+      const [byBranch, top] = await Promise.all([
         !bId ? supabase.rpc('get_giving_by_branch', { p_org_id: orgId, p_start: start, p_end: end }) : Promise.resolve({ data: [] }),
         supabase.rpc('get_top_givers', { p_org_id: orgId, p_branch_id: bId, p_start: start, p_end: end, p_limit: 10 }),
-        supabase.rpc('get_category_breakdown', { p_org_id: orgId, p_branch_id: bId, p_start: start, p_end: end }),
-        expQ,
       ])
-      setGivingByCat((byCat.data ?? []) as MonthlyGivingCat[])
       setGivingByBranch((byBranch.data ?? []) as GivingByBranch[])
       setTopGivers((top.data ?? []) as TopGiver[])
-      setCatBreakdown((cat.data ?? []) as CatBreakdown[])
-      setExpenseRows((exp.data ?? []) as unknown as ExpenseRow[])
     } finally {
       setLoadingGiving(false)
     }
   }, [user?.org_id, selectedBranch, activeTab, givingPeriod])
+
+  // ── Income chart data (real categories, like the expense chart) ─────────────
+  const fetchIncome = useCallback(async () => {
+    if (!user?.org_id || activeTab !== 'giving') return
+    if (sortedIncMonths.length === 0) { setIncRows([]); return }
+    const start = `${incYear}-01-01`
+    const end = `${incYear}-12-31`
+    let q = supabase.from('transactions')
+      .select('amount, transaction_date, transaction_categories(name, type)')
+      .eq('org_id', user.org_id)
+      .gte('transaction_date', start)
+      .lte('transaction_date', end)
+    if (branchId) q = q.eq('branch_id', branchId)
+    const { data } = await q
+    const rows = ((data ?? []) as unknown as Array<{ amount: number; transaction_date: string; transaction_categories: { name: string; type: string } | null }>)
+      .filter(r => r.transaction_categories?.type === 'income')
+      .map(r => ({ amount: r.amount, expense_date: r.transaction_date, transaction_categories: r.transaction_categories ? { name: r.transaction_categories.name } : null }))
+    setIncRows(rows as unknown as ExpenseRow[])
+  }, [user?.org_id, branchId, activeTab, incYear, sortedIncMonths.join(',')])
+  useEffect(() => { fetchIncome() }, [fetchIncome])
+
+  // ── I&E export data (own month/year filter) ─────────────────────────────────
+  const fetchIeRows = useCallback(async () => {
+    if (!user?.org_id || activeTab !== 'giving') return
+    if (sortedIeMonths.length === 0) { setIeRows({ income: [], expense: [] }); return }
+    const start = `${ieYear}-01-01`
+    const end = `${ieYear}-12-31`
+    let incQ = supabase.from('transactions')
+      .select('amount, transaction_date, transaction_categories(name, type)')
+      .eq('org_id', user.org_id).gte('transaction_date', start).lte('transaction_date', end)
+    let expQ = supabase.from('expenses')
+      .select('amount, expense_date, transaction_categories(name)')
+      .eq('org_id', user.org_id).gte('expense_date', start).lte('expense_date', end)
+    if (branchId) { incQ = incQ.eq('branch_id', branchId); expQ = expQ.eq('branch_id', branchId) }
+    const [inc, exp] = await Promise.all([incQ, expQ])
+    const incRows2 = ((inc.data ?? []) as unknown as Array<{ amount: number; transaction_date: string; transaction_categories: { name: string; type: string } | null }>)
+      .filter(r => r.transaction_categories?.type === 'income')
+      .map(r => ({ amount: r.amount, expense_date: r.transaction_date, transaction_categories: r.transaction_categories ? { name: r.transaction_categories.name } : null }))
+    setIeRows({ income: incRows2 as unknown as ExpenseRow[], expense: (exp.data ?? []) as unknown as ExpenseRow[] })
+  }, [user?.org_id, branchId, activeTab, ieYear, sortedIeMonths.join(',')])
+  useEffect(() => { fetchIeRows() }, [fetchIeRows])
 
   useEffect(() => { fetchGiving() }, [fetchGiving])
 
@@ -562,65 +580,9 @@ export function ReportsPage() {
 
   // ── Derived stats ────────────────────────────────────────────────────────────
 
-  const givingTotal = givingByCat.reduce((s, r) => s + Number(r.tithe) + Number(r.offering) + Number(r.building) + Number(r.other_amount), 0)
 
   // Narrative insights for the Giving by Category PDF export. Built from the
   // already-loaded givingByCat rows — no extra fetch.
-  const givingCatInsights = (() => {
-    if (!givingByCat || givingByCat.length === 0) return undefined
-
-    const rows = givingByCat.map(r => ({
-      month: r.month,
-      tithe: Number(r.tithe), offering: Number(r.offering),
-      building: Number(r.building), other: Number(r.other_amount),
-      total: Number(r.tithe) + Number(r.offering) + Number(r.building) + Number(r.other_amount),
-    }))
-
-    const periodTotal = rows.reduce((s, r) => s + r.total, 0)
-    const avgMonthly = periodTotal / rows.length
-    const last = rows[rows.length - 1]
-    const prev = rows.length > 1 ? rows[rows.length - 2] : null
-
-    // Category totals + share of period
-    const catTotals: Record<'tithe' | 'offering' | 'building' | 'other', number> = {
-      tithe: rows.reduce((s, r) => s + r.tithe, 0),
-      offering: rows.reduce((s, r) => s + r.offering, 0),
-      building: rows.reduce((s, r) => s + r.building, 0),
-      other: rows.reduce((s, r) => s + r.other, 0),
-    }
-    const catLabels: Record<string, string> = { tithe: 'Tithe', offering: 'Offering', building: 'Building Fund', other: 'Other' }
-    const topCategory = (Object.entries(catTotals) as [string, number][])
-      .sort((a, b) => b[1] - a[1])[0]
-
-    const summary = `Total giving across ${monthLabel(rows[0].month)} to ${monthLabel(last.month)} was ${fGHS(periodTotal)}, averaging ${fGHS(Math.round(avgMonthly))} per month. ${catLabels[topCategory[0]]} was the largest contributor at ${fGHS(topCategory[1])} (${Math.round((topCategory[1] / periodTotal) * 100)}% of total giving).`
-
-    // Trend line: last month vs previous month, and vs period average
-    let trend = ''
-    if (prev && prev.total > 0) {
-      const momChange = Math.round(((last.total - prev.total) / prev.total) * 100)
-      const vsAvg = Math.round(((last.total - avgMonthly) / avgMonthly) * 100)
-      trend = `${monthLabel(last.month)} giving was ${fGHS(last.total)}, ${momChange >= 0 ? 'up' : 'down'} ${Math.abs(momChange)}% from ${monthLabel(prev.month)} and ${vsAvg >= 0 ? 'above' : 'below'} the period average by ${Math.abs(vsAvg)}%.`
-    }
-
-    // Anomaly flags: flag any category-month value more than 2.5x that
-    // category's own average across the period (simple, explainable rule —
-    // not a statistical model, easy for a non-technical reader to trust)
-    const flags: string[] = []
-    ;(['tithe', 'offering', 'building', 'other'] as const).forEach(cat => {
-      const values = rows.map(r => r[cat])
-      const catAvg = values.reduce((s, v) => s + v, 0) / values.length
-      if (catAvg <= 0) return
-      rows.forEach(r => {
-        const v = r[cat]
-        if (v > catAvg * 2.5 && v > 100) {
-          const multiple = (v / catAvg).toFixed(1)
-          flags.push(`${catLabels[cat]} in ${monthLabel(r.month)} was ${fGHS(v)} — about ${multiple}x this category's typical monthly amount. Worth confirming this reflects a real event (e.g. a special offering) rather than a recording error.`)
-        }
-      })
-    })
-
-    return { summary, trend, flags: flags.slice(0, 4) } // cap at 4 flags to keep the PDF readable
-  })()
 
   // ── Income & Expenditure account (PDF) ──────────────────────────────────────
   //
@@ -631,7 +593,7 @@ export function ReportsPage() {
   // INCOME is mapped from the real `givingByCat` rows already loaded for the
   // selected 3M / 6M / 12M range, so it needs no extra fetch.
   //
-  // EXPENDITURE is bucketed from the real `expenseRows` loaded above, by
+  // EXPENDITURE is bucketed from the I&E-filtered expense rows, by
   // category × month. `transaction_categories` has no parent/grouping column,
   // so expense categories are a flat list — rendered with groupName: null (no
   // sub-headers, no sub-totals). If category groups are added later, split the
@@ -643,69 +605,47 @@ export function ReportsPage() {
   // figure here once the church records it.
 
   function buildIncomeExpenditureData(): IncomeExpenditureReportData | null {
-    if (givingByCat.length === 0) return null
+    const monthsWanted = sortedIeMonths.map(m => `${ieYear}-${String(m).padStart(2, '0')}`)
+    if (monthsWanted.length === 0) return null
+    if (ieRows.income.length === 0 && ieRows.expense.length === 0) return null
 
-    const months = givingByCat.map(r => r.month)
-    const monthLabels = months.map(monthFullLabel)
+    const monthLabels = monthsWanted.map(monthFullLabel)
+    const monthIndex = new Map(monthsWanted.map((m, i) => [m, i]))
 
-    // A zero month means no activity, which the sheet shows as a blank cell —
-    // never a "0". null carries that through to the PDF.
-    const blankIfZero = (v: number) => (Number(v) > 0 ? Number(v) : null)
-
-    const line = (particulars: string, pick: (r: MonthlyGivingCat) => number): ReportLineItem => {
-      const monthlyActuals = givingByCat.map(r => blankIfZero(pick(r)))
-      const total = monthlyActuals.reduce<number | null>(
-        (s, v) => (v === null ? s : (s ?? 0) + v), null,
-      )
-      return { particulars, monthlyActuals, total }
+    // Bucket rows into [CATEGORY][month]; blank (null) cell when nothing that month.
+    const bucket = (rows: ExpenseRow[]) => {
+      const byCat = new Map<string, (number | null)[]>()
+      rows.forEach(e => {
+        const idx = monthIndex.get(String(e.expense_date).slice(0, 7))
+        if (idx === undefined) return
+        const name = (e.transaction_categories?.name ?? 'Uncategorised').toUpperCase()
+        if (!byCat.has(name)) byCat.set(name, monthsWanted.map(() => null))
+        const cells = byCat.get(name)!
+        cells[idx] = Math.round(((cells[idx] ?? 0) + Number(e.amount)) * 100) / 100
+      })
+      return [...byCat.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([particulars, monthlyActuals]) => ({
+          particulars, monthlyActuals,
+          total: monthlyActuals.reduce<number | null>((sm, v) => (v === null ? sm : (sm ?? 0) + v), null),
+        }))
     }
-
-    const incomeCategories = [
-      line('TITHE', r => r.tithe),
-      line('OFFERING', r => r.offering),
-      line('BUILDING FUND', r => r.building),
-      line('OTHER', r => r.other_amount),
-    ]
 
     const sumRows = (rows: ReportLineItem[], label: string): ReportLineItem => {
       const monthlyActuals = monthLabels.map((_, i) =>
-        rows.reduce<number | null>((s, row) => {
+        rows.reduce<number | null>((sm, row) => {
           const v = row.monthlyActuals[i]
-          return v === null || v === undefined ? s : (s ?? 0) + v
+          return v === null || v === undefined ? sm : (sm ?? 0) + v
         }, null),
       )
-      const total = monthlyActuals.reduce<number | null>(
-        (s, v) => (v === null ? s : (s ?? 0) + v), null,
-      )
+      const total = monthlyActuals.reduce<number | null>((sm, v) => (v === null ? sm : (sm ?? 0) + v), null)
       return { particulars: label, monthlyActuals, total }
     }
 
-    // Bucket each expense into [category][month]. Months outside the selected
-    // range are ignored; a category with nothing in a month keeps its null, so
-    // the cell prints blank rather than 0.00.
-    const monthIndex = new Map(months.map((m, i) => [m, i]))
-    const byCategory = new Map<string, (number | null)[]>()
-    expenseRows.forEach(e => {
-      const idx = monthIndex.get(String(e.expense_date).slice(0, 7))
-      if (idx === undefined) return
-      const name = (e.transaction_categories?.name ?? 'Uncategorised').toUpperCase()
-      if (!byCategory.has(name)) byCategory.set(name, months.map(() => null))
-      const cells = byCategory.get(name)!
-      cells[idx] = Math.round(((cells[idx] ?? 0) + Number(e.amount)) * 100) / 100
-    })
+    const incomeCategories = bucket(ieRows.income)
+    const expenditureCategories = bucket(ieRows.expense)
 
-    const expenditureCategories: ReportLineItem[] = [...byCategory.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([particulars, monthlyActuals]) => ({
-        particulars,
-        monthlyActuals,
-        total: monthlyActuals.reduce<number | null>(
-          (s, v) => (v === null ? s : (s ?? 0) + v), null,
-        ),
-      }))
-
-    const first = monthYearLabel(months[0])
-    const last = monthYearLabel(months[months.length - 1])
+    const first = monthYearLabel(monthsWanted[0])
+    const last = monthYearLabel(monthsWanted[monthsWanted.length - 1])
     const period = first === last ? first : `${first} TO ${last}`
     const branchName = branches.find(b => b.id === selectedBranch)?.name
 
@@ -713,10 +653,9 @@ export function ReportsPage() {
       churchName: [orgName || 'CHURCH', branchName].filter(Boolean).join(' — ').toUpperCase(),
       reportTitle: `INCOME AND EXPENDITURE ACCOUNT FOR ${period}`,
       monthLabels,
-      broughtForward: null, // see TODO(broughtForward) above
+      broughtForward: null,
       income: { categories: incomeCategories, grandTotal: sumRows(incomeCategories, 'GRAND TOTAL') },
       expenditure: {
-        // Flat list — no category groups in the schema, so no sub-headers.
         groups: [{
           groupName: null,
           categories: expenditureCategories,
@@ -727,10 +666,11 @@ export function ReportsPage() {
     }
   }
 
-  function handleExportIncomeExpenditure() {
+  function handleExportIncomeExpenditure(format: 'pdf' | 'excel') {
     const data = buildIncomeExpenditureData()
     if (!data) return
-    generateIncomeExpenditurePdf(data, `income-expenditure-${givingPeriod.toLowerCase()}`)
+    if (format === 'excel') generateIncomeExpenditureExcel(data, `income-expenditure-${ieYear}`)
+    else generateIncomeExpenditurePdf(data, `income-expenditure-${ieYear}`)
   }
 
   const avgAtt = weeklyAtt.length > 0
@@ -749,6 +689,34 @@ export function ReportsPage() {
   })
 
   // ── Expense report derivations ───────────────────────────────────────────────
+  // Income chart — identical shape to the expense chart: every real income
+  // category is its own stacked series, indigo→grey ramp, biggest-first, no Other.
+  const incomeChart = useMemo(() => {
+    const monthsWanted = sortedIncMonths.map(m => `${incYear}-${String(m).padStart(2, '0')}`)
+    const catTotals = new Map<string, number>()
+    const perMonth = new Map<string, Map<string, number>>()
+    monthsWanted.forEach(ym => perMonth.set(ym, new Map()))
+    incRows.forEach(e => {
+      const ym = String(e.expense_date).slice(0, 7)
+      if (!perMonth.has(ym)) return
+      const name = e.transaction_categories?.name ?? 'Uncategorised'
+      catTotals.set(name, (catTotals.get(name) ?? 0) + Number(e.amount))
+      const mm = perMonth.get(ym)!
+      mm.set(name, (mm.get(name) ?? 0) + Number(e.amount))
+    })
+    const categories = [...catTotals.entries()].sort((a, b) => b[1] - a[1]).map(([n]) => n)
+    const colorOf = new Map(categories.map((n, i) => [n, expenseRamp(i, categories.length)]))
+    const data = monthsWanted.map(ym => {
+      const row: Record<string, number | string> = { month: ym }
+      const mm = perMonth.get(ym)!
+      categories.forEach(c => { row[c] = mm.get(c) ?? 0 })
+      return row
+    })
+    const totalGiven = [...catTotals.values()].reduce((s, v) => s + v, 0)
+    const catRows = [...catTotals.entries()].sort((a, b) => b[1] - a[1]).map(([category, total]) => ({ category, total }))
+    return { data, categories, colorOf, totalGiven, catRows }
+  }, [incRows, incYear, sortedIncMonths.join(',')])
+
   // Option A: every category is its own stacked series, coloured by the indigo→
   // grey ramp, ordered biggest-first. No "Other" bucket.
   const expenseChart = useMemo(() => {
@@ -836,7 +804,81 @@ export function ReportsPage() {
             Giving, attendance, member growth, and group analytics
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {/* I&E account export — Income tab only. Its month/year pickers drive
+              only the PDF, independent of the giving chart's own filter. */}
+          {activeTab === 'giving' && (
+            <>
+              <div style={{ position: 'relative' }}>
+                <button onClick={() => setIeMenuOpen(o => !o)} style={{ ...selectSt, display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 120, justifyContent: 'space-between', cursor: 'pointer' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 130 }}>
+                    {sortedIeMonths.length === 0 ? 'Months' : sortedIeMonths.length === 12 ? 'All months' : sortedIeMonths.map(m => MONTH_NAMES[m - 1].slice(0, 3)).join(', ')}
+                  </span>
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+                {ieMenuOpen && (
+                  <>
+                    <div onClick={() => setIeMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 20 }} />
+                    <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 210, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', padding: 8, zIndex: 21 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px 8px' }}>
+                        <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-secondary)' }}>Export months</span>
+                        <span role="button" onClick={() => setIeMonths(ieMonths.length === 12 ? [] : Array.from({ length: 12 }, (_, i) => i + 1))} style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#4F6BED', cursor: 'pointer' }}>
+                          {ieMonths.length === 12 ? 'Clear all' : 'Select all'}
+                        </span>
+                      </div>
+                      <div style={{ maxHeight: 240, overflowY: 'auto' }}>
+                        {MONTH_NAMES.map((name, i) => (
+                          <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 8px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', borderRadius: 6, cursor: 'pointer' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                            <input type="checkbox" checked={ieMonths.includes(i + 1)} onChange={() => toggleIeMonth(i + 1)} style={{ accentColor: '#4F6BED' }} />
+                            {name}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+              <select value={ieYear} onChange={e => setIeYear(Number(e.target.value))} style={{ ...selectSt, cursor: 'pointer' }}>
+                {expYearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+              <div style={{ position: 'relative' }}>
+                {(() => {
+                  const ieDisabled = sortedIeMonths.length === 0 || (ieRows.income.length === 0 && ieRows.expense.length === 0)
+                  return (
+                    <button
+                      onClick={() => { if (!ieDisabled) setIeExportMenuOpen(o => !o) }}
+                      disabled={ieDisabled}
+                      title="Download the Income & Expenditure account for the selected months"
+                      style={{ ...selectSt, display: 'inline-flex', alignItems: 'center', gap: 5, cursor: ieDisabled ? 'not-allowed' : 'pointer', opacity: ieDisabled ? 0.5 : 1 }}
+                    >
+                      <DownloadIcon /> I&amp;E Account
+                      <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </button>
+                  )
+                })()}
+                {ieExportMenuOpen && (
+                  <>
+                    <div onClick={() => setIeExportMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 20 }} />
+                    <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 150, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 9, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', padding: 5, zIndex: 21 }}>
+                      {(['pdf', 'excel'] as const).map(fmt => (
+                        <button
+                          key={fmt}
+                          onClick={() => { setIeExportMenuOpen(false); handleExportIncomeExpenditure(fmt) }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '8px 10px', border: 'none', background: 'none', borderRadius: 6, cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', textAlign: 'left' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <DownloadIcon /> {fmt === 'pdf' ? 'PDF' : 'Excel'}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          )}
           {user?.role === 'super_admin' && branches.length > 0 && (
             <select value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)} style={{ ...selectSt, width: isMobile ? '100%' : undefined }}>
               <option value="">All Branches</option>
@@ -895,60 +937,75 @@ export function ReportsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* Stat cards */}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 12 }}>
-            <StatCard label="Total Given" value={fGHS(givingTotal)} sub={`${givingPeriod} period`} accent="#4F6BED" />
+            <StatCard label="Total Given" value={fGHS(incomeChart.totalGiven)} sub={sortedIncMonths.length === 1 ? `${MONTH_NAMES[sortedIncMonths[0] - 1]} ${incYear}` : `${sortedIncMonths.length} months of ${incYear}`} accent="#4F6BED" />
             <StatCard label="Top Givers (Total)" value={topGivers.length > 0 ? fGHS(topGivers.reduce((s, g) => s + Number(g.total_given), 0)) : '—'} sub="Top 10 contributors" accent="#C8964A" />
-            <StatCard label="Categories" value={catBreakdown.length} sub="Giving categories with activity" accent="#7B93F5" />
+            <StatCard label="Categories" value={incomeChart.categories.length} sub="Giving categories with activity" accent="#7B93F5" />
           </div>
 
-          {/* Period toggle + Stacked bar */}
+          {/* Month/year filter + Stacked bar (real categories, indigo ramp) */}
           <div style={card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
               <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>
                 Monthly Giving by Category
               </div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                {(['3M', '6M', '12M'] as GivingPeriod[]).map(p => (
-                  <button key={p} style={periodBtn(givingPeriod === p)} onClick={() => setGivingPeriod(p)}>{p}</button>
-                ))}
-                <button
-                  onClick={() => setExportGiving('trend')}
-                  style={{ ...periodBtn(false), marginLeft: 4, display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                >
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => setIncMenuOpen(o => !o)} style={{ ...periodBtn(false), display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 150, justifyContent: 'space-between' }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>
+                      {sortedIncMonths.length === 0 ? 'Select months' : sortedIncMonths.length === 12 ? 'All months' : sortedIncMonths.map(m => MONTH_NAMES[m - 1].slice(0, 3)).join(', ')}
+                    </span>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </button>
+                  {incMenuOpen && (
+                    <>
+                      <div onClick={() => setIncMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 20 }} />
+                      <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 220, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', padding: 8, zIndex: 21 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px 8px' }}>
+                          <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-secondary)' }}>Months</span>
+                          <span role="button" onClick={() => setIncMonths(incMonths.length === 12 ? [] : Array.from({ length: 12 }, (_, i) => i + 1))} style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#4F6BED', cursor: 'pointer' }}>
+                            {incMonths.length === 12 ? 'Clear all' : 'Select all'}
+                          </span>
+                        </div>
+                        <div style={{ maxHeight: 240, overflowY: 'auto' }}>
+                          {MONTH_NAMES.map((name, i) => (
+                            <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 8px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', borderRadius: 6, cursor: 'pointer' }}
+                              onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')}
+                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                              <input type="checkbox" checked={incMonths.includes(i + 1)} onChange={() => toggleIncMonth(i + 1)} style={{ accentColor: '#4F6BED' }} />
+                              {name}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <select value={incYear} onChange={e => setIncYear(Number(e.target.value))} style={{ ...periodBtn(false), cursor: 'pointer', paddingRight: 8 }}>
+                  {expYearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+                <button onClick={() => setExportGiving('trend')} disabled={incomeChart.categories.length === 0} style={{ ...periodBtn(false), marginLeft: 4, display: 'inline-flex', alignItems: 'center', gap: 5, opacity: incomeChart.categories.length === 0 ? 0.5 : 1 }}>
                   <DownloadIcon /> Export
-                </button>
-                {/* Income & Expenditure account — the church's own accounting
-                    layout, separate from the generic CSV / Excel / PDF export */}
-                <button
-                  onClick={handleExportIncomeExpenditure}
-                  disabled={loadingGiving || givingByCat.length === 0}
-                  title={
-                    givingByCat.length === 0
-                      ? 'No giving data for this period'
-                      : 'Download the Income & Expenditure account for this period (PDF)'
-                  }
-                  style={{
-                    ...periodBtn(false),
-                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                    cursor: (loadingGiving || givingByCat.length === 0) ? 'not-allowed' : 'pointer',
-                    opacity: (loadingGiving || givingByCat.length === 0) ? 0.5 : 1,
-                  }}
-                >
-                  <DownloadIcon /> I&amp;E Account
                 </button>
               </div>
             </div>
-            {loadingGiving ? <Skeleton h={220} /> : givingByCat.length === 0 ? <EmptyState message="No giving data for this period" /> : (
-              <BarChart width={700} height={220} data={givingByCat} margin={{ top: 0, right: 8, bottom: 4, left: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
-                <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={v => fGHS(v)} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={64} />
-                <Tooltip content={<GivingTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="tithe" stackId="a" fill="#4F6BED" name="Tithe" radius={[0, 0, 0, 0]} minPointSize={0} isAnimationActive={false} />
-                <Bar dataKey="offering" stackId="a" fill="#C8964A" name="Offering" minPointSize={0} isAnimationActive={false} />
-                <Bar dataKey="building" stackId="a" fill="#7B93F5" name="Building" minPointSize={0} isAnimationActive={false} />
-                <Bar dataKey="other_amount" stackId="a" fill="#9CA3AF" name="Other" radius={[3, 3, 0, 0]} minPointSize={0} isAnimationActive={false} />
-              </BarChart>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)', marginBottom: 16 }}>
+              Pick the months and year to view. Applies to the chart and the CSV / Excel / PDF export.
+            </div>
+            {loadingGiving ? <Skeleton h={220} /> : sortedIncMonths.length === 0 ? <EmptyState message="Select at least one month to view" /> : incomeChart.categories.length === 0 ? <EmptyState message="No giving recorded for this range" /> : (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={incomeChart.data} margin={{ top: 0, right: 8, bottom: 4, left: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
+                  <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={v => fGHS(v)} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={64} />
+                  <Tooltip content={<ExpenseTooltip />} cursor={{ fill: 'var(--dm-bg-muted)', opacity: 0.4 }} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  {incomeChart.categories.map((c, i) => (
+                    <Bar key={c} dataKey={c} stackId="a" fill={incomeChart.colorOf.get(c)} name={c}
+                      radius={i === incomeChart.categories.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                      minPointSize={0} isAnimationActive animationBegin={0} animationDuration={900} animationEasing="ease-out" />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
             )}
           </div>
 
@@ -957,23 +1014,23 @@ export function ReportsPage() {
             {/* Category donut */}
             <div style={card}>
               <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', marginBottom: 16 }}>By Category</div>
-              {loadingGiving ? <Skeleton h={180} /> : catBreakdown.length === 0 ? <EmptyState message="No data" /> : (
+              {loadingGiving ? <Skeleton h={180} /> : incomeChart.catRows.length === 0 ? <EmptyState message="No data" /> : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <ResponsiveContainer width={160} height={160}>
                     <PieChart>
-                      <Pie data={catBreakdown} cx="50%" cy="50%" innerRadius={48} outerRadius={72} dataKey="total" paddingAngle={2}>
-                        {catBreakdown.map((_, i) => <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />)}
+                      <Pie data={incomeChart.catRows} cx="50%" cy="50%" innerRadius={48} outerRadius={72} dataKey="total" paddingAngle={2}>
+                        {incomeChart.catRows.map(c => <Cell key={c.category} fill={incomeChart.colorOf.get(c.category)} />)}
                       </Pie>
                       <Tooltip formatter={(v: number) => fGHSFull(v)} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {catBreakdown.map((c, i) => {
-                      const total = catBreakdown.reduce((s, r) => s + Number(r.total), 0)
+                    {incomeChart.catRows.map(c => {
+                      const total = incomeChart.totalGiven
                       const pct = total > 0 ? Math.round((Number(c.total) / total) * 100) : 0
                       return (
                         <div key={c.category} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: DONUT_COLORS[i % DONUT_COLORS.length], flexShrink: 0 }} />
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: incomeChart.colorOf.get(c.category), flexShrink: 0 }} />
                           <div style={{ flex: 1, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-body)', textTransform: 'capitalize' }}>{c.category}</div>
                           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: 'var(--dm-text-secondary)' }}>{pct}%</div>
                         </div>
@@ -1557,15 +1614,13 @@ export function ReportsPage() {
       {exportGiving === 'trend' && (
         <ExportModal
           title="Monthly Giving by Category"
-          columns={['Month', 'Tithe', 'Offering', 'Building', 'Other', 'Total']}
-          rows={givingByCat.map(r => [
-            monthLabel(r.month),
-            fGHSFull(r.tithe), fGHSFull(r.offering),
-            fGHSFull(r.building), fGHSFull(r.other_amount),
-            fGHSFull(Number(r.tithe) + Number(r.offering) + Number(r.building) + Number(r.other_amount)),
-          ])}
-          filename={`giving-by-category-${givingPeriod.toLowerCase()}`}
-          insights={givingCatInsights}
+          columns={['Month', ...incomeChart.categories, 'Total']}
+          rows={incomeChart.data.map(r => {
+            const cells = incomeChart.categories.map(c => fGHSFull(Number(r[c] ?? 0)))
+            const total = incomeChart.categories.reduce((sm, c) => sm + Number(r[c] ?? 0), 0)
+            return [monthLabel(String(r.month)), ...cells, fGHSFull(total)]
+          })}
+          filename={`giving-by-category-${incYear}`}
           onClose={() => setExportGiving(null)}
         />
       )}
