@@ -220,6 +220,14 @@ function EnvelopeIcon() {
   )
 }
 
+function TrashIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M2 3.5h10M5.5 3.5V2a1 1 0 011-1h1a1 1 0 011 1v1.5M5.5 6.5v4M8.5 6.5v4M3 3.5l.6 8a1 1 0 001 .9h4.8a1 1 0 001-.9l.6-8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 function ChevronDownIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
@@ -754,6 +762,132 @@ function PhotoLightbox({
             Close
           </button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Delete Member Modal ──────────────────────────────────────────────────────
+function DeleteMemberModal({
+  memberId, memberName, onClose, onDeleted,
+}: {
+  memberId: string
+  memberName: string
+  onClose: () => void
+  onDeleted: () => void
+}) {
+  const [checking, setChecking] = useState(true)
+  const [blockers, setBlockers] = useState<{ pledges: number; transactions: number } | null>(null)
+  const [typedName, setTypedName] = useState('')
+  const [deleting, setDeleting] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const [pledges, transactions] = await Promise.all([
+        supabase.from('pledges').select('id', { count: 'exact', head: true }).eq('member_id', memberId),
+        supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('member_id', memberId),
+      ])
+      if (cancelled) return
+      setBlockers({ pledges: pledges.count ?? 0, transactions: transactions.count ?? 0 })
+      setChecking(false)
+    })()
+    return () => { cancelled = true }
+  }, [memberId])
+
+  const isBlocked = !!blockers && (blockers.pledges > 0 || blockers.transactions > 0)
+  const nameMatches = typedName.trim().toLowerCase() === memberName.trim().toLowerCase()
+
+  const handleDelete = async () => {
+    if (!nameMatches) return
+    setDeleting(true)
+    const { error } = await supabase.from('members').delete().eq('id', memberId)
+    setDeleting(false)
+    if (error) {
+      toast.error(error.message)
+    } else {
+      toast.success('Member deleted')
+      onDeleted()
+    }
+  }
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div style={{ background: 'var(--dm-bg-card)', borderRadius: 12, border: '0.5px solid var(--dm-border)', padding: 24, width: 440, maxWidth: '90vw', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+        {checking ? (
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)' }}>
+            Checking for pledges and transactions…
+          </div>
+        ) : isBlocked ? (
+          <>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: '#DC2626', marginBottom: 10 }}>
+              Can't delete {memberName}
+            </div>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', lineHeight: 1.6, marginBottom: 16 }}>
+              This member has real financial history:
+              {blockers!.pledges > 0 && <div>&bull; {blockers!.pledges} pledge{blockers!.pledges > 1 ? 's' : ''}</div>}
+              {blockers!.transactions > 0 && <div>&bull; {blockers!.transactions} transaction{blockers!.transactions > 1 ? 's' : ''}</div>}
+              <div style={{ marginTop: 10 }}>
+                Deleting a member with existing pledges or transactions is not allowed, since financial records shouldn't disappear as a side effect. Remove or reassign those records individually first if this member genuinely needs to be deleted.
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={onClose}
+                style={{ padding: '8px 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13 }}
+              >
+                Close
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: '#DC2626', marginBottom: 10 }}>
+              Delete {memberName}?
+            </div>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', lineHeight: 1.6, marginBottom: 16 }}>
+              This permanently removes this member and their attendance, group memberships, and notes. This cannot be undone.
+              <div style={{ marginTop: 10 }}>
+                Type <strong>{memberName}</strong> to confirm:
+              </div>
+            </div>
+            <input
+              autoFocus
+              value={typedName}
+              onChange={e => setTypedName(e.target.value)}
+              placeholder={memberName}
+              style={{
+                width: '100%', height: 38, borderRadius: 8, border: '0.5px solid var(--dm-border)',
+                background: 'var(--dm-bg-card)', padding: '0 12px', marginBottom: 18, boxSizing: 'border-box',
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)',
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button
+                onClick={onClose}
+                style={{ padding: '8px 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={!nameMatches || deleting}
+                style={{
+                  padding: '8px 16px', borderRadius: 8, border: 'none',
+                  background: nameMatches ? '#DC2626' : 'var(--dm-border)',
+                  color: nameMatches ? 'white' : 'var(--dm-text-secondary)',
+                  cursor: nameMatches && !deleting ? 'pointer' : 'not-allowed',
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13,
+                }}
+              >
+                {deleting ? 'Deleting…' : 'Delete Member'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -1473,6 +1607,7 @@ export function MemberProfilePage() {
   const [photoUploading, setPhotoUploading] = useState(false)
   const [avatarHovered, setAvatarHovered] = useState(false)
   const [photoLightboxOpen, setPhotoLightboxOpen] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchMember = async () => {
@@ -1804,6 +1939,15 @@ export function MemberProfilePage() {
             />
           )}
 
+          {showDeleteModal && (
+            <DeleteMemberModal
+              memberId={member.id}
+              memberName={`${member.first_name} ${member.last_name}`}
+              onClose={() => setShowDeleteModal(false)}
+              onDeleted={() => navigate('/members')}
+            />
+          )}
+
           <div>
             <h1 style={{
               fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
@@ -1860,6 +2004,23 @@ export function MemberProfilePage() {
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
           >
             <EditIcon /> Edit Member
+          </button>
+
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              height: 38, padding: '0 14px', borderRadius: 8,
+              border: '0.5px solid #FCA5A5', background: 'var(--dm-bg-card)',
+              cursor: 'pointer', color: '#DC2626',
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+              fontWeight: 500, fontSize: 13,
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
+          >
+            <TrashIcon /> Delete Member
           </button>
         </div>
       </div>

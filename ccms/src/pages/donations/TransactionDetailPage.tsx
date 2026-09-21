@@ -108,6 +108,62 @@ function calculateStreak(txDates: string[]): number {
   return streak
 }
 
+function DeleteTransactionModal({
+  amount, memberName, categoryName, dateStr, onClose, onConfirm, deleting,
+}: {
+  amount: number
+  memberName: string
+  categoryName: string
+  dateStr: string
+  onClose: () => void
+  onConfirm: () => void
+  deleting: boolean
+}) {
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div style={{ background: 'var(--dm-bg-card)', borderRadius: 12, border: '0.5px solid var(--dm-border)', padding: 24, width: 420, maxWidth: '90vw', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: '#DC2626', marginBottom: 14 }}>
+          Delete this transaction?
+        </div>
+        <div style={{
+          background: 'var(--dm-bg-muted)', borderRadius: 8, padding: 14, marginBottom: 16,
+          fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', lineHeight: 1.8,
+        }}>
+          <div><strong>{formatAmount(amount)}</strong> &middot; {categoryName}</div>
+          <div>{memberName}</div>
+          <div style={{ color: 'var(--dm-text-secondary)' }}>{dateStr}</div>
+        </div>
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 20 }}>
+          This removes the record permanently and cannot be undone. It will no longer count in any totals or reports.
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+          <button
+            onClick={onClose}
+            style={{ padding: '8px 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13 }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={deleting}
+            style={{
+              padding: '8px 16px', borderRadius: 8, border: 'none',
+              background: '#DC2626', color: 'white',
+              cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? 0.6 : 1,
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13,
+            }}
+          >
+            {deleting ? 'Deleting…' : 'Delete Transaction'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function TransactionDetailPage() {
@@ -122,6 +178,7 @@ export function TransactionDetailPage() {
   const [streak,    setStreak]    = useState(0)
   const [history,   setHistory]   = useState<{ month: string; amount: number }[]>([])
   const [deleting,  setDeleting]  = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [orgName,   setOrgName]   = useState('')
 
   useEffect(() => {
@@ -212,8 +269,10 @@ export function TransactionDetailPage() {
       .then(({ data }) => { if (data) setOrgName(data.name) })
   }, [user?.org_id])
 
-  const handleDelete = async () => {
-    if (!tx || !window.confirm('Delete this transaction? This cannot be undone.')) return
+  const handleDelete = () => setShowDeleteModal(true)
+
+  const confirmDelete = async () => {
+    if (!tx) return
     setDeleting(true)
     const { error } = await supabase.from('transactions').delete().eq('id', tx.id)
     setDeleting(false)
@@ -894,6 +953,18 @@ export function TransactionDetailPage() {
           </div>
         </div>
       </div>
+
+      {showDeleteModal && tx && (
+        <DeleteTransactionModal
+          amount={tx.amount}
+          memberName={tx.member ? `${tx.member.first_name} ${tx.member.last_name}` : 'Anonymous'}
+          categoryName={tx.transaction_categories?.name ?? 'Uncategorised'}
+          dateStr={formatDate(tx.transaction_date)}
+          deleting={deleting}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={confirmDelete}
+        />
+      )}
     </>
   )
 }
