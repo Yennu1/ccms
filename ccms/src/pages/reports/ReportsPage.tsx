@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import {
   LineChart, Line, BarChart, Bar, ComposedChart,
@@ -18,8 +18,39 @@ import type {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ReportTab = 'giving' | 'attendance' | 'members' | 'groups'
+type ReportTab = 'giving' | 'expense' | 'attendance' | 'members' | 'groups'
+type ReportGroup = 'income' | 'expense' | 'others'
 type GivingPeriod = '3M' | '6M' | '12M'
+
+// which top-level group each sub-tab lives under
+const TAB_GROUP: Record<ReportTab, ReportGroup> = {
+  giving: 'income', expense: 'expense',
+  attendance: 'others', members: 'others', groups: 'others',
+}
+const GROUP_TABS: Record<ReportGroup, ReportTab[]> = {
+  income: ['giving'], expense: ['expense'], others: ['attendance', 'members', 'groups'],
+}
+const GROUP_LABEL: Record<ReportGroup, string> = { income: 'Income', expense: 'Expense', others: 'Others' }
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December']
+
+// One continuous ramp: deep indigo -> light indigo, then dark grey -> light grey.
+// Categories are ordered biggest-first, so index 0 (biggest) is the deepest.
+function expenseRamp(i: number, n: number): string {
+  if (n <= 1) return '#4F6BED'
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+  const hex = (r: number, g: number, b: number) =>
+    '#' + [r, g, b].map(x => Math.round(x).toString(16).padStart(2, '0')).join('')
+  const t = i / (n - 1)
+  const split = 0.6
+  if (t <= split) {
+    const u = t / split // deep indigo #26215C -> light indigo #AFA9EC
+    return hex(lerp(38, 175, u), lerp(33, 169, u), lerp(92, 236, u))
+  }
+  const u = (t - split) / (1 - split) // dark grey #3F3F46 -> light grey #E5E7EB
+  return hex(lerp(63, 229, u), lerp(63, 231, u), lerp(70, 235, u))
+}
 type AttWeeks = 4 | 8 | 12 | 24
 
 interface Branch { id: string; name: string }
@@ -221,6 +252,31 @@ function GivingTooltip({ active, payload, label }: { active?: boolean; payload?:
   )
 }
 
+function ExpenseTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string; fill: string }>; label?: string }) {
+  if (!active || !payload?.length) return null
+  const rows = payload.filter(p => (p.value ?? 0) > 0)
+  const total = payload.reduce((s, p) => s + (p.value ?? 0), 0)
+  return (
+    <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 8, padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', maxHeight: 280, overflowY: 'auto' }}>
+      <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, color: 'var(--dm-text-secondary)', marginBottom: 6 }}>{monthLabel(label ?? '')}</div>
+      {rows.length === 0 ? (
+        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: 'var(--dm-text-muted)' }}>No expenses</div>
+      ) : rows.map(p => (
+        <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, color: 'var(--dm-text-body)', marginBottom: 2 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--dm-text-secondary)' }}>
+            <span style={{ width: 9, height: 9, borderRadius: 2, background: p.fill, border: '0.5px solid rgba(0,0,0,0.12)', flexShrink: 0 }} />
+            {p.name}
+          </span>
+          <span>{fGHSFull(p.value)}</span>
+        </div>
+      ))}
+      <div style={{ borderTop: '0.5px solid var(--dm-border-subtle)', marginTop: 6, paddingTop: 6, display: 'flex', justifyContent: 'space-between', gap: 16, fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: 'var(--dm-text-ink)' }}>
+        <span>Total</span><span>{fGHSFull(total)}</span>
+      </div>
+    </div>
+  )
+}
+
 function AttTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
   if (!active || !payload?.length) return null
   return (
@@ -242,12 +298,21 @@ export function ReportsPage() {
   // finance_officer only sees Giving; guard also covers URL manipulation (?tab=members)
   const role = user?.role
   const visibleReportTabs: ReportTab[] = role === 'finance_officer'
-    ? ['giving']
-    : ['giving', 'attendance', 'members', 'groups']
+    ? ['giving', 'expense']
+    : ['giving', 'expense', 'attendance', 'members', 'groups']
 
   const rawTab = (searchParams.get('tab') ?? 'giving') as ReportTab
   const activeTab = visibleReportTabs.includes(rawTab) ? rawTab : 'giving'
   function setTab(t: ReportTab) { setSearchParams({ tab: t }) }
+
+  // Top-level group (Income / Expense / Others) derived from the active sub-tab.
+  const activeGroup = TAB_GROUP[activeTab]
+  const visibleGroups: ReportGroup[] = (['income', 'expense', 'others'] as ReportGroup[])
+    .filter(g => GROUP_TABS[g].some(t => visibleReportTabs.includes(t)))
+  function setGroup(g: ReportGroup) {
+    const first = GROUP_TABS[g].find(t => visibleReportTabs.includes(t))
+    if (first) setTab(first)
+  }
 
   // Shared
   const [branches, setBranches] = useState<Branch[]>([])
@@ -264,6 +329,20 @@ export function ReportsPage() {
   const [givingByBranch, setGivingByBranch] = useState<GivingByBranch[]>([])
   // Expense rows for the selected period — feeds the Income & Expenditure PDF
   const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([])
+
+  // Expense report tab
+  const nowDate = new Date()
+  const [expYear, setExpYear] = useState<number>(nowDate.getFullYear())
+  const [expMonths, setExpMonths] = useState<number[]>([nowDate.getMonth() + 1]) // default: current month
+  const [expMenuOpen, setExpMenuOpen] = useState(false)
+  const [expRows, setExpRows] = useState<ExpenseRow[]>([])
+  const [loadingExpense, setLoadingExpense] = useState(false)
+  const [exportExpense, setExportExpense] = useState<'trend' | 'cats' | null>(null)
+  const expYearOptions = Array.from({ length: 6 }, (_, i) => nowDate.getFullYear() + i) // this year + next 5
+  const sortedExpMonths = [...expMonths].sort((a, b) => a - b)
+  function toggleExpMonth(m: number) {
+    setExpMonths(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m])
+  }
   const [loadingGiving, setLoadingGiving] = useState(false)
   const [exportGiving, setExportGiving] = useState<'trend' | 'givers' | null>(null)
 
@@ -342,6 +421,29 @@ export function ReportsPage() {
   }, [user?.org_id, selectedBranch, activeTab, givingPeriod])
 
   useEffect(() => { fetchGiving() }, [fetchGiving])
+
+  // ── Expense report data ──────────────────────────────────────────────────────
+  const fetchExpense = useCallback(async () => {
+    if (!user?.org_id || activeTab !== 'expense') return
+    if (sortedExpMonths.length === 0) { setExpRows([]); return }
+    setLoadingExpense(true)
+    try {
+      const start = `${expYear}-01-01`
+      const end = `${expYear}-12-31`
+      let q = supabase.from('expenses')
+        .select('amount, expense_date, transaction_categories(name)')
+        .eq('org_id', user.org_id)
+        .gte('expense_date', start)
+        .lte('expense_date', end)
+      if (branchId) q = q.eq('branch_id', branchId)
+      const { data } = await q
+      setExpRows((data ?? []) as unknown as ExpenseRow[])
+    } finally {
+      setLoadingExpense(false)
+    }
+  }, [user?.org_id, branchId, activeTab, expYear, sortedExpMonths.join(',')])
+
+  useEffect(() => { fetchExpense() }, [fetchExpense])
 
   // ── Attendance data ──────────────────────────────────────────────────────────
 
@@ -646,6 +748,51 @@ export function ReportsPage() {
     return g.name.toLowerCase().includes(q) || (g.ministry_name ?? '').toLowerCase().includes(q)
   })
 
+  // ── Expense report derivations ───────────────────────────────────────────────
+  // Option A: every category is its own stacked series, coloured by the indigo→
+  // grey ramp, ordered biggest-first. No "Other" bucket.
+  const expenseChart = useMemo(() => {
+    const monthsWanted = sortedExpMonths.map(m => `${expYear}-${String(m).padStart(2, '0')}`)
+    // total per category across the window, to rank them
+    const catTotals = new Map<string, number>()
+    // per-month, per-category amounts
+    const perMonth = new Map<string, Map<string, number>>()
+    monthsWanted.forEach(ym => perMonth.set(ym, new Map()))
+    expRows.forEach(e => {
+      const ym = String(e.expense_date).slice(0, 7)
+      if (!perMonth.has(ym)) return
+      const name = e.transaction_categories?.name ?? 'Uncategorised'
+      catTotals.set(name, (catTotals.get(name) ?? 0) + Number(e.amount))
+      const mm = perMonth.get(ym)!
+      mm.set(name, (mm.get(name) ?? 0) + Number(e.amount))
+    })
+    // categories ordered biggest first
+    const categories = [...catTotals.entries()].sort((a, b) => b[1] - a[1]).map(([n]) => n)
+    const colorOf = new Map(categories.map((n, i) => [n, expenseRamp(i, categories.length)]))
+    // one row per selected month, every category present (0 when absent → blank stack)
+    const data = monthsWanted.map(ym => {
+      const row: Record<string, number | string> = { month: ym }
+      const mm = perMonth.get(ym)!
+      categories.forEach(c => { row[c] = mm.get(c) ?? 0 })
+      return row
+    })
+    const catRows = [...catTotals.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([category, total]) => ({
+        category, total,
+        cnt: expRows.filter(e => (e.transaction_categories?.name ?? 'Uncategorised') === category
+          && perMonth.has(String(e.expense_date).slice(0, 7))).length,
+      }))
+    const totalSpent = [...catTotals.values()].reduce((s, v) => s + v, 0)
+    // biggest month by total
+    let biggest = ''; let biggestVal = -1
+    perMonth.forEach((mm, ym) => {
+      const t = [...mm.values()].reduce((s, v) => s + v, 0)
+      if (t > biggestVal) { biggestVal = t; biggest = ym }
+    })
+    return { data, categories, colorOf, catRows, totalSpent, biggest: biggestVal > 0 ? biggest : '' }
+  }, [expRows, expYear, sortedExpMonths.join(',')])
+
   // ── Styles ───────────────────────────────────────────────────────────────────
 
   const card: React.CSSProperties = {
@@ -699,27 +846,49 @@ export function ReportsPage() {
         </div>
       </div>
 
-      {/* Tab navigation */}
-      <div style={{ display: 'flex', gap: 2, borderBottom: '0.5px solid var(--dm-border-soft)', marginBottom: 28 }}>
-        {visibleReportTabs.map(t => (
+      {/* Top-level group navigation: Income / Expense / Others */}
+      <div style={{ display: 'flex', gap: 2, borderBottom: '0.5px solid var(--dm-border-soft)', marginBottom: GROUP_TABS[activeGroup].length > 1 ? 14 : 28 }}>
+        {visibleGroups.map(g => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={g}
+            onClick={() => setGroup(g)}
             style={{
               height: 38, padding: '0 16px', border: 'none', background: 'none',
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: activeTab === t ? 600 : 400,
-              fontSize: 13.5, cursor: 'pointer', color: activeTab === t ? '#4F6BED' : '#6B7280',
-              borderBottom: activeTab === t ? '2px solid #4F6BED' : '2px solid transparent',
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: activeGroup === g ? 600 : 400,
+              fontSize: 13.5, cursor: 'pointer', color: activeGroup === g ? '#4F6BED' : '#6B7280',
+              borderBottom: activeGroup === g ? '2px solid #4F6BED' : '2px solid transparent',
               marginBottom: -1, transition: 'color 0.1s',
-              textTransform: 'capitalize',
             }}
-            onMouseEnter={e => { if (activeTab !== t) e.currentTarget.style.color = 'var(--dm-text-body)' }}
-            onMouseLeave={e => { if (activeTab !== t) e.currentTarget.style.color = 'var(--dm-text-secondary)' }}
+            onMouseEnter={e => { if (activeGroup !== g) e.currentTarget.style.color = 'var(--dm-text-body)' }}
+            onMouseLeave={e => { if (activeGroup !== g) e.currentTarget.style.color = 'var(--dm-text-secondary)' }}
           >
-            {t === 'giving' ? 'Giving' : t === 'attendance' ? 'Attendance' : t === 'members' ? 'Members' : 'Groups'}
+            {GROUP_LABEL[g]}
           </button>
         ))}
       </div>
+
+      {/* Sub-tab navigation — only when the active group has more than one sub-tab (Others) */}
+      {GROUP_TABS[activeGroup].length > 1 && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 28, flexWrap: 'wrap' }}>
+          {GROUP_TABS[activeGroup].filter(t => visibleReportTabs.includes(t)).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                height: 30, padding: '0 14px', borderRadius: 999,
+                border: activeTab === t ? '0.5px solid #111827' : '0.5px solid var(--dm-border)',
+                background: activeTab === t ? '#111827' : 'var(--dm-bg-card)',
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500,
+                fontSize: 13, cursor: 'pointer',
+                color: activeTab === t ? '#fff' : 'var(--dm-text-body)',
+                transition: 'all 0.1s', textTransform: 'capitalize',
+              }}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── GIVING TAB ─────────────────────────────────────────────────────── */}
       {activeTab === 'giving' && (
@@ -876,6 +1045,149 @@ export function ReportsPage() {
                         <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-secondary)' }}>{fDate(g.last_gift_date)}</td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── EXPENSE TAB ────────────────────────────────────────────────────── */}
+      {activeTab === 'expense' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Stat cards — default to current month, follow the filter once changed */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(3, 1fr)', gap: 12 }}>
+            <StatCard label="Total Spent" value={fGHS(expenseChart.totalSpent)} sub={sortedExpMonths.length === 1 ? `${MONTH_NAMES[sortedExpMonths[0] - 1]} ${expYear}` : `${sortedExpMonths.length} months of ${expYear}`} accent="#4F6BED" />
+            <StatCard label="Categories" value={expenseChart.categories.length} sub="Expense categories with activity" accent="#7B93F5" />
+            <StatCard label="Biggest Month" value={expenseChart.biggest ? monthLabel(expenseChart.biggest) : '—'} sub="Highest spend in range" accent="#C8964A" />
+          </div>
+
+          {/* Month/year filter + Stacked bar */}
+          <div style={card}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)' }}>
+                Monthly Expense by Category
+              </div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                {/* Month multi-select */}
+                <div style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setExpMenuOpen(o => !o)}
+                    style={{ ...periodBtn(false), display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 150, justifyContent: 'space-between' }}
+                  >
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>
+                      {sortedExpMonths.length === 0 ? 'Select months'
+                        : sortedExpMonths.length === 12 ? 'All months'
+                        : sortedExpMonths.map(m => MONTH_NAMES[m - 1].slice(0, 3)).join(', ')}
+                    </span>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </button>
+                  {expMenuOpen && (
+                    <>
+                      <div onClick={() => setExpMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 20 }} />
+                      <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 220, background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border-soft)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', padding: 8, zIndex: 21 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px 8px' }}>
+                          <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-secondary)' }}>Months</span>
+                          <span
+                            role="button"
+                            onClick={() => setExpMonths(expMonths.length === 12 ? [] : Array.from({ length: 12 }, (_, i) => i + 1))}
+                            style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#4F6BED', cursor: 'pointer' }}
+                          >
+                            {expMonths.length === 12 ? 'Clear all' : 'Select all'}
+                          </span>
+                        </div>
+                        <div style={{ maxHeight: 240, overflowY: 'auto' }}>
+                          {MONTH_NAMES.map((name, i) => {
+                            const m = i + 1
+                            return (
+                              <label key={m} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 8px', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', borderRadius: 6, cursor: 'pointer' }}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                                <input type="checkbox" checked={expMonths.includes(m)} onChange={() => toggleExpMonth(m)} style={{ accentColor: '#4F6BED' }} />
+                                {name}
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+                {/* Year select */}
+                <select value={expYear} onChange={e => setExpYear(Number(e.target.value))} style={{ ...periodBtn(false), cursor: 'pointer', paddingRight: 8 }}>
+                  {expYearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+                <button
+                  onClick={() => setExportExpense('trend')}
+                  disabled={expenseChart.categories.length === 0}
+                  style={{ ...periodBtn(false), marginLeft: 4, display: 'inline-flex', alignItems: 'center', gap: 5, opacity: expenseChart.categories.length === 0 ? 0.5 : 1 }}
+                >
+                  <DownloadIcon /> Export
+                </button>
+              </div>
+            </div>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)', marginBottom: 16 }}>
+              Pick the months and year to view. Applies to the chart and every export.
+            </div>
+            {loadingExpense ? <Skeleton h={220} /> : sortedExpMonths.length === 0 ? <EmptyState message="Select at least one month to view" /> : expenseChart.categories.length === 0 ? <EmptyState message="No expenses recorded for this range" /> : (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={expenseChart.data} margin={{ top: 0, right: 8, bottom: 4, left: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--dm-chart-grid)" vertical={false} />
+                  <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={v => fGHS(v)} tick={{ fontSize: 11, fill: 'var(--dm-chart-tick)' }} axisLine={false} tickLine={false} width={64} />
+                  <Tooltip content={<ExpenseTooltip />} cursor={{ fill: 'var(--dm-bg-muted)', opacity: 0.4 }} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  {expenseChart.categories.map((c, i) => (
+                    <Bar
+                      key={c}
+                      dataKey={c}
+                      stackId="a"
+                      fill={expenseChart.colorOf.get(c)}
+                      name={c}
+                      radius={i === expenseChart.categories.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                      minPointSize={0}
+                      isAnimationActive
+                      animationBegin={0}
+                      animationDuration={900}
+                      animationEasing="ease-out"
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* Category breakdown table */}
+          <div style={card}>
+            <SectionHeader title="By Category" onExport={expenseChart.catRows.length > 0 ? () => setExportExpense('cats') : undefined} />
+            {loadingExpense ? <Skeleton h={180} /> : expenseChart.catRows.length === 0 ? <EmptyState message="No expenses recorded for this range" /> : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={th}>Category</th>
+                      <th style={{ ...th, textAlign: 'right' }}>Entries</th>
+                      <th style={{ ...th, textAlign: 'right' }}>Total Spent</th>
+                      <th style={{ ...th, textAlign: 'right' }}>Share</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {expenseChart.catRows.map((c, i) => {
+                      const grand = expenseChart.totalSpent
+                      const pct = grand > 0 ? Math.round((Number(c.total) / grand) * 100) : 0
+                      return (
+                        <tr key={c.category} style={{ background: i % 2 === 0 ? 'var(--dm-bg-card)' : 'var(--dm-bg-surface)' }}>
+                          <td style={{ ...td, display: 'flex', alignItems: 'center', gap: 8, textTransform: 'capitalize', fontWeight: 500, color: 'var(--dm-text-ink)' }}>
+                            <span style={{ width: 10, height: 10, borderRadius: 3, background: expenseChart.colorOf.get(c.category), border: '0.5px solid rgba(0,0,0,0.12)', flexShrink: 0 }} />
+                            {c.category}
+                          </td>
+                          <td style={{ ...td, textAlign: 'right', color: 'var(--dm-text-secondary)' }}>{c.cnt}</td>
+                          <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, color: 'var(--dm-text-ink)' }}>{fGHSFull(c.total)}</td>
+                          <td style={{ ...td, textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--dm-text-secondary)' }}>{pct}%</td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1267,6 +1579,28 @@ export function ReportsPage() {
           ])}
           filename="top-givers"
           onClose={() => setExportGiving(null)}
+        />
+      )}
+      {exportExpense === 'trend' && (
+        <ExportModal
+          title="Monthly Expense by Category"
+          columns={['Month', ...expenseChart.categories, 'Total']}
+          rows={expenseChart.data.map(r => {
+            const cells = expenseChart.categories.map(c => fGHSFull(Number(r[c] ?? 0)))
+            const total = expenseChart.categories.reduce((s, c) => s + Number(r[c] ?? 0), 0)
+            return [monthLabel(String(r.month)), ...cells, fGHSFull(total)]
+          })}
+          filename={`expense-by-category-${expYear}`}
+          onClose={() => setExportExpense(null)}
+        />
+      )}
+      {exportExpense === 'cats' && (
+        <ExportModal
+          title="Expense by Category"
+          columns={['Category', 'Entries', 'Total Spent']}
+          rows={expenseChart.catRows.map(c => [c.category, c.cnt, fGHSFull(c.total)])}
+          filename={`expense-categories-${expYear}`}
+          onClose={() => setExportExpense(null)}
         />
       )}
       {exportAtRisk && (
