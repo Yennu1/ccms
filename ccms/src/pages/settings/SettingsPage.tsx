@@ -14,6 +14,7 @@ interface Category {
   name: string
   type: 'income' | 'expense'
   is_default: boolean
+  allow_individual: boolean
   created_at: string
   usage_count: number
 }
@@ -457,7 +458,7 @@ function CategoriesContent({ orgId }: { orgId: string }) {
 
     const { data: cats, error } = await supabase
       .from('transaction_categories')
-      .select('id, org_id, name, type, is_default, created_at')
+      .select('id, org_id, name, type, is_default, allow_individual, created_at')
       .eq('org_id', orgId)
       .order('name')
 
@@ -490,6 +491,20 @@ function CategoriesContent({ orgId }: { orgId: string }) {
   useEffect(() => { fetchCategories() }, [fetchCategories])
 
   const canDelete = (cat: Category) => cat.usage_count === 0 && !cat.is_default
+
+  async function toggleIndividual(cat: Category) {
+    const next = !cat.allow_individual
+    // optimistic
+    setCategories(prev => prev.map(c => c.id === cat.id ? { ...c, allow_individual: next } : c))
+    const { error } = await supabase
+      .from('transaction_categories')
+      .update({ allow_individual: next })
+      .eq('id', cat.id)
+    if (error) {
+      setCategories(prev => prev.map(c => c.id === cat.id ? { ...c, allow_individual: !next } : c))
+      toast.error('Failed to update category')
+    }
+  }
 
   const deleteTooltip = (cat: Category) => {
     if (cat.is_default) return 'Default category cannot be deleted'
@@ -547,6 +562,7 @@ function CategoriesContent({ orgId }: { orgId: string }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 18px', borderBottom: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-subtle)' }}>
             <div style={{ flex: 1, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, color: 'var(--dm-text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Name</div>
             <div style={{ width: 70, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, color: 'var(--dm-text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Type</div>
+            <div style={{ width: 150, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, color: 'var(--dm-text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Personal tab</div>
             <div style={{ width: 100, textAlign: 'right', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, color: 'var(--dm-text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Usage</div>
             <div style={{ width: 64, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, color: 'var(--dm-text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}></div>
             <div style={{ width: 64 }}></div>
@@ -574,6 +590,28 @@ function CategoriesContent({ orgId }: { orgId: string }) {
                 }}>
                   {cat.type === 'income' ? 'Income' : 'Expense'}
                 </span>
+              </div>
+
+              {/* Personal-tab toggle (income only) */}
+              <div style={{ width: 150, display: 'flex', alignItems: 'center', gap: 10 }}>
+                {cat.type === 'income' ? (
+                  <>
+                    <button
+                      onClick={() => toggleIndividual(cat)}
+                      aria-label={`Toggle ${cat.name} on the Personal Offering tab`}
+                      style={{ width: 38, height: 22, borderRadius: 999, border: 'none', background: cat.allow_individual ? '#4F6BED' : '#D1D5DB', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.12s' }}
+                    >
+                      <span style={{ position: 'absolute', top: 2, left: cat.allow_individual ? 18 : 2, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.12s', boxShadow: '0 1px 2px rgba(0,0,0,0.18)' }} />
+                    </button>
+                    {cat.allow_individual && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: 6, background: '#EDEDED', color: '#111827', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11, whiteSpace: 'nowrap' }}>
+                        On personal tab
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)' }}>—</span>
+                )}
               </div>
 
               {/* Usage count */}
