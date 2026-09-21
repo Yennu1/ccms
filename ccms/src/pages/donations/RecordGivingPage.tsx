@@ -24,7 +24,7 @@ const givingSchema = z.object({
   notes:            z.string().optional(),
   branch_id:        z.string().min(1, 'Please select a branch'),
 }).superRefine((data, ctx) => {
-  if (!data.is_collective && (!data.category_id || data.category_id.length === 0)) {
+  if (!data.category_id || data.category_id.length === 0) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Please select a category', path: ['category_id'] })
   }
 })
@@ -33,17 +33,12 @@ type FormValues = z.infer<typeof givingSchema>
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface DbMember   { id: string; first_name: string; last_name: string; member_number: string }
-interface DbCategory { id: string; name: string }
+interface DbMember   { id: string; first_name: string; last_name: string; member_number: string; photo_url: string | null }
+interface DbCategory { id: string; name: string; type: string; allow_individual: boolean }
 interface DbBranch   { id: string; name: string }
 interface DbEvent    { id: string; name: string; starts_at: string }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const COLLECTIVE_OFFERING_TYPES = [
-  'Sunday Offering', 'Midweek Offering', 'Special Offering',
-  'Harvest', 'Thanksgiving', 'Building Fund', 'Other',
-]
 
 const CAT_STYLE: Record<string, { dot: string; bg: string; color: string }> = {
   tithe:        { dot: '#C8964A', bg: '#FEF6E5', color: '#8A6418' },
@@ -59,9 +54,9 @@ const METHOD_LABELS: Record<string, string> = {
 }
 
 const MOMO_NETWORKS = [
-  { key: 'mtn',        label: 'MTN',        color: '#F59E0B' },
-  { key: 'vodafone',   label: 'Vodafone',   color: '#EF4444' },
-  { key: 'airteltigo', label: 'AirtelTigo', color: '#3B82F6' },
+  { key: 'mtn',        label: 'MTN',        color: '#212529', markBg: '#FDCC00', markFg: '#212529', markRing: '' },
+  { key: 'telecel',    label: 'Telecel',    color: '#E32526', markBg: '#E32526', markFg: '#FFFFFF', markRing: '#CCCCCC' },
+  { key: 'airteltigo', label: 'AirtelTigo', color: '#285AE6', markBg: '#285AE6', markFg: '#FFFFFF', markRing: '' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -85,27 +80,6 @@ function formatEventDate(dateStr: string) {
   try {
     return new Date(dateStr).toLocaleDateString('en-GH', { month: 'short', day: 'numeric', year: 'numeric' })
   } catch { return dateStr }
-}
-
-function resolveCollectiveCategoryId(offeringType: string, categories: DbCategory[]): string {
-  const lower = offeringType.toLowerCase()
-  let match: DbCategory | undefined
-  if (lower.includes('building')) {
-    match = categories.find(c => c.name.toLowerCase().includes('building'))
-  } else if (lower === 'thanksgiving' || lower === 'harvest') {
-    match = categories.find(c => c.name.toLowerCase().includes('thanksgiving'))
-    if (!match) match = categories.find(c => c.name.toLowerCase().includes('special'))
-  } else if (lower.includes('special')) {
-    match = categories.find(c => c.name.toLowerCase().includes('special'))
-    if (!match) match = categories.find(c => c.name.toLowerCase().includes('offering'))
-  } else {
-    match = categories.find(c => {
-      const n = c.name.toLowerCase()
-      return n.includes('offering') && !n.includes('special')
-    })
-    if (!match) match = categories.find(c => c.name.toLowerCase().includes('offering'))
-  }
-  return match?.id ?? categories[0]?.id ?? ''
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -143,6 +117,10 @@ export function RecordGivingPage() {
   const isAnonymous        = watch('is_anonymous')
   const isCollective       = watch('is_collective')
   const selectedCategoryId = watch('category_id')
+
+  // Personal Offering tab shows only income categories the admin marked
+  // allow_individual; Collective shows every income category.
+  const visibleCategories = isCollective ? categories : categories.filter(c => c.allow_individual)
   const selectedMethod     = watch('payment_method')
   const selectedMemberId   = watch('member_id')
   const amountValue        = watch('amount')
@@ -152,6 +130,14 @@ export function RecordGivingPage() {
 
   const selectedMember   = members.find(m => m.id === selectedMemberId)
   const selectedCategory = categories.find(c => c.id === selectedCategoryId)
+
+  // If a tab switch hides the currently selected category, clear it.
+  useEffect(() => {
+    if (selectedCategoryId && !visibleCategories.some(c => c.id === selectedCategoryId)) {
+      setValue('category_id', undefined)
+    }
+  }, [isCollective, visibleCategories, selectedCategoryId, setValue])
+
   const selectedEvent    = events.find(e => e.id === selectedEventId)
   const filteredMembers  = members.filter(m => {
     if (!memberSearch) return true
@@ -166,13 +152,14 @@ export function RecordGivingPage() {
       setDataLoading(true)
       const [memRes, catRes, branchRes, eventRes] = await Promise.all([
         supabase.from('members')
-          .select('id, first_name, last_name, member_number')
+          .select('id, first_name, last_name, member_number, photo_url')
           .eq('org_id', user.org_id)
           .eq('membership_status', 'active')
           .order('first_name'),
         supabase.from('transaction_categories')
-          .select('id, name')
+          .select('id, name, type, allow_individual')
           .eq('org_id', user.org_id)
+          .eq('type', 'income')
           .order('name'),
         supabase.from('branches')
           .select('id, name')
@@ -187,7 +174,6 @@ export function RecordGivingPage() {
       if (!catRes.error) {
         const cats = (catRes.data ?? []) as DbCategory[]
         setCategories(cats)
-        if (cats.length > 0) setValue('category_id', cats[0].id)
       }
       if (!branchRes.error) {
         const brs = (branchRes.data ?? []) as DbBranch[]
@@ -204,9 +190,7 @@ export function RecordGivingPage() {
     if (!user) return
     setSubmitting(true)
 
-    const category_id = data.is_collective
-      ? resolveCollectiveCategoryId(data.offering_type ?? 'Sunday Offering', categories)
-      : (data.category_id || null)
+    const category_id = data.category_id || null
 
     const { error } = await supabase.from('transactions').insert({
       org_id:           user.org_id,
@@ -304,7 +288,7 @@ export function RecordGivingPage() {
         </span>
         <div style={{ display: 'flex', background: '#F4F5F7', borderRadius: 8, padding: 3, gap: 2 }}>
           {[
-            { label: 'Individual Member', value: false },
+            { label: 'Personal Offering', value: false },
             { label: 'Collective Offering', value: true },
           ].map(({ label, value }) => {
             const active = isCollective === value
@@ -382,9 +366,13 @@ export function RecordGivingPage() {
                     <label style={fieldLabel}>Member</label>
                     {selectedMember ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 38, padding: '0 10px', border: '1.5px solid #4F6BED', borderRadius: 8, background: '#EEF1FE' }}>
-                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          {selectedMember.first_name[0]}{selectedMember.last_name[0]}
-                        </div>
+                        {selectedMember.photo_url ? (
+                          <img src={selectedMember.photo_url} alt="" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                        ) : (
+                          <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#4F6BED', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {selectedMember.first_name[0]}{selectedMember.last_name[0]}
+                          </div>
+                        )}
                         <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#1B2352', flex: 1 }}>
                           {selectedMember.first_name} {selectedMember.last_name}
                         </span>
@@ -424,9 +412,13 @@ export function RecordGivingPage() {
                                 onMouseDown={() => { setValue('member_id', m.id); setMemberSearch(''); setMemberDropdownOpen(false) }}
                                 style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', cursor: 'pointer', background: 'var(--dm-bg-card)' }}
                               >
-                                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#E8ECF9', color: '#4F6BED', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                  {m.first_name[0]}{m.last_name[0]}
-                                </div>
+                                {m.photo_url ? (
+                                  <img src={m.photo_url} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                                ) : (
+                                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#E8ECF9', color: '#4F6BED', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    {m.first_name[0]}{m.last_name[0]}
+                                  </div>
+                                )}
                                 <div>
                                   <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#111827' }}>{m.first_name} {m.last_name}</div>
                                   <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#9CA3AF' }}>{m.member_number}</div>
@@ -446,55 +438,33 @@ export function RecordGivingPage() {
             <div style={card}>
               <div style={sectionLabel}>{isCollective ? 'Offering Details' : 'Giving Details'}</div>
 
-              {isCollective ? (
-                <div style={{ marginBottom: 20 }}>
-                  <label style={fieldLabel}>Offering Type</label>
-                  <select
-                    className="rg-select"
-                    {...register('offering_type')}
-                    style={{ ...inputBase, padding: '0 12px', cursor: 'pointer' } as React.CSSProperties}
-                  >
-                    {COLLECTIVE_OFFERING_TYPES.map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <>
-                  <label style={fieldLabel}>Category</label>
-                  {dataLoading ? (
-                    <div style={{ height: 36, background: '#F3F4F6', borderRadius: 8, marginBottom: 20 }} />
-                  ) : (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: errors.category_id ? 4 : 20 }}>
-                      {categories.map(c => {
-                        const s = getCatStyle(c.name)
-                        const active = selectedCategoryId === c.id
-                        return (
-                          <button
-                            key={c.id}
-                            type="button"
-                            className="cat-pill"
-                            onClick={() => setValue('category_id', c.id)}
-                            style={{
-                              display: 'inline-flex', alignItems: 'center', gap: 6,
-                              padding: '6px 12px', borderRadius: 999, cursor: 'pointer',
-                              border: active ? `1.5px solid ${s.dot}` : '1.5px solid transparent',
-                              background: active ? s.bg : '#F4F5F7',
-                              color: active ? s.color : '#6B7280',
-                              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                              fontWeight: 600, fontSize: 12.5, transition: 'all 0.12s',
-                            }}
-                          >
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: active ? s.dot : '#D1D5DB' }} />
-                            {c.name}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                  {errors.category_id && <div style={{ ...errorStyle, marginBottom: 16 }}>{errors.category_id.message}</div>}
-                </>
-              )}
+              <>
+                <label style={fieldLabel}>Category</label>
+                {dataLoading ? (
+                  <div style={{ height: 40, background: '#F3F4F6', borderRadius: 8, marginBottom: 20 }} />
+                ) : visibleCategories.length === 0 ? (
+                  <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF', padding: '10px 0', marginBottom: 16 }}>
+                    {isCollective
+                      ? 'No income categories exist yet. An admin can add them in Settings → Categories.'
+                      : 'No categories are enabled for personal giving yet. An admin can turn them on in Settings → Categories.'}
+                  </div>
+                ) : (
+                  <div style={{ marginBottom: errors.category_id ? 4 : 20 }}>
+                    <select
+                      className="rg-select"
+                      value={selectedCategoryId ?? ''}
+                      onChange={e => setValue('category_id', e.target.value || undefined, { shouldValidate: true })}
+                      style={{ ...inputBase, padding: '0 12px', cursor: 'pointer' } as React.CSSProperties}
+                    >
+                      <option value="">Select a category</option>
+                      {visibleCategories.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {errors.category_id && <div style={{ ...errorStyle, marginBottom: 16 }}>{errors.category_id.message}</div>}
+              </>
 
               <label style={fieldLabel}>Amount</label>
               <div style={{ position: 'relative', marginBottom: errors.amount ? 4 : isCollective ? 0 : 20 }}>
@@ -523,9 +493,9 @@ export function RecordGivingPage() {
                         onClick={() => setValue('payment_method', m)}
                         style={{
                           height: 38, borderRadius: 8, cursor: 'pointer',
-                          border: selectedMethod === m ? '1.5px solid #4F6BED' : '1.5px solid #E5E7EB',
-                          background: selectedMethod === m ? '#EEF1FE' : 'var(--dm-bg-card)',
-                          color: selectedMethod === m ? '#4F6BED' : '#6B7280',
+                          border: selectedMethod === m ? '1.5px solid #1B2352' : '1.5px solid #E5E7EB',
+                          background: selectedMethod === m ? '#1B2352' : 'var(--dm-bg-card)',
+                          color: selectedMethod === m ? '#fff' : '#6B7280',
                           fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                           fontWeight: 600, fontSize: 12.5, transition: 'all 0.12s',
                         }}
@@ -538,25 +508,44 @@ export function RecordGivingPage() {
                   {selectedMethod === 'momo' && (
                     <div style={{ background: '#FAFBFE', border: '0.5px solid #E8ECF9', borderRadius: 10, padding: 14, marginTop: 14 }}>
                       <label style={{ ...fieldLabel, marginBottom: 10 }}>Network</label>
-                      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-                        {MOMO_NETWORKS.map(n => (
-                          <button
-                            key={n.key}
-                            type="button"
-                            className="network-pill"
-                            onClick={() => setMomoNetwork(n.key)}
-                            style={{
-                              flex: 1, height: 34, borderRadius: 8, cursor: 'pointer',
-                              border: momoNetwork === n.key ? `1.5px solid ${n.color}` : '1.5px solid #E5E7EB',
-                              background: momoNetwork === n.key ? `${n.color}18` : 'var(--dm-bg-card)',
-                              color: momoNetwork === n.key ? n.color : '#6B7280',
-                              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                              fontWeight: 600, fontSize: 12.5, transition: 'all 0.12s',
-                            }}
-                          >
-                            {n.label}
-                          </button>
-                        ))}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
+                        {MOMO_NETWORKS.map(n => {
+                          const active = momoNetwork === n.key
+                          return (
+                            <button
+                              key={n.key}
+                              type="button"
+                              className="network-pill"
+                              onClick={() => setMomoNetwork(n.key)}
+                              style={{
+                                height: 48, borderRadius: 10, cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                                border: active ? '1.5px solid #1B2352' : '1.5px solid #E5E7EB',
+                                boxShadow: active ? 'inset 0 0 0 1px #1B2352' : 'none',
+                                background: 'var(--dm-bg-card)',
+                                color: active ? '#1B2352' : '#6B7280',
+                                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                                fontWeight: 600, fontSize: 12.5, transition: 'all 0.12s',
+                              }}
+                            >
+                              <span style={{
+                                width: 26, height: 26, borderRadius: 6, flexShrink: 0,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                position: 'relative',
+                                background: n.markBg, color: n.markFg,
+                                border: n.markRing ? `2px solid ${n.markRing}` : 'none',
+                                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                                fontWeight: 800, fontSize: 9.5, letterSpacing: '-0.02em',
+                              }}>
+                                {n.key === 'airteltigo' && (
+                                  <span style={{ position: 'absolute', right: 2, bottom: 2, width: 7, height: 7, borderRadius: '50%', background: '#E32526' }} />
+                                )}
+                                {n.key === 'mtn' ? 'MTN' : n.key === 'telecel' ? 'tc' : 'at'}
+                              </span>
+                              {n.label}
+                            </button>
+                          )
+                        })}
                       </div>
                       <label style={fieldLabel}>MoMo Number (optional)</label>
                       <input

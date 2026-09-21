@@ -80,6 +80,7 @@ interface MemberOption {
 interface Transaction {
   amount: number
   transaction_date: string
+  transaction_categories: { name: string } | null
 }
 
 interface Member {
@@ -690,67 +691,6 @@ function AddRelationshipModal({
             }}
           >
             {saving ? 'Adding…' : 'Add Relationship'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Photo Lightbox ─────────────────────────────────────────────────────────
-// Shows the member's photo full-size. Changing or removing it is a
-// deliberate action from here, not a side-effect of tapping the small
-// avatar to get a closer look.
-function PhotoLightbox({
-  photoUrl, memberName, onClose, onChangePhoto, onRemovePhoto,
-}: {
-  photoUrl: string
-  memberName: string
-  onClose: () => void
-  onChangePhoto: () => void
-  onRemovePhoto: () => void
-}) {
-  return (
-    <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, maxWidth: '90vw' }}>
-        <img
-          src={photoUrl}
-          alt={memberName}
-          style={{ maxWidth: '90vw', maxHeight: '70vh', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', objectFit: 'contain' }}
-        />
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button
-            onClick={onChangePhoto}
-            style={{
-              padding: '8px 16px', borderRadius: 8, border: 'none',
-              background: 'white', color: '#111827', cursor: 'pointer',
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13,
-            }}
-          >
-            Change Photo
-          </button>
-          <button
-            onClick={onRemovePhoto}
-            style={{
-              padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.3)',
-              background: 'transparent', color: 'white', cursor: 'pointer',
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13,
-            }}
-          >
-            Remove
-          </button>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.3)',
-              background: 'transparent', color: 'white', cursor: 'pointer',
-              fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13,
-            }}
-          >
-            Close
           </button>
         </div>
       </div>
@@ -1471,7 +1411,6 @@ export function MemberProfilePage() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoUploading, setPhotoUploading] = useState(false)
   const [avatarHovered, setAvatarHovered] = useState(false)
-  const [photoLightboxOpen, setPhotoLightboxOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchMember = async () => {
@@ -1522,12 +1461,12 @@ export function MemberProfilePage() {
     const startOfYear = `${currentYear}-01-01`
     const { data } = await supabase
       .from('transactions')
-      .select('amount, transaction_date')
+      .select('amount, transaction_date, transaction_categories(name)')
       .eq('member_id', id)
       .eq('org_id', user.org_id)
       .gte('transaction_date', startOfYear)
       .order('transaction_date', { ascending: false })
-    setTransactions((data ?? []) as Transaction[])
+    setTransactions((data ?? []) as unknown as Transaction[])
   }
 
   const fetchSidebarGroups = async () => {
@@ -1667,6 +1606,17 @@ export function MemberProfilePage() {
   const ytdTotal = transactions.reduce((sum, t) => sum + (t.amount ?? 0), 0)
   const lastGift = transactions[0] ?? null
 
+  // Per-category breakdown, biggest first
+  const givingByCategory = (() => {
+    const map = new Map<string, number>()
+    for (const t of transactions) {
+      const name = t.transaction_categories?.name ?? 'Uncategorised'
+      map.set(name, (map.get(name) ?? 0) + (t.amount ?? 0))
+    }
+    return [...map.entries()].sort((a, b) => b[1] - a[1])
+  })()
+  const lastGiftCategory = lastGift?.transaction_categories?.name ?? null
+
   const handleWhatsAppWelcome = () => {
     const message = `Hi ${member.first_name}, welcome to our church family! We're so glad you're here. If you have any questions, feel free to reach out anytime. God bless!`
     const link = buildWhatsAppLink(member.phone, message)
@@ -1714,14 +1664,7 @@ export function MemberProfilePage() {
           >
             <div
               style={{ position: 'relative', width: 48, height: 48, borderRadius: '50%', cursor: 'pointer', overflow: 'hidden' }}
-              onClick={() => {
-                if (photoUploading) return
-                // A photo already exists: clicking shows it full-size first.
-                // Changing it is a deliberate action inside the lightbox, not
-                // an accidental side-effect of wanting a closer look.
-                if (photoUrl) setPhotoLightboxOpen(true)
-                else fileInputRef.current?.click()
-              }}
+              onClick={() => !photoUploading && fileInputRef.current?.click()}
             >
               <MemberAvatar firstName={member.first_name} lastName={member.last_name} photoUrl={photoUrl} size={48} />
               <div style={{
@@ -1736,13 +1679,6 @@ export function MemberProfilePage() {
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="photo-spin">
                     <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
                     <path d="M8 2a6 6 0 0 1 6 6" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                ) : photoUrl ? (
-                  // Magnifying-glass icon: signals "view", not "upload",
-                  // when a photo is already there.
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <circle cx="11" cy="11" r="7" stroke="white" strokeWidth="1.5" />
-                    <path d="M21 21l-4.3-4.3" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 ) : (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -1782,15 +1718,6 @@ export function MemberProfilePage() {
               e.target.value = ''
             }}
           />
-          {photoLightboxOpen && photoUrl && (
-            <PhotoLightbox
-              photoUrl={photoUrl}
-              memberName={`${member.first_name} ${member.last_name}`}
-              onClose={() => setPhotoLightboxOpen(false)}
-              onChangePhoto={() => { setPhotoLightboxOpen(false); fileInputRef.current?.click() }}
-              onRemovePhoto={() => { setPhotoLightboxOpen(false); handlePhotoRemove() }}
-            />
-          )}
 
           <div>
             <h1 style={{
@@ -2206,6 +2133,24 @@ export function MemberProfilePage() {
                   </div>
                 </div>
 
+                {givingByCategory.length > 0 && (
+                  <div style={{ marginBottom: 16, borderTop: '0.5px solid var(--dm-border-soft)', paddingTop: 14 }}>
+                    <div style={{
+                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                      fontWeight: 500, fontSize: 11, color: '#9CA3AF',
+                      textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8,
+                    }}>
+                      By Category
+                    </div>
+                    {givingByCategory.map(([name, amount]) => (
+                      <div key={name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderTop: '0.5px solid var(--dm-border-subtle)' }}>
+                        <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)', textTransform: 'capitalize' }}>{name}</span>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: 'var(--dm-text-ink)' }}>{formatAmount(amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div style={{ marginBottom: 16 }}>
                   <div style={{
                     fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
@@ -2219,7 +2164,7 @@ export function MemberProfilePage() {
                     fontSize: 13, color: 'var(--dm-text-ink)',
                   }}>
                     {lastGift
-                      ? `${formatAmount(lastGift.amount)} on ${format(new Date(lastGift.transaction_date), 'MMM d, yyyy')}`
+                      ? `${formatAmount(lastGift.amount)}${lastGiftCategory ? ` · ${lastGiftCategory}` : ''} on ${format(new Date(lastGift.transaction_date), 'MMM d, yyyy')}`
                       : '—'}
                   </div>
                 </div>
