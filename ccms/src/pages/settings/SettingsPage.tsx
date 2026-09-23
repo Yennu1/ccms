@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import Cropper from 'react-easy-crop'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
@@ -44,13 +45,6 @@ const ROLE_OPTIONS: { value: UserRoleEntry['role']; label: string }[] = [
   { value: 'finance_officer', label: 'Finance Officer' },
   { value: 'group_leader', label: 'Group Leader' },
 ]
-
-const ROLE_BADGE_COLOR: Record<UserRoleEntry['role'], string> = {
-  super_admin: '#1B2352',
-  admin: '#4F6BED',
-  finance_officer: '#7B93F5',
-  group_leader: '#C8964A',
-}
 
 const ROLE_LEGEND: { role: UserRoleEntry['role']; name: string; desc: string }[] = [
   { role: 'super_admin', name: 'Super Admin', desc: 'Full access, all branches' },
@@ -561,35 +555,37 @@ function CategoriesContent({ orgId }: { orgId: string }) {
           {/* Table header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 18px', borderBottom: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-subtle)' }}>
             <div style={{ flex: 1, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, color: 'var(--dm-text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Name</div>
-            <div style={{ width: 70, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, color: 'var(--dm-text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Type</div>
             <div style={{ width: 150, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, color: 'var(--dm-text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Personal tab</div>
             <div style={{ width: 100, textAlign: 'right', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, color: 'var(--dm-text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>Usage</div>
             <div style={{ width: 64, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, color: 'var(--dm-text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}></div>
             <div style={{ width: 64 }}></div>
           </div>
 
-          {categories.map((cat, idx) => (
+          {([['income','Income'],['expense','Expense']] as const).map(([gtype, glabel], gi) => {
+            const groupCats = categories.filter(c => c.type === gtype)
+            if (groupCats.length === 0) return null
+            return (
+              <div key={gtype} style={{ marginTop: gi > 0 ? 10 : 0, borderTop: gi > 0 ? '6px solid var(--dm-bg-muted)' : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '13px 18px 10px', borderBottom: '1px solid var(--dm-border)', background: 'var(--dm-bg-subtle)' }}>
+                  <span style={{ display: 'inline-flex', color: gtype === 'income' ? '#15803D' : '#B45309' }}>
+                    {gtype === 'income' ? (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11 5L5 11M5 11h4M5 11V7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M5 11L11 5M11 5H7M11 5v4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    )}
+                  </span>
+                  <span style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: 'var(--dm-text-ink)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{glabel}</span>
+                  <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-secondary)' }}>({groupCats.length})</span>
+                </div>
+                {groupCats.map((cat, idx, arr) => (
             <div
               key={cat.id}
               className="cat-row"
-              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderBottom: idx < categories.length - 1 ? '0.5px solid var(--dm-border-soft)' : 'none' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderBottom: idx < arr.length - 1 ? '0.5px solid var(--dm-border-soft)' : 'none' }}
             >
               {/* Name */}
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13.5, color: 'var(--dm-text-ink)' }}>{cat.name}</span>
-              </div>
-
-              {/* Type badge */}
-              <div style={{ width: 70 }}>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', padding: '3px 9px',
-                  borderRadius: 999,
-                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11,
-                  background: cat.type === 'income' ? '#DCFCE7' : '#FEF3C7',
-                  color: cat.type === 'income' ? '#15803D' : '#B45309',
-                }}>
-                  {cat.type === 'income' ? 'Income' : 'Expense'}
-                </span>
               </div>
 
               {/* Personal-tab toggle (income only) */}
@@ -654,7 +650,10 @@ function CategoriesContent({ orgId }: { orgId: string }) {
                 </button>
               </div>
             </div>
-          ))}
+                ))}
+              </div>
+            )
+          })}
         </div>
       )}
     </>
@@ -1001,39 +1000,37 @@ function AccessControlTab({ orgId }: { orgId: string }) {
 
       {/* Roles legend */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
-        {ROLE_LEGEND.map(item => {
-          const roleColor = ROLE_BADGE_COLOR[item.role]
-          return (
-            <div
-              key={item.role}
-              style={{
-                flex: 1,
-                minWidth: 0,
-                background: 'var(--dm-bg-card)',
-                border: `2px solid ${roleColor}`,
-                borderRadius: 12,
-                padding: 16,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                gap: 8,
-              }}
-            >
-              <div style={{
-                width: 40, height: 40, borderRadius: '50%',
-                background: `${roleColor}1F`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: roleColor,
-                margin: '0 auto 8px',
-              }}>
-                <ShieldCheckIcon />
-              </div>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: '#1B2352', textAlign: 'center' }}>{item.name}</div>
-              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280', lineHeight: 1.5, textAlign: 'center' }}>{item.desc}</div>
+        {ROLE_LEGEND.map(item => (
+          <div
+            key={item.role}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              background: '#F6F6F4',
+              border: '0.5px solid var(--dm-border)',
+              borderRadius: 12,
+              padding: 16,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              gap: 8,
+            }}
+          >
+            <div style={{
+              width: 36, height: 36, borderRadius: 9,
+              background: 'var(--dm-bg-card)',
+              border: '0.5px solid var(--dm-border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#1B2352',
+              margin: '0 auto 6px',
+            }}>
+              <ShieldCheckIcon />
             </div>
-          )
-        })}
+            <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: 'var(--dm-text-ink)', textAlign: 'center' }}>{item.name}</div>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-secondary)', lineHeight: 1.5, textAlign: 'center' }}>{item.desc}</div>
+          </div>
+        ))}
       </div>
 
       {/* Users table */}
@@ -1085,7 +1082,13 @@ function AccessControlTab({ orgId }: { orgId: string }) {
 
                 {/* Role badge */}
                 <div style={{ width: 130 }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 999, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11, background: ROLE_BADGE_COLOR[entry.role], color: '#fff' }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 6,
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 11.5,
+                    background: entry.role === 'super_admin' ? '#1B2352' : '#F1F1EF',
+                    color: entry.role === 'super_admin' ? '#fff' : 'var(--dm-text-ink)',
+                    border: entry.role === 'super_admin' ? '0.5px solid transparent' : '0.5px solid var(--dm-border)',
+                  }}>
                     {ROLE_LABELS[entry.role] ?? entry.role}
                   </span>
                 </div>
@@ -1151,11 +1154,40 @@ function AccessControlTab({ orgId }: { orgId: string }) {
 
 // ─── Profile Tab ──────────────────────────────────────────────────────────────
 
+// Crop an image File to a square blob using the pixel area from react-easy-crop.
+async function cropToSquareBlob(src: string, area: { x: number; y: number; width: number; height: number }): Promise<Blob> {
+  const img = document.createElement('img')
+  img.crossOrigin = 'anonymous'
+  img.src = src
+  await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('image load failed')) })
+  const size = Math.max(1, Math.round(Math.min(area.width, area.height)))
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  ctx.drawImage(img, area.x, area.y, size, size, 0, 0, size, size)
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(b => resolve(b), 'image/jpeg', 0.9)
+  })
+  if (!blob || blob.size === 0) throw new Error('crop produced an empty image')
+  return blob
+}
+
 function ProfileTab() {
   const { user } = useAuth()
   const [fullName, setFullName] = useState(user?.full_name ?? '')
   const [saving, setSaving] = useState(false)
   const [branchName, setBranchName] = useState<string | null>(null)
+  const [orgName, setOrgName] = useState<string>('')
+  const [photoUrl, setPhotoUrl] = useState<string | null>(user?.photo_url ? user.photo_url + (user.photo_url.includes('?') ? '&' : '?') + 't=' + Date.now() : null)
+  const [photoUploading, setPhotoUploading] = useState(false)
+
+  // Cropper state
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedArea, setCroppedArea] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!user) return
@@ -1165,7 +1197,11 @@ function ProfileTab() {
     } else {
       setBranchName('All Branches')
     }
-  }, [user?.branch_id])
+    if (user.org_id) {
+      supabase.from('organisations').select('name').eq('id', user.org_id).single()
+        .then(({ data }) => { if (data) setOrgName(data.name) })
+    }
+  }, [user?.branch_id, user?.org_id])
 
   const handleSave = async () => {
     if (!user?.id) return
@@ -1180,18 +1216,85 @@ function ProfileTab() {
     if (error) { toast.error('Failed to update profile') } else { toast.success('Profile updated') }
   }
 
+  function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-picking the same file
+    if (!file) return
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Only JPEG, PNG or WebP images are allowed')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => { setCropSrc(reader.result as string); setCrop({ x: 0, y: 0 }); setZoom(1) }
+    reader.readAsDataURL(file)
+  }
+
+  async function handleCropSave() {
+    if (!user?.id || !cropSrc || !croppedArea) return
+    setPhotoUploading(true)
+    try {
+      const blob = await cropToSquareBlob(cropSrc, croppedArea)
+      const path = `${user.id}.jpg`
+      const { error: upErr } = await supabase.storage.from('profile-photos').upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '0' })
+      if (upErr) { console.error('profile photo upload error:', upErr); throw upErr }
+      const { data: { publicUrl } } = supabase.storage.from('profile-photos').getPublicUrl(path)
+      const { error: dbErr } = await supabase.from('profiles').update({ photo_url: publicUrl }).eq('id', user.id)
+      if (dbErr) { console.error('profile photo db error:', dbErr); throw dbErr }
+      setPhotoUrl(publicUrl + '?t=' + Date.now())
+      setCropSrc(null)
+      toast.success('Photo updated')
+    } catch (err) {
+      console.error('profile photo failed:', err)
+      toast.error('Failed to upload photo')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
+  async function handleRemovePhoto() {
+    if (!user?.id) return
+    setPhotoUploading(true)
+    try {
+      await supabase.storage.from('profile-photos').remove([`${user.id}.jpg`])
+      await supabase.from('profiles').update({ photo_url: null }).eq('id', user.id)
+      setPhotoUrl(null)
+      toast.success('Photo removed')
+    } catch {
+      toast.error('Failed to remove photo')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
   const pal = avatarColor(user?.full_name ?? 'U')
   const initials = user?.full_name ? initialsOf(user.full_name) : '?'
 
   return (
     <div style={{ maxWidth: 480 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
-        <div style={{ width: 72, height: 72, borderRadius: '50%', background: pal.bg, color: pal.color, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-          {initials}
+      {/* Header: photo left, name / church / branch / role stacked right */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 28 }}>
+        <div
+          onClick={() => !photoUploading && fileInputRef.current?.click()}
+          title="Upload photo"
+          style={{ width: 84, height: 84, borderRadius: '50%', flexShrink: 0, cursor: photoUploading ? 'default' : 'pointer', position: 'relative', overflow: 'hidden', background: photoUrl ? 'transparent' : pal.bg, color: pal.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 26, border: '0.5px solid var(--dm-border)' }}
+        >
+          {photoUrl ? <img src={photoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, background: 'rgba(27,35,82,0.72)', color: '#fff', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 9.5, textAlign: 'center', padding: '2px 0' }}>
+            {photoUploading ? '…' : 'Upload'}
+          </div>
         </div>
-        <button style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#4F6BED', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-          Upload photo
-        </button>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 18, color: 'var(--dm-text-ink)', lineHeight: 1.2 }}>{user?.full_name || '—'}</div>
+          {orgName && <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13.5, color: 'var(--dm-text-ink)', marginTop: 3 }}>{orgName}</div>}
+          {branchName && <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12.5, color: 'var(--dm-text-ink)', marginTop: 2 }}>{branchName}</div>}
+          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12.5, color: 'var(--dm-text-ink)', marginTop: 2 }}>{ROLE_LABELS[user?.role ?? ''] ?? (user?.role ?? '')}</div>
+          {photoUrl && (
+            <button onClick={handleRemovePhoto} disabled={photoUploading} style={{ marginTop: 8, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              Remove photo
+            </button>
+          )}
+        </div>
+        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={onPickFile} style={{ display: 'none' }} />
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -1218,11 +1321,39 @@ function ProfileTab() {
       <button onClick={handleSave} disabled={saving} style={{ height: 36, padding: '0 20px', borderRadius: 8, border: 'none', background: saving ? '#A5B4FC' : '#4F6BED', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#fff' }}>
         {saving ? 'Saving…' : 'Save Changes'}
       </button>
+
+      {/* Cropper modal */}
+      {cropSrc && (
+        <div onClick={() => !photoUploading && setCropSrc(null)} style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--dm-bg-card)', borderRadius: 14, width: '100%', maxWidth: 380, overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.4)' }}>
+            <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--dm-border-soft)', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: 'var(--dm-text-ink)' }}>Position your photo</div>
+            <div style={{ position: 'relative', width: '100%', height: 300, background: '#1B2352' }}>
+              <Cropper
+                image={cropSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={(_, areaPixels) => setCroppedArea(areaPixels)}
+              />
+            </div>
+            <div style={{ padding: '14px 18px' }}>
+              <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-secondary)', marginBottom: 8 }}>Drag to reposition, slide to zoom</div>
+              <input type="range" min={1} max={3} step={0.01} value={zoom} onChange={e => setZoom(Number(e.target.value))} style={{ width: '100%', accentColor: '#4F6BED' }} />
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
+                <button onClick={() => setCropSrc(null)} disabled={photoUploading} style={{ height: 34, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-body)' }}>Cancel</button>
+                <button onClick={handleCropSave} disabled={photoUploading} style={{ height: 34, padding: '0 16px', borderRadius: 8, border: 'none', background: photoUploading ? '#A5B4FC' : '#4F6BED', cursor: photoUploading ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#fff' }}>{photoUploading ? 'Saving…' : 'Save photo'}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
-
-// ─── General Tab ──────────────────────────────────────────────────────────────
 
 function GeneralTab({ orgId }: { orgId: string }) {
   const [orgName, setOrgName] = useState('')
@@ -1485,6 +1616,7 @@ function NotificationsTab() {
 export function SettingsPage({ modal = false }: { modal?: boolean }) {
   const { user } = useAuth()
   const { activeTab, setActiveTab } = useSettings()
+  const [navCollapsed, setNavCollapsed] = useState(false)
   const { isMobile } = useSidebar()
 
   const role = user?.role
@@ -1554,26 +1686,43 @@ export function SettingsPage({ modal = false }: { modal?: boolean }) {
         ) : (
           // Desktop: vertical left nav
           <div style={{
-            width: modal ? 200 : 196,
+            width: navCollapsed ? 56 : (modal ? 176 : 172),
             flexShrink: 0,
             background: modal ? 'var(--dm-bg-subtle)' : 'var(--dm-bg-card)',
             border: modal ? 'none' : '0.5px solid var(--dm-border)',
             borderRight: modal ? '0.5px solid var(--dm-border-soft)' : undefined,
             borderRadius: modal ? 0 : 12,
             overflowY: 'auto',
+            overflowX: 'hidden',
             padding: '8px 0',
+            transition: 'width 0.15s ease',
           }}>
+            {/* Collapse toggle */}
+            <div style={{ display: 'flex', justifyContent: navCollapsed ? 'center' : 'flex-end', padding: navCollapsed ? '0 0 6px' : '0 10px 6px' }}>
+              <button
+                onClick={() => setNavCollapsed(c => !c)}
+                aria-label={navCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                title={navCollapsed ? 'Expand' : 'Collapse'}
+                style={{ width: 26, height: 26, borderRadius: 7, border: '0.5px solid var(--dm-border)', background: 'var(--dm-bg-card)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--dm-text-secondary)' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ transform: navCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+                  <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
             {tabs.map(tab => {
               const active = currentTab === tab.key
               return (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
+                  title={navCollapsed ? tab.label : undefined}
                   style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-                    padding: '9px 14px',
+                    width: '100%', display: 'flex', alignItems: 'center', gap: navCollapsed ? 0 : 9,
+                    justifyContent: navCollapsed ? 'center' : 'flex-start',
+                    padding: navCollapsed ? '10px 0' : '9px 14px',
                     background: active ? '#E8ECF9' : 'transparent',
-                    borderLeft: active ? '2.5px solid #4F6BED' : '2.5px solid transparent',
+                    borderLeft: active && !navCollapsed ? '2.5px solid #4F6BED' : '2.5px solid transparent',
                     borderRight: 'none', borderTop: 'none', borderBottom: 'none',
                     cursor: 'pointer',
                     color: active ? '#4F6BED' : 'var(--dm-text-secondary)',
@@ -1581,13 +1730,15 @@ export function SettingsPage({ modal = false }: { modal?: boolean }) {
                     fontWeight: active ? 600 : 400,
                     fontSize: 13,
                     textAlign: 'left',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
                     transition: 'background 0.1s, color 0.1s',
                   }}
                   onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--dm-bg-muted)' }}
                   onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
                 >
                   <span style={{ display: 'inline-flex', flexShrink: 0 }}>{tab.icon}</span>
-                  {tab.label}
+                  {!navCollapsed && tab.label}
                 </button>
               )
             })}
