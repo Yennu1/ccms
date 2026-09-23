@@ -1337,7 +1337,7 @@ function ProfileTab() {
                 showGrid={false}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
-                onCropComplete={(_, areaPixels) => setCroppedArea(areaPixels)}
+                onCropComplete={(_area: unknown, areaPixels: { x: number; y: number; width: number; height: number }) => setCroppedArea(areaPixels)}
               />
             </div>
             <div style={{ padding: '14px 18px' }}>

@@ -16,6 +16,7 @@ export interface AuthUser {
   full_name: string
   branch_id: string | null
   org_id: string
+  photo_url: string | null
 }
 
 interface AuthContextValue {
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const fetchProfile = async () => {
       const [profileResult, roleResult] = await Promise.all([
-           supabase.from('profiles').select('id, email, full_name, org_id, password_set').eq('id', session.user.id).single(),
+           supabase.from('profiles').select('id, email, full_name, org_id, password_set, photo_url').eq('id', session.user.id).single(),
            supabase.from('user_roles').select('role, branch_id').eq('user_id', session.user.id).eq('is_active', true).single()
              ])
 
@@ -96,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             org_id: profileResult.data.org_id,
             role: roleResult.data.role as UserRole,
             branch_id: roleResult.data.branch_id,
+            photo_url: profileResult.data.photo_url ?? null,
           })
           // Server-truth gate: an invited user whose profile has never had a
           // password set (password_set = false) must be routed to /accept-invite,
