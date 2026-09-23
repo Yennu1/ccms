@@ -642,15 +642,24 @@ export function Sidebar() {
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
+              overflow: 'hidden',
             }}>
-              <span style={{
-                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                fontWeight: 500,
-                fontSize: 12,
-                color: '#fff',
-              }}>
-                {user?.full_name ? getInitials(user.full_name) : '?'}
-              </span>
+              {user?.photo_url ? (
+                <img
+                  src={user.photo_url + (user.photo_url.includes('?') ? '&' : '?') + 't=' + Date.now()}
+                  alt=""
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span style={{
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                  fontWeight: 500,
+                  fontSize: 12,
+                  color: '#fff',
+                }}>
+                  {user?.full_name ? getInitials(user.full_name) : '?'}
+                </span>
+              )}
             </div>
 
             {/* Name + role · branch */}
