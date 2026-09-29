@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { ROLE_HOME_ROUTE } from '../lib/constants'
 import { LoginPage } from '../pages/auth/LoginPage'
 import { AcceptInvitePage } from '../pages/auth/AcceptInvitePage'
+import { OnboardingPage } from '../pages/auth/OnboardingPage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { MembersPage } from '../pages/members/MembersPage'
 import { MemberNewPage } from '../pages/members/MemberNewPage'
@@ -55,6 +56,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/accept-invite', element: <AcceptInvitePage /> },
+      { path: '/onboarding', element: <OnboardingPage /> },
     ],
   },
   {
