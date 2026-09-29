@@ -25,6 +25,7 @@ interface AuthContextValue {
   loading: boolean
   passwordRecovery: boolean
   mustSetPassword: boolean
+  needsOnboarding: boolean
   signOut: () => Promise<void>
   clearPasswordRecovery: () => void
   clearMustSetPassword: () => void
@@ -36,6 +37,7 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
   passwordRecovery: false,
   mustSetPassword: false,
+  needsOnboarding: false,
   signOut: async () => {},
   clearPasswordRecovery: () => {},
   clearMustSetPassword: () => {},
@@ -47,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [passwordRecovery, setPasswordRecovery] = useState(false)
   const [mustSetPassword, setMustSetPassword] = useState(false)
+  const [needsOnboarding, setNeedsOnboarding] = useState(false)
   // Once the user completes password setup we latch this ON for the rest of the
   // session, so a late profile refetch (e.g. the USER_UPDATED that updateUser
   // fires) can never re-derive mustSetPassword=true and trap them in a loop.
@@ -67,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session)
         if (!session) {
           setUser(null)
+          setNeedsOnboarding(false)
           setLoading(false)
         }
       }
@@ -99,14 +103,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             branch_id: roleResult.data.branch_id,
             photo_url: profileResult.data.photo_url ?? null,
           })
-          // Server-truth gate: an invited user whose profile has never had a
-          // password set (password_set = false) must be routed to /accept-invite,
-          // regardless of what the invite URL did or didn't contain. Latched off
-          // once setup completes so a refetch can't re-trap the user.
           setMustSetPassword(!passwordSetupDone.current && profileResult.data.password_set === false)
-        } else {
-          await supabase.auth.signOut()
-          setUser(null)
+          setNeedsOnboarding(false)
+        } else if (profileResult.error || roleResult.error) {
+          // No profile or no role — could be a self-serve signup that hasn't
+          // gone through onboarding yet. Check if the user exists in auth but
+          // has no role assigned.
+          const hasNoRole = roleResult.error?.code === 'PGRST116' // "no rows returned"
+          if (hasNoRole) {
+            setNeedsOnboarding(true)
+            setUser(null)
+          } else {
+            await supabase.auth.signOut()
+            setUser(null)
+          }
         }
         setLoading(false)
             }
@@ -127,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, passwordRecovery, mustSetPassword, signOut, clearPasswordRecovery, clearMustSetPassword }}>
+    <AuthContext.Provider value={{ session, user, loading, passwordRecovery, mustSetPassword, needsOnboarding, signOut, clearPasswordRecovery, clearMustSetPassword }}>
       {children}
     </AuthContext.Provider>
   )

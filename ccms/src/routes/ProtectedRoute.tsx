@@ -6,7 +6,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  const { user, loading, passwordRecovery, mustSetPassword } = useAuth()
+  const { user, loading, passwordRecovery, mustSetPassword, needsOnboarding } = useAuth()
 
   if (loading) {
     return (
@@ -31,6 +31,8 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   }
 
   if (passwordRecovery || mustSetPassword) return <Navigate to="/accept-invite" replace />
+
+  if (needsOnboarding) return <Navigate to="/onboarding" replace />
 
   if (!user) return <Navigate to="/login" replace />
 

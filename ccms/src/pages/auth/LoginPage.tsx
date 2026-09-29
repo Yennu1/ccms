@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -46,6 +46,17 @@ function EyeIcon({ open }: { open: boolean }) {
   )
 }
 
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+      <path d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    </svg>
+  )
+}
+
 export function LoginPage() {
   const navigate = useNavigate()
   const { user, loading: authLoading } = useAuth()
@@ -59,10 +70,19 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [mode, setMode] = useState<'login' | 'forgot'>('login')
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login')
   const [resetEmail, setResetEmail] = useState('')
   const [resetSending, setResetSending] = useState(false)
   const [resetSent, setResetSent] = useState(false)
+
+  // Sign-up state
+  const [signUpEmail, setSignUpEmail] = useState('')
+  const [signUpPassword, setSignUpPassword] = useState('')
+  const [signUpConfirm, setSignUpConfirm] = useState('')
+  const [signUpLoading, setSignUpLoading] = useState(false)
+  const [signUpError, setSignUpError] = useState<string | null>(null)
+  const [signUpSuccess, setSignUpSuccess] = useState(false)
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false)
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -127,6 +147,52 @@ export function LoginPage() {
       return
     }
     setResetSent(true)
+  }
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSignUpError(null)
+
+    if (!signUpEmail.trim()) {
+      setSignUpError('Email is required')
+      return
+    }
+    if (signUpPassword.length < 6) {
+      setSignUpError('Password must be at least 6 characters')
+      return
+    }
+    if (signUpPassword !== signUpConfirm) {
+      setSignUpError('Passwords do not match')
+      return
+    }
+
+    setSignUpLoading(true)
+    const { error } = await supabase.auth.signUp({
+      email: signUpEmail.trim(),
+      password: signUpPassword,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+      },
+    })
+    setSignUpLoading(false)
+
+    if (error) {
+      setSignUpError(error.message)
+    } else {
+      setSignUpSuccess(true)
+    }
+  }
+
+  const handleGoogleSignIn = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    })
+    if (error) {
+      toast.error(error.message)
+    }
   }
 
   return (
@@ -236,6 +302,20 @@ export function LoginPage() {
         }
         html.dark .ccms-divider-line    { background: var(--dm-border) !important; }
         html.dark .ccms-footer-muted    { color: var(--dm-text-muted) !important; }
+        html.dark .ccms-google-btn {
+          background: var(--dm-bg-surface) !important;
+          border-color: var(--dm-border) !important;
+          color: var(--dm-text-ink) !important;
+        }
+        html.dark .ccms-google-btn:hover {
+          background: var(--dm-bg-muted) !important;
+        }
+        html.dark .ccms-tab-inactive {
+          color: var(--dm-text-muted) !important;
+        }
+        html.dark .ccms-tab-inactive:hover {
+          color: var(--dm-text-secondary) !important;
+        }
 
         /* ── Inputs ──────────────────────────────────────── */
         .ccms-input {
@@ -320,6 +400,36 @@ export function LoginPage() {
         }
 
         .ccms-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        /* ── Google button ───────────────────────────────── */
+        .ccms-google-btn {
+          width: 100%;
+          height: 38px;
+          background: #fff;
+          color: #374151;
+          border: 0.5px solid var(--dm-border-soft);
+          border-radius: 8px;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          letter-spacing: -0.01em;
+          transition: background 0.12s, border-color 0.12s, transform 0.12s, box-shadow 0.15s;
+        }
+        .ccms-google-btn:hover {
+          background: #F9FAFB;
+          border-color: var(--dm-border-strong);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .ccms-google-btn:active {
+          transform: translateY(0);
+          box-shadow: none;
+        }
 
         /* ── Links ───────────────────────────────────────── */
         .ccms-link {
@@ -707,7 +817,7 @@ export function LoginPage() {
                 animationDelay: '160ms',
               }}
             >
-              Welcome back
+              {mode === 'signup' ? 'Create an account' : 'Welcome back'}
             </h2>
             <p
               className="ccms-form-sub ccms-reveal"
@@ -715,13 +825,61 @@ export function LoginPage() {
                 fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
                 fontSize: '13px',
                 color: 'var(--dm-text-secondary)',
-                margin: '0 0 28px 0',
+                margin: '0 0 20px 0',
                 animationDelay: '230ms',
               }}
             >
-              Sign in to your organisation
+              {mode === 'signup' ? 'Sign up to get started with Centry' : 'Sign in to your organisation'}
             </p>
 
+            {/* Sign In / Sign Up toggle */}
+            {mode !== 'forgot' && (
+              <div
+                className="ccms-reveal"
+                style={{
+                  display: 'flex', gap: 0, marginBottom: 20,
+                  borderBottom: '1px solid var(--dm-border-soft)',
+                  animationDelay: '270ms',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => { setMode('login'); setSignUpError(null); setSignUpSuccess(false) }}
+                  style={{
+                    flex: 1, padding: '8px 0',
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                    fontSize: 13, fontWeight: 500,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: mode === 'login' ? '#4F6BED' : 'var(--dm-text-muted)',
+                    borderBottom: mode === 'login' ? '2px solid #4F6BED' : '2px solid transparent',
+                    transition: 'color 0.15s, border-color 0.15s',
+                    marginBottom: -1,
+                  }}
+                  className={mode !== 'login' ? 'ccms-tab-inactive' : undefined}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMode('signup'); setError(null) }}
+                  style={{
+                    flex: 1, padding: '8px 0',
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                    fontSize: 13, fontWeight: 500,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: mode === 'signup' ? '#4F6BED' : 'var(--dm-text-muted)',
+                    borderBottom: mode === 'signup' ? '2px solid #4F6BED' : '2px solid transparent',
+                    transition: 'color 0.15s, border-color 0.15s',
+                    marginBottom: -1,
+                  }}
+                  className={mode !== 'signup' ? 'ccms-tab-inactive' : undefined}
+                >
+                  Sign Up
+                </button>
+              </div>
+            )}
+
+            {/* ── SIGN IN FORM ── */}
             {mode === 'login' && (
             <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
@@ -825,6 +983,140 @@ export function LoginPage() {
             </form>
             )}
 
+            {/* ── SIGN UP FORM ── */}
+            {mode === 'signup' && !signUpSuccess && (
+              <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div
+                  className="ccms-reveal"
+                  style={{ display: 'flex', flexDirection: 'column', gap: 5, animationDelay: '310ms' }}
+                >
+                  <label
+                    htmlFor="signup-email"
+                    className="ccms-field-label"
+                    style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: '12px', fontWeight: 500, color: 'var(--dm-text-body)' }}
+                  >
+                    Email
+                  </label>
+                  <input
+                    id="signup-email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    className="ccms-input"
+                    value={signUpEmail}
+                    onChange={e => setSignUpEmail(e.target.value)}
+                  />
+                </div>
+
+                <div
+                  className="ccms-reveal"
+                  style={{ display: 'flex', flexDirection: 'column', gap: 5, animationDelay: '370ms' }}
+                >
+                  <label
+                    htmlFor="signup-password"
+                    className="ccms-field-label"
+                    style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: '12px', fontWeight: 500, color: 'var(--dm-text-body)' }}
+                  >
+                    Password
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      id="signup-password"
+                      type={showSignUpPassword ? 'text' : 'password'}
+                      placeholder="At least 6 characters"
+                      className="ccms-input ccms-input--pw"
+                      value={signUpPassword}
+                      onChange={e => setSignUpPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="ccms-pw-toggle"
+                      onClick={() => setShowSignUpPassword(v => !v)}
+                      aria-label={showSignUpPassword ? 'Hide password' : 'Show password'}
+                    >
+                      <EyeIcon open={showSignUpPassword} />
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  className="ccms-reveal"
+                  style={{ display: 'flex', flexDirection: 'column', gap: 5, animationDelay: '430ms' }}
+                >
+                  <label
+                    htmlFor="signup-confirm"
+                    className="ccms-field-label"
+                    style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: '12px', fontWeight: 500, color: 'var(--dm-text-body)' }}
+                  >
+                    Confirm Password
+                  </label>
+                  <input
+                    id="signup-confirm"
+                    type="password"
+                    placeholder="Re-enter your password"
+                    className="ccms-input"
+                    value={signUpConfirm}
+                    onChange={e => setSignUpConfirm(e.target.value)}
+                  />
+                </div>
+
+                {signUpError && (
+                  <div
+                    className="ccms-error-banner ccms-reveal"
+                    style={{
+                      borderRadius: 8,
+                      background: 'var(--badge-deceased-bg)',
+                      border: '0.5px solid var(--badge-deceased-dot)',
+                      padding: '10px 12px',
+                      fontSize: '13px',
+                      color: 'var(--badge-deceased-fg)',
+                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                      animationDelay: '0ms',
+                    }}
+                  >
+                    {signUpError}
+                  </div>
+                )}
+
+                <div className="ccms-reveal" style={{ animationDelay: '490ms' }}>
+                  <button type="submit" className="ccms-btn" disabled={signUpLoading}>
+                    {signUpLoading ? <><Spinner /> Creating account…</> : 'Sign up'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Sign Up success message */}
+            {mode === 'signup' && signUpSuccess && (
+              <div
+                className="ccms-reveal"
+                style={{ textAlign: 'center', padding: '12px 0', animationDelay: '0ms' }}
+              >
+                <div style={{
+                  width: 48, height: 48, borderRadius: '50%',
+                  background: '#E8ECF9', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 16px',
+                }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4F6BED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                  </svg>
+                </div>
+                <p style={{
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                  fontSize: 14, color: 'var(--dm-text-body)',
+                  margin: '0 0 4px', fontWeight: 500,
+                }}>
+                  Check your email
+                </p>
+                <p style={{
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                  fontSize: 13, color: 'var(--dm-text-secondary)', margin: 0,
+                }}>
+                  We sent a verification link to <strong>{signUpEmail}</strong>. Click it to activate your account.
+                </p>
+              </div>
+            )}
+
+            {/* ── FORGOT PASSWORD ── */}
             {mode === 'forgot' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {!resetSent ? (
@@ -894,23 +1186,37 @@ export function LoginPage() {
               <div className="ccms-divider-line" style={{ flex: 1, height: '0.5px', background: 'var(--dm-border-soft)' }} />
             </div>
 
+            {/* Google button */}
+            <div className="ccms-reveal" style={{ animationDelay: '580ms' }}>
+              <button
+                type="button"
+                className="ccms-google-btn"
+                onClick={handleGoogleSignIn}
+              >
+                <GoogleIcon />
+                Continue with Google
+              </button>
+            </div>
+
             {/* Footer */}
-            <p
-              className="ccms-footer-muted ccms-reveal"
-              style={{
-                textAlign: 'center',
-                fontSize: '12px',
-                color: 'var(--dm-text-muted)',
-                margin: 0,
-                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                animationDelay: '600ms',
-              }}
-            >
-              Don't have an account?{' '}
-              <a href="mailto:admin@church.org" className="ccms-link">
-                Contact your admin
-              </a>
-            </p>
+            {mode === 'forgot' && (
+              <p
+                className="ccms-footer-muted ccms-reveal"
+                style={{
+                  textAlign: 'center',
+                  fontSize: '12px',
+                  color: 'var(--dm-text-muted)',
+                  margin: '16px 0 0',
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                  animationDelay: '600ms',
+                }}
+              >
+                Don't have an account?{' '}
+                <a href="#" className="ccms-link" onClick={(e) => { e.preventDefault(); setMode('signup') }}>
+                  Sign up
+                </a>
+              </p>
+            )}
           </div>
         </div>
 
