@@ -1,27 +1,118 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Navigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { toast } from 'sonner'
+import { Upload, ChevronDown, Users } from 'lucide-react'
+
+const CHURCH_ROLES = [
+  'Senior Pastor',
+  'Associate Pastor',
+  'Administrator',
+  'Secretary',
+  'Treasurer',
+  'Worship Leader',
+  'Youth Leader',
+  'Deacon / Elder',
+  'Other',
+]
+
+const DENOMINATIONS = [
+  'Pentecostal',
+  'Charismatic',
+  'Baptist',
+  'Methodist',
+  'Presbyterian',
+  'Catholic',
+  'Anglican',
+  'Seventh-day Adventist',
+  'Assemblies of God',
+  'Non-denominational',
+  'Other',
+]
+
+const CHURCH_SIZES = [
+  '1 – 50',
+  '51 – 100',
+  '101 – 250',
+  '251 – 500',
+  '500 – 1,000',
+  '1,000+',
+]
+
+const COUNTRIES = [
+  'Ghana',
+  'Nigeria',
+  'Kenya',
+  'South Africa',
+  'Cameroon',
+  'Tanzania',
+  'Uganda',
+  'United Kingdom',
+  'United States',
+  'Canada',
+  'Other',
+]
 
 export function OnboardingPage() {
   const { session, loading, needsOnboarding, user } = useAuth()
-  const [orgName, setOrgName] = useState('')
+
+  const [currentStep, setCurrentStep] = useState(1)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+
+  // Step 1
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [churchRole, setChurchRole] = useState('')
+
+  // Step 2
+  const [churchName, setChurchName] = useState('')
+  const [denomination, setDenomination] = useState('')
+  const [churchSize, setChurchSize] = useState('')
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [logoUploading, setLogoUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Step 3
+  const [country, setCountry] = useState('Ghana')
+  const [city, setCity] = useState('')
+  const [address, setAddress] = useState('')
+  const [postCode, setPostCode] = useState('')
+
+  // General
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (!session) return
+    const loadUser = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (!authUser) return
+      const metadata = authUser.user_metadata
+      const fullName = metadata?.full_name || metadata?.name || ''
+      const parts = fullName.split(' ')
+      setFirstName(parts[0] || '')
+      setLastName(parts.slice(1).join(' ') || '')
+      setEmail(authUser.email || '')
+    }
+    loadUser()
+  }, [session])
 
   if (loading) {
     return (
       <div style={{
         display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--dm-bg-page, #F4F5F7)',
+        background: '#FFFFFF',
       }}>
         <div style={{
           width: 32, height: 32, borderRadius: '50%',
-          border: '3px solid #1B2352', borderTopColor: '#4F6BED',
-          animation: 'spin 0.8s linear infinite',
+          border: '3px solid #DFE2EE', borderTopColor: '#4F6BED',
+          animation: 'ccms-ob-spin 0.8s linear infinite',
         }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        <style>{`@keyframes ccms-ob-spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     )
   }
@@ -29,15 +120,77 @@ export function OnboardingPage() {
   if (!session) return <Navigate to="/login" replace />
   if (user && !needsOnboarding) return <Navigate to="/" replace />
 
-  const handleSetup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!orgName.trim()) return
+  const goToStep = (step: number) => {
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrentStep(step)
+      setIsTransitioning(false)
+      window.scrollTo(0, 0)
+    }, 200)
+  }
 
+  const validateStep = (step: number): boolean => {
+    const errors: Record<string, string> = {}
+    if (step === 1) {
+      if (!firstName.trim()) errors.firstName = 'First name is required'
+      if (!lastName.trim()) errors.lastName = 'Last name is required'
+    } else if (step === 2) {
+      if (!churchName.trim()) errors.churchName = 'Church name is required'
+    } else if (step === 3) {
+      if (!country.trim()) errors.country = 'Country is required'
+      if (!city.trim()) errors.city = 'City is required'
+    }
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handleContinue = () => {
+    if (!validateStep(currentStep)) return
+    goToStep(currentStep + 1)
+  }
+
+  const handleBack = () => {
+    setFieldErrors({})
+    goToStep(currentStep - 1)
+  }
+
+  const handleLogoUpload = async (file: File) => {
+    if (!file || !file.type.startsWith('image/')) return
+    setLogoUploading(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `logos/${Date.now()}.${ext}`
+      const { error: uploadErr } = await supabase.storage.from('logos').upload(path, file)
+      if (uploadErr) {
+        toast.error('Logo upload failed')
+        return
+      }
+      const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path)
+      setLogoUrl(publicUrl)
+    } catch {
+      toast.error('Logo upload failed')
+    } finally {
+      setLogoUploading(false)
+    }
+  }
+
+  const handleSubmit = async () => {
     setSaving(true)
     setError('')
 
     const { error: rpcError } = await supabase.rpc('setup_new_organisation', {
-      p_org_name: orgName.trim(),
+      p_org_name: churchName.trim(),
+      p_denomination: denomination || null,
+      p_church_size: churchSize || null,
+      p_logo_url: logoUrl,
+      p_country: country,
+      p_city: city || null,
+      p_address: address || null,
+      p_post_code: postCode || null,
+      p_phone: phone || null,
+      p_church_role: churchRole || null,
+      p_first_name: firstName.trim(),
+      p_last_name: lastName.trim(),
     })
 
     if (rpcError) {
@@ -50,39 +203,393 @@ export function OnboardingPage() {
     window.location.href = '/'
   }
 
+  const initials = `${(firstName[0] || '').toUpperCase()}${(lastName[0] || '').toUpperCase()}` || '?'
+
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
-        @keyframes ccms-fade-up {
-          from { opacity: 0; transform: translateY(18px); }
-          to   { opacity: 1; transform: translateY(0);    }
+
+        @keyframes ccms-ob-spin { to { transform: rotate(360deg) } }
+
+        .ccms-ob-page {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          background: #FFFFFF;
+          padding: 48px 16px 64px;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
+          color: #1B2352;
         }
-        .ccms-onboard-reveal {
+
+        .ccms-ob-content {
+          width: 100%;
+          max-width: 440px;
+        }
+
+        .ccms-ob-logo {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          margin-bottom: 32px;
+        }
+        .ccms-ob-logo-text {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-weight: 700;
+          font-size: 18px;
+          color: #1B2352;
+        }
+
+        /* Step indicator */
+        .ccms-ob-steps {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0;
+          margin-bottom: 32px;
+        }
+        .ccms-ob-step-dot {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: 600;
+          flex-shrink: 0;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
+        }
+        .ccms-ob-step-dot.active,
+        .ccms-ob-step-dot.completed {
+          background: #4F6BED;
+          color: #fff;
+        }
+        .ccms-ob-step-dot.upcoming {
+          background: transparent;
+          color: #8085A0;
+          border: 1.5px solid #DFE2EE;
+        }
+        .ccms-ob-step-line {
+          width: 40px;
+          height: 2px;
+          flex-shrink: 0;
+        }
+        .ccms-ob-step-line.done {
+          background: #4F6BED;
+        }
+        .ccms-ob-step-line.pending {
+          background: #DFE2EE;
+        }
+
+        /* Heading and subtitle */
+        .ccms-ob-heading {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-weight: 600;
+          font-size: 20px;
+          color: #1B2352;
+          margin: 0 0 6px 0;
+          text-align: center;
+        }
+        .ccms-ob-subtitle {
+          font-size: 14px;
+          color: #4A4F6A;
+          margin: 0 0 32px 0;
+          text-align: center;
+          line-height: 1.5;
+        }
+
+        /* Step content fade */
+        .ccms-ob-step-content {
+          transition: opacity 200ms ease-out;
+          opacity: 1;
+        }
+        .ccms-ob-step-content.fading {
           opacity: 0;
-          animation: ccms-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Form elements */
+        .ccms-ob-label {
+          display: block;
+          font-size: 13px;
+          font-weight: 500;
+          color: #1B2352;
+          margin-bottom: 6px;
+        }
+        .ccms-ob-optional {
+          color: #8085A0;
+          font-weight: 400;
+          margin-left: 4px;
+        }
+        .ccms-ob-input {
+          width: 100%;
+          height: 42px;
+          border-radius: 8px;
+          border: 1px solid #DFE2EE;
+          padding: 0 14px;
+          font-size: 14px;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
+          color: #1B2352;
+          background: #fff;
+          outline: none;
+          transition: border-color 0.15s, box-shadow 0.15s;
+          box-sizing: border-box;
+        }
+        .ccms-ob-input:focus {
+          border-color: #4F6BED;
+          box-shadow: 0 0 0 3px rgba(79, 107, 237, 0.12);
+        }
+        .ccms-ob-input::placeholder {
+          color: #8085A0;
+        }
+        .ccms-ob-input.disabled {
+          background: #F7F8FB;
+          color: #8085A0;
+          cursor: not-allowed;
+        }
+
+        .ccms-ob-select-wrap {
+          position: relative;
+        }
+        .ccms-ob-select-wrap svg {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          pointer-events: none;
+          color: #8085A0;
+        }
+        .ccms-ob-select {
+          width: 100%;
+          height: 42px;
+          border-radius: 8px;
+          border: 1px solid #DFE2EE;
+          padding: 0 36px 0 14px;
+          font-size: 14px;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
+          color: #1B2352;
+          background: #fff;
+          outline: none;
+          appearance: none;
+          -webkit-appearance: none;
+          cursor: pointer;
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .ccms-ob-select:focus {
+          border-color: #4F6BED;
+          box-shadow: 0 0 0 3px rgba(79, 107, 237, 0.12);
+        }
+        .ccms-ob-select.placeholder {
+          color: #8085A0;
+        }
+
+        .ccms-ob-field-error {
+          color: #EF4444;
+          font-size: 12px;
+          margin-top: 4px;
+        }
+
+        .ccms-ob-row {
+          display: flex;
+          gap: 12px;
+        }
+        .ccms-ob-row > * {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .ccms-ob-field {
+          margin-bottom: 16px;
+        }
+
+        /* Buttons */
+        .ccms-ob-btn-row {
+          display: flex;
+          gap: 12px;
+          margin-top: 24px;
+        }
+        .ccms-ob-btn-primary {
+          flex: 1;
+          height: 42px;
+          border-radius: 8px;
+          border: none;
+          background: #4F6BED;
+          color: #fff;
+          font-weight: 600;
+          font-size: 14px;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .ccms-ob-btn-primary:hover {
+          background: #3D59DB;
+        }
+        .ccms-ob-btn-primary:disabled {
+          opacity: 0.7;
+          cursor: default;
+        }
+        .ccms-ob-btn-back {
+          height: 42px;
+          border-radius: 8px;
+          border: 1px solid #DFE2EE;
+          background: #fff;
+          color: #1B2352;
+          font-weight: 500;
+          font-size: 14px;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
+          cursor: pointer;
+          padding: 0 20px;
+          transition: border-color 0.15s, background 0.15s;
+        }
+        .ccms-ob-btn-back:hover {
+          background: #F7F8FB;
+          border-color: #C5CAE0;
+        }
+
+        /* Profile photo */
+        .ccms-ob-avatar {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin-bottom: 24px;
+        }
+        .ccms-ob-avatar-circle {
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          background: #4F6BED;
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 22px;
+          font-weight: 600;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .ccms-ob-avatar-hint {
+          font-size: 12px;
+          color: #8085A0;
+          margin-top: 8px;
+        }
+        .ccms-ob-avatar-link {
+          font-size: 13px;
+          color: #4F6BED;
+          cursor: pointer;
+          background: none;
+          border: none;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
+          margin-top: 4px;
+          font-weight: 500;
+        }
+        .ccms-ob-avatar-link:hover {
+          text-decoration: underline;
+        }
+
+        /* Logo upload area */
+        .ccms-ob-upload {
+          border: 1.5px dashed #DFE2EE;
+          border-radius: 8px;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          transition: border-color 0.15s, background 0.15s;
+        }
+        .ccms-ob-upload:hover {
+          border-color: #4F6BED;
+          background: rgba(79, 107, 237, 0.03);
+        }
+        .ccms-ob-upload-text {
+          font-size: 13px;
+          color: #4A4F6A;
+        }
+        .ccms-ob-upload-text span {
+          color: #4F6BED;
+          font-weight: 500;
+        }
+        .ccms-ob-upload-preview {
+          width: 48px;
+          height: 48px;
+          border-radius: 8px;
+          object-fit: cover;
+        }
+
+        /* Summary */
+        .ccms-ob-summary {
+          background: #F7F8FB;
+          border-radius: 10px;
+          overflow: hidden;
+          margin-bottom: 20px;
+        }
+        .ccms-ob-summary-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 16px;
+          border-bottom: 1px solid #E8ECF9;
+        }
+        .ccms-ob-summary-row:last-child {
+          border-bottom: none;
+        }
+        .ccms-ob-summary-label {
+          font-size: 13px;
+          color: #8085A0;
+        }
+        .ccms-ob-summary-value {
+          font-size: 13px;
+          font-weight: 500;
+          color: #1B2352;
+          text-align: right;
+        }
+
+        /* Invite banner */
+        .ccms-ob-invite {
+          background: #1B2352;
+          border-radius: 10px;
+          padding: 16px 20px;
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          margin-bottom: 4px;
+        }
+        .ccms-ob-invite-icon {
+          color: #7B93F5;
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+        .ccms-ob-invite-text {
+          font-size: 13px;
+          color: #C5CAE0;
+          line-height: 1.5;
+        }
+        .ccms-ob-invite-text strong {
+          color: #fff;
+          font-weight: 600;
+        }
+
+        @media (max-width: 480px) {
+          .ccms-ob-page {
+            padding: 32px 16px 48px;
+          }
+          .ccms-ob-row {
+            flex-direction: column;
+            gap: 0;
+          }
+          .ccms-ob-step-line {
+            width: 28px;
+          }
         }
       `}</style>
 
-      <div style={{
-        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--dm-bg-page, #F4F5F7)', padding: 24,
-        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-      }}>
-        <div
-          className="ccms-onboard-reveal"
-          style={{
-            width: '100%', maxWidth: 420,
-            background: 'var(--dm-bg-card, #fff)',
-            borderRadius: 16,
-            border: '1px solid var(--dm-border, #E5E7EB)',
-            padding: 32,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-          }}
-        >
+      <div className="ccms-ob-page">
+        <div className="ccms-ob-content">
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-            <svg width="36" height="36" viewBox="204 269 997 1065" fill="none">
+          <div className="ccms-ob-logo">
+            <svg width="32" height="32" viewBox="204 269 997 1065" fill="none">
               <g transform="translate(0.000000,1600.000000) scale(0.100000,-0.100000)"
               fill="#1B2352" stroke="none">
               <path d="M7110 12913 c-19 -2 -102 -10 -185 -19 -82 -8 -166 -17 -185 -19 -97
@@ -241,110 +748,335 @@ export function OnboardingPage() {
               -23 2 -44 -8z"/>
               </g>
             </svg>
-            <span style={{
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontWeight: 700, fontSize: 18, color: 'var(--dm-text-ink, #1B2352)',
-            }}>
-              Centry CMS
-            </span>
+            <span className="ccms-ob-logo-text">Centry</span>
           </div>
 
-          <h1
-            className="ccms-onboard-reveal"
-            style={{
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontWeight: 700, fontSize: 22,
-              color: 'var(--dm-text-ink, #1B2352)',
-              margin: '0 0 6px 0',
-              letterSpacing: '-0.02em',
-              animationDelay: '100ms',
-            }}
-          >
-            Set up your church
-          </h1>
-          <p
-            className="ccms-onboard-reveal"
-            style={{
-              fontSize: 13, color: 'var(--dm-text-secondary, #6B7280)',
-              margin: '0 0 24px 0',
-              animationDelay: '180ms',
-            }}
-          >
-            Tell us about your organization to get started.
-          </p>
+          {/* Step indicator */}
+          <div className="ccms-ob-steps">
+            {[1, 2, 3, 4].map((step, i) => (
+              <div key={step} style={{ display: 'flex', alignItems: 'center' }}>
+                <div className={`ccms-ob-step-dot ${
+                  step < currentStep ? 'completed' :
+                  step === currentStep ? 'active' : 'upcoming'
+                }`}>
+                  {step}
+                </div>
+                {i < 3 && (
+                  <div className={`ccms-ob-step-line ${
+                    step < currentStep ? 'done' : 'pending'
+                  }`} />
+                )}
+              </div>
+            ))}
+          </div>
 
-          <form onSubmit={handleSetup}>
-            <label
-              className="ccms-onboard-reveal"
-              htmlFor="org-name"
-              style={{
-                fontSize: 12, fontWeight: 500,
-                color: 'var(--dm-text-body, #374151)',
-                display: 'block', marginBottom: 6,
-                animationDelay: '260ms',
-              }}
-            >
-              Church / Organization Name
-            </label>
-            <input
-              id="org-name"
-              type="text"
-              placeholder="e.g. Grace Community Church"
-              value={orgName}
-              onChange={e => setOrgName(e.target.value)}
-              autoFocus
-              className="ccms-onboard-reveal"
-              style={{
-                width: '100%', height: 44, borderRadius: 8,
-                border: '1px solid var(--dm-border, #D5D9E8)',
-                padding: '0 14px', fontSize: 14, outline: 'none',
-                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                background: 'var(--dm-bg-card, #fff)',
-                color: 'var(--dm-text-ink, #111827)',
-                marginBottom: 8,
-                animationDelay: '340ms',
-                transition: 'border-color 0.15s, box-shadow 0.15s',
-              }}
-              onFocus={e => {
-                e.currentTarget.style.borderColor = '#4F6BED'
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(79,107,237,0.13)'
-              }}
-              onBlur={e => {
-                e.currentTarget.style.borderColor = 'var(--dm-border, #D5D9E8)'
-                e.currentTarget.style.boxShadow = 'none'
-              }}
-            />
+          {/* Step content */}
+          <div className={`ccms-ob-step-content ${isTransitioning ? 'fading' : ''}`}>
 
-            {error && (
-              <div style={{
-                color: '#EF4444', fontSize: 12,
-                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                marginBottom: 12,
-              }}>
-                {error}
+            {/* ─── Step 1: Profile ─── */}
+            {currentStep === 1 && (
+              <div>
+                <h1 className="ccms-ob-heading">Set up your profile</h1>
+                <p className="ccms-ob-subtitle">
+                  We pulled some details from your Google account. Fill in the rest so your team recognizes you.
+                </p>
+
+                <div className="ccms-ob-avatar">
+                  <div className="ccms-ob-avatar-circle">{initials}</div>
+                  <span className="ccms-ob-avatar-hint">Auto-filled from Google</span>
+                  <button type="button" className="ccms-ob-avatar-link">Change photo</button>
+                </div>
+
+                <div className="ccms-ob-row">
+                  <div className="ccms-ob-field">
+                    <label className="ccms-ob-label">First name</label>
+                    <input
+                      className="ccms-ob-input"
+                      value={firstName}
+                      onChange={e => { setFirstName(e.target.value); setFieldErrors(p => ({ ...p, firstName: '' })) }}
+                      placeholder="John"
+                    />
+                    {fieldErrors.firstName && <div className="ccms-ob-field-error">{fieldErrors.firstName}</div>}
+                  </div>
+                  <div className="ccms-ob-field">
+                    <label className="ccms-ob-label">Last name</label>
+                    <input
+                      className="ccms-ob-input"
+                      value={lastName}
+                      onChange={e => { setLastName(e.target.value); setFieldErrors(p => ({ ...p, lastName: '' })) }}
+                      placeholder="Doe"
+                    />
+                    {fieldErrors.lastName && <div className="ccms-ob-field-error">{fieldErrors.lastName}</div>}
+                  </div>
+                </div>
+
+                <div className="ccms-ob-field">
+                  <label className="ccms-ob-label">Email</label>
+                  <input className="ccms-ob-input disabled" value={email} readOnly tabIndex={-1} />
+                </div>
+
+                <div className="ccms-ob-field">
+                  <label className="ccms-ob-label">Phone number</label>
+                  <input
+                    className="ccms-ob-input"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    placeholder="+233 XX XXX XXXX"
+                  />
+                </div>
+
+                <div className="ccms-ob-field">
+                  <label className="ccms-ob-label">Role in church</label>
+                  <div className="ccms-ob-select-wrap">
+                    <select
+                      className={`ccms-ob-select ${!churchRole ? 'placeholder' : ''}`}
+                      value={churchRole}
+                      onChange={e => setChurchRole(e.target.value)}
+                    >
+                      <option value="" disabled>Select your role</option>
+                      {CHURCH_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                    <ChevronDown size={16} />
+                  </div>
+                </div>
+
+                <div className="ccms-ob-btn-row">
+                  <button className="ccms-ob-btn-primary" type="button" onClick={handleContinue}>
+                    Continue
+                  </button>
+                </div>
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={saving || !orgName.trim()}
-              className="ccms-onboard-reveal"
-              style={{
-                width: '100%', height: 44, borderRadius: 8, border: 'none',
-                background: '#4F6BED', color: '#fff', fontWeight: 600, fontSize: 14,
-                cursor: saving || !orgName.trim() ? 'default' : 'pointer',
-                opacity: saving || !orgName.trim() ? 0.7 : 1,
-                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                marginTop: 8,
-                transition: 'background 0.15s, transform 0.12s, box-shadow 0.15s',
-                animationDelay: '420ms',
-              }}
-            >
-              {saving ? 'Setting up...' : 'Get Started'}
-            </button>
-          </form>
+            {/* ─── Step 2: Church ─── */}
+            {currentStep === 2 && (
+              <div>
+                <h1 className="ccms-ob-heading">Tell us about your church</h1>
+                <p className="ccms-ob-subtitle">
+                  This creates your organization in Centry. You can update everything later.
+                </p>
+
+                <div className="ccms-ob-field">
+                  <label className="ccms-ob-label">Church name</label>
+                  <input
+                    className="ccms-ob-input"
+                    value={churchName}
+                    onChange={e => { setChurchName(e.target.value); setFieldErrors(p => ({ ...p, churchName: '' })) }}
+                    placeholder="Your religious organisation"
+                  />
+                  {fieldErrors.churchName && <div className="ccms-ob-field-error">{fieldErrors.churchName}</div>}
+                </div>
+
+                <div className="ccms-ob-field">
+                  <label className="ccms-ob-label">Denomination</label>
+                  <div className="ccms-ob-select-wrap">
+                    <select
+                      className={`ccms-ob-select ${!denomination ? 'placeholder' : ''}`}
+                      value={denomination}
+                      onChange={e => setDenomination(e.target.value)}
+                    >
+                      <option value="" disabled>Select denomination</option>
+                      {DENOMINATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                    <ChevronDown size={16} />
+                  </div>
+                </div>
+
+                <div className="ccms-ob-field">
+                  <label className="ccms-ob-label">Church size</label>
+                  <div className="ccms-ob-select-wrap">
+                    <select
+                      className={`ccms-ob-select ${!churchSize ? 'placeholder' : ''}`}
+                      value={churchSize}
+                      onChange={e => setChurchSize(e.target.value)}
+                    >
+                      <option value="" disabled>Select size</option>
+                      {CHURCH_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    <ChevronDown size={16} />
+                  </div>
+                </div>
+
+                <div className="ccms-ob-field">
+                  <label className="ccms-ob-label">
+                    Logo <span className="ccms-ob-optional">optional</span>
+                  </label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={e => {
+                      const f = e.target.files?.[0]
+                      if (f) handleLogoUpload(f)
+                    }}
+                  />
+                  <div
+                    className="ccms-ob-upload"
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                      e.preventDefault()
+                      const f = e.dataTransfer.files?.[0]
+                      if (f) handleLogoUpload(f)
+                    }}
+                  >
+                    {logoUrl ? (
+                      <img src={logoUrl} alt="Logo" className="ccms-ob-upload-preview" />
+                    ) : logoUploading ? (
+                      <div style={{
+                        width: 24, height: 24, borderRadius: '50%',
+                        border: '2px solid #DFE2EE', borderTopColor: '#4F6BED',
+                        animation: 'ccms-ob-spin 0.8s linear infinite',
+                      }} />
+                    ) : (
+                      <Upload size={20} color="#8085A0" />
+                    )}
+                    <div className="ccms-ob-upload-text">
+                      <span>Upload</span> or drag and drop
+                    </div>
+                  </div>
+                </div>
+
+                <div className="ccms-ob-btn-row">
+                  <button className="ccms-ob-btn-back" type="button" onClick={handleBack}>
+                    Back
+                  </button>
+                  <button className="ccms-ob-btn-primary" type="button" onClick={handleContinue}>
+                    Continue
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ─── Step 3: Location ─── */}
+            {currentStep === 3 && (
+              <div>
+                <h1 className="ccms-ob-heading">Where are you located?</h1>
+                <p className="ccms-ob-subtitle">
+                  Helps us tailor currency, payments, and regional features for your church.
+                </p>
+
+                <div className="ccms-ob-field">
+                  <label className="ccms-ob-label">Country</label>
+                  <div className="ccms-ob-select-wrap">
+                    <select
+                      className="ccms-ob-select"
+                      value={country}
+                      onChange={e => setCountry(e.target.value)}
+                    >
+                      {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <ChevronDown size={16} />
+                  </div>
+                </div>
+
+                <div className="ccms-ob-field">
+                  <label className="ccms-ob-label">City / Town</label>
+                  <input
+                    className="ccms-ob-input"
+                    value={city}
+                    onChange={e => { setCity(e.target.value); setFieldErrors(p => ({ ...p, city: '' })) }}
+                    placeholder="Accra"
+                  />
+                  {fieldErrors.city && <div className="ccms-ob-field-error">{fieldErrors.city}</div>}
+                </div>
+
+                <div className="ccms-ob-field">
+                  <label className="ccms-ob-label">
+                    Street address <span className="ccms-ob-optional">optional</span>
+                  </label>
+                  <input
+                    className="ccms-ob-input"
+                    value={address}
+                    onChange={e => setAddress(e.target.value)}
+                    placeholder="14 Independence Ave, East Legon"
+                  />
+                </div>
+
+                <div className="ccms-ob-field">
+                  <label className="ccms-ob-label">
+                    Post code <span className="ccms-ob-optional">optional</span>
+                  </label>
+                  <input
+                    className="ccms-ob-input"
+                    value={postCode}
+                    onChange={e => setPostCode(e.target.value)}
+                    placeholder="GA-XXX-XXXX"
+                  />
+                </div>
+
+                <div className="ccms-ob-btn-row">
+                  <button className="ccms-ob-btn-back" type="button" onClick={handleBack}>
+                    Back
+                  </button>
+                  <button className="ccms-ob-btn-primary" type="button" onClick={handleContinue}>
+                    Continue
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ─── Step 4: Summary ─── */}
+            {currentStep === 4 && (
+              <div>
+                <h1 className="ccms-ob-heading">You're ready to go</h1>
+                <p className="ccms-ob-subtitle">
+                  Here's what we set up. Change anything from Settings once you're inside.
+                </p>
+
+                <div className="ccms-ob-summary">
+                  <SummaryRow label="Name" value={`${firstName} ${lastName}`} />
+                  <SummaryRow label="Email" value={email} />
+                  {phone && <SummaryRow label="Phone" value={phone} />}
+                  {churchRole && <SummaryRow label="Role" value={churchRole} />}
+                  <SummaryRow label="Church" value={churchName} />
+                  {denomination && <SummaryRow label="Denomination" value={denomination} />}
+                  {churchSize && <SummaryRow label="Size" value={churchSize} />}
+                  <SummaryRow label="Location" value={[city, country].filter(Boolean).join(', ')} />
+                </div>
+
+                <div className="ccms-ob-invite">
+                  <Users size={20} className="ccms-ob-invite-icon" />
+                  <div className="ccms-ob-invite-text">
+                    <strong>Bring your team on board.</strong> Head to Settings, then Invite Members to add your leadership, volunteers, and staff.
+                  </div>
+                </div>
+
+                {error && (
+                  <div style={{ color: '#EF4444', fontSize: 13, marginTop: 12, textAlign: 'center' }}>
+                    {error}
+                  </div>
+                )}
+
+                <div className="ccms-ob-btn-row">
+                  <button className="ccms-ob-btn-back" type="button" onClick={handleBack} disabled={saving}>
+                    Back
+                  </button>
+                  <button
+                    className="ccms-ob-btn-primary"
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={saving}
+                  >
+                    {saving ? 'Setting up...' : 'Get started'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
       </div>
     </>
+  )
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="ccms-ob-summary-row">
+      <span className="ccms-ob-summary-label">{label}</span>
+      <span className="ccms-ob-summary-value">{value}</span>
+    </div>
   )
 }
