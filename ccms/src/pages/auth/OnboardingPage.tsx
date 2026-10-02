@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { toast } from 'sonner'
-import { Upload, ChevronDown, Users } from 'lucide-react'
+import { ChevronDown, Users } from 'lucide-react'
 
 const CHURCH_ROLES = [
   'Senior Pastor',
@@ -54,6 +54,95 @@ const COUNTRIES = [
   'Other',
 ]
 
+interface PhoneCountry {
+  code: string
+  dial: string
+  flag: string
+  name: string
+  maxDigits: number
+  format?: (digits: string) => string
+}
+
+const formatGhana = (d: string) => {
+  if (d.length <= 2) return d
+  if (d.length <= 5) return `${d.slice(0, 2)} ${d.slice(2)}`
+  return `${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 9)}`
+}
+const formatNigeria = (d: string) => {
+  if (d.length <= 3) return d
+  if (d.length <= 6) return `${d.slice(0, 3)} ${d.slice(3)}`
+  return `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6, 10)}`
+}
+const formatKenya = (d: string) => {
+  if (d.length <= 3) return d
+  if (d.length <= 6) return `${d.slice(0, 3)} ${d.slice(3)}`
+  return `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6, 9)}`
+}
+const formatSA = (d: string) => {
+  if (d.length <= 2) return d
+  if (d.length <= 5) return `${d.slice(0, 2)} ${d.slice(2)}`
+  return `${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 9)}`
+}
+const formatUK = (d: string) => {
+  if (d.length <= 4) return d
+  if (d.length <= 7) return `${d.slice(0, 4)} ${d.slice(4)}`
+  return `${d.slice(0, 4)} ${d.slice(4, 7)} ${d.slice(7, 10)}`
+}
+const formatUS = (d: string) => {
+  if (d.length <= 3) return `(${d}`
+  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6, 10)}`
+}
+
+const TOP_PHONE_COUNTRIES: PhoneCountry[] = [
+  { code: 'GH', dial: '+233', flag: '\u{1F1EC}\u{1F1ED}', name: 'Ghana', maxDigits: 9, format: formatGhana },
+  { code: 'NG', dial: '+234', flag: '\u{1F1F3}\u{1F1EC}', name: 'Nigeria', maxDigits: 10, format: formatNigeria },
+  { code: 'KE', dial: '+254', flag: '\u{1F1F0}\u{1F1EA}', name: 'Kenya', maxDigits: 9, format: formatKenya },
+  { code: 'ZA', dial: '+27', flag: '\u{1F1FF}\u{1F1E6}', name: 'South Africa', maxDigits: 9, format: formatSA },
+  { code: 'GB', dial: '+44', flag: '\u{1F1EC}\u{1F1E7}', name: 'United Kingdom', maxDigits: 10, format: formatUK },
+  { code: 'US', dial: '+1', flag: '\u{1F1FA}\u{1F1F8}', name: 'United States', maxDigits: 10, format: formatUS },
+  { code: 'CA', dial: '+1', flag: '\u{1F1E8}\u{1F1E6}', name: 'Canada', maxDigits: 10, format: formatUS },
+]
+
+const OTHER_PHONE_COUNTRIES: PhoneCountry[] = [
+  { code: 'CM', dial: '+237', flag: '\u{1F1E8}\u{1F1F2}', name: 'Cameroon', maxDigits: 9 },
+  { code: 'CI', dial: '+225', flag: '\u{1F1E8}\u{1F1EE}', name: "Côte d'Ivoire", maxDigits: 10 },
+  { code: 'EG', dial: '+20', flag: '\u{1F1EA}\u{1F1EC}', name: 'Egypt', maxDigits: 10 },
+  { code: 'ET', dial: '+251', flag: '\u{1F1EA}\u{1F1F9}', name: 'Ethiopia', maxDigits: 9 },
+  { code: 'DE', dial: '+49', flag: '\u{1F1E9}\u{1F1EA}', name: 'Germany', maxDigits: 12 },
+  { code: 'IN', dial: '+91', flag: '\u{1F1EE}\u{1F1F3}', name: 'India', maxDigits: 10 },
+  { code: 'IE', dial: '+353', flag: '\u{1F1EE}\u{1F1EA}', name: 'Ireland', maxDigits: 9 },
+  { code: 'JM', dial: '+1876', flag: '\u{1F1EF}\u{1F1F2}', name: 'Jamaica', maxDigits: 7 },
+  { code: 'LR', dial: '+231', flag: '\u{1F1F1}\u{1F1F7}', name: 'Liberia', maxDigits: 9 },
+  { code: 'MW', dial: '+265', flag: '\u{1F1F2}\u{1F1FC}', name: 'Malawi', maxDigits: 9 },
+  { code: 'ML', dial: '+223', flag: '\u{1F1F2}\u{1F1F1}', name: 'Mali', maxDigits: 8 },
+  { code: 'NL', dial: '+31', flag: '\u{1F1F3}\u{1F1F1}', name: 'Netherlands', maxDigits: 9 },
+  { code: 'RW', dial: '+250', flag: '\u{1F1F7}\u{1F1FC}', name: 'Rwanda', maxDigits: 9 },
+  { code: 'SN', dial: '+221', flag: '\u{1F1F8}\u{1F1F3}', name: 'Senegal', maxDigits: 9 },
+  { code: 'SL', dial: '+232', flag: '\u{1F1F8}\u{1F1F1}', name: 'Sierra Leone', maxDigits: 8 },
+  { code: 'TZ', dial: '+255', flag: '\u{1F1F9}\u{1F1FF}', name: 'Tanzania', maxDigits: 9 },
+  { code: 'TG', dial: '+228', flag: '\u{1F1F9}\u{1F1EC}', name: 'Togo', maxDigits: 8 },
+  { code: 'UG', dial: '+256', flag: '\u{1F1FA}\u{1F1EC}', name: 'Uganda', maxDigits: 9 },
+  { code: 'ZM', dial: '+260', flag: '\u{1F1FF}\u{1F1F2}', name: 'Zambia', maxDigits: 9 },
+  { code: 'ZW', dial: '+263', flag: '\u{1F1FF}\u{1F1FC}', name: 'Zimbabwe', maxDigits: 9 },
+]
+
+const ALL_PHONE_COUNTRIES = [...TOP_PHONE_COUNTRIES, ...OTHER_PHONE_COUNTRIES]
+
+function getPhoneCountry(code: string): PhoneCountry {
+  return ALL_PHONE_COUNTRIES.find(c => c.code === code) || TOP_PHONE_COUNTRIES[0]
+}
+
+function formatPhoneDisplay(dialCode: string, digits: string, country: PhoneCountry): string {
+  if (!digits) return ''
+  const formatted = country.format ? country.format(digits) : digits
+  return `${dialCode} ${formatted}`
+}
+
+function stripToDigits(value: string): string {
+  return value.replace(/\D/g, '')
+}
+
 export function OnboardingPage() {
   const { session, loading, needsOnboarding, user } = useAuth()
 
@@ -64,16 +153,14 @@ export function OnboardingPage() {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
+  const [phoneCountryCode, setPhoneCountryCode] = useState('GH')
+  const [phoneDigits, setPhoneDigits] = useState('')
   const [churchRole, setChurchRole] = useState('')
 
   // Step 2
   const [churchName, setChurchName] = useState('')
   const [denomination, setDenomination] = useState('')
   const [churchSize, setChurchSize] = useState('')
-  const [logoUrl, setLogoUrl] = useState<string | null>(null)
-  const [logoUploading, setLogoUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Step 3
   const [country, setCountry] = useState('Ghana')
@@ -85,6 +172,20 @@ export function OnboardingPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+
+  const phoneCountry = getPhoneCountry(phoneCountryCode)
+
+  const fullPhoneNumber = phoneDigits
+    ? `${phoneCountry.dial}${phoneDigits}`
+    : ''
+
+  const displayPhoneNumber = phoneDigits
+    ? formatPhoneDisplay(phoneCountry.dial, phoneDigits, phoneCountry)
+    : ''
+
+  const phoneInputFormatted = phoneCountry.format
+    ? phoneCountry.format(phoneDigits)
+    : phoneDigits
 
   useEffect(() => {
     if (!session) return
@@ -154,23 +255,33 @@ export function OnboardingPage() {
     goToStep(currentStep - 1)
   }
 
-  const handleLogoUpload = async (file: File) => {
-    if (!file || !file.type.startsWith('image/')) return
-    setLogoUploading(true)
-    try {
-      const ext = file.name.split('.').pop()
-      const path = `logos/${Date.now()}.${ext}`
-      const { error: uploadErr } = await supabase.storage.from('logos').upload(path, file)
-      if (uploadErr) {
-        toast.error('Logo upload failed')
-        return
+  const handlePhoneInput = (raw: string) => {
+    let cleaned = raw.replace(/[^\d]/g, '')
+    if (cleaned.startsWith('0')) cleaned = cleaned.slice(1)
+    cleaned = cleaned.slice(0, phoneCountry.maxDigits)
+    setPhoneDigits(cleaned)
+  }
+
+  const handlePhonePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasted = e.clipboardData.getData('text').trim()
+    if (pasted.startsWith('+') || /^\d{7,}/.test(pasted)) {
+      e.preventDefault()
+      let digits = pasted.replace(/[^\d+]/g, '')
+      if (digits.startsWith('+')) digits = digits.slice(1)
+      const matched = ALL_PHONE_COUNTRIES.find(c => {
+        const dialDigits = c.dial.replace('+', '')
+        return digits.startsWith(dialDigits)
+      })
+      if (matched) {
+        const dialDigits = matched.dial.replace('+', '')
+        setPhoneCountryCode(matched.code)
+        let local = digits.slice(dialDigits.length)
+        if (local.startsWith('0')) local = local.slice(1)
+        setPhoneDigits(local.slice(0, matched.maxDigits))
+      } else {
+        if (digits.startsWith('0')) digits = digits.slice(1)
+        setPhoneDigits(digits.slice(0, phoneCountry.maxDigits))
       }
-      const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path)
-      setLogoUrl(publicUrl)
-    } catch {
-      toast.error('Logo upload failed')
-    } finally {
-      setLogoUploading(false)
     }
   }
 
@@ -182,12 +293,12 @@ export function OnboardingPage() {
       p_org_name: churchName.trim(),
       p_denomination: denomination || null,
       p_church_size: churchSize || null,
-      p_logo_url: logoUrl,
+      p_logo_url: null,
       p_country: country,
       p_city: city || null,
       p_address: address || null,
       p_post_code: postCode || null,
-      p_phone: phone || null,
+      p_phone: fullPhoneNumber || null,
       p_church_role: churchRole || null,
       p_first_name: firstName.trim(),
       p_last_name: lastName.trim(),
@@ -202,8 +313,6 @@ export function OnboardingPage() {
     toast.success('Your organisation is ready!')
     window.location.href = '/'
   }
-
-  const initials = `${(firstName[0] || '').toUpperCase()}${(lastName[0] || '').toUpperCase()}` || '?'
 
   return (
     <>
@@ -448,74 +557,62 @@ export function OnboardingPage() {
           border-color: #C5CAE0;
         }
 
-        /* Profile photo */
-        .ccms-ob-avatar {
+        /* Phone input group */
+        .ccms-ob-phone-group {
           display: flex;
-          flex-direction: column;
-          align-items: center;
-          margin-bottom: 24px;
-        }
-        .ccms-ob-avatar-circle {
-          width: 64px;
-          height: 64px;
-          border-radius: 50%;
-          background: #4F6BED;
-          color: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 22px;
-          font-weight: 600;
-          font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-        .ccms-ob-avatar-hint {
-          font-size: 12px;
-          color: #8085A0;
-          margin-top: 8px;
-        }
-        .ccms-ob-avatar-link {
-          font-size: 13px;
-          color: #4F6BED;
-          cursor: pointer;
-          background: none;
-          border: none;
-          font-family: 'IBM Plex Sans', system-ui, sans-serif;
-          margin-top: 4px;
-          font-weight: 500;
-        }
-        .ccms-ob-avatar-link:hover {
-          text-decoration: underline;
-        }
-
-        /* Logo upload area */
-        .ccms-ob-upload {
-          border: 1.5px dashed #DFE2EE;
+          border: 1px solid #DFE2EE;
           border-radius: 8px;
-          padding: 20px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-          transition: border-color 0.15s, background 0.15s;
+          overflow: hidden;
+          height: 42px;
+          transition: border-color 0.15s, box-shadow 0.15s;
         }
-        .ccms-ob-upload:hover {
+        .ccms-ob-phone-group:focus-within {
           border-color: #4F6BED;
-          background: rgba(79, 107, 237, 0.03);
+          box-shadow: 0 0 0 3px rgba(79, 107, 237, 0.12);
         }
-        .ccms-ob-upload-text {
-          font-size: 13px;
-          color: #4A4F6A;
+        .ccms-ob-phone-country {
+          position: relative;
+          display: flex;
+          align-items: center;
+          background: #F9FAFB;
+          border-right: 1px solid #DFE2EE;
+          flex-shrink: 0;
         }
-        .ccms-ob-upload-text span {
-          color: #4F6BED;
-          font-weight: 500;
+        .ccms-ob-phone-country select {
+          appearance: none;
+          -webkit-appearance: none;
+          border: none;
+          background: transparent;
+          font-size: 14px;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
+          color: #1B2352;
+          padding: 0 28px 0 12px;
+          height: 100%;
+          cursor: pointer;
+          outline: none;
+          min-width: 105px;
         }
-        .ccms-ob-upload-preview {
-          width: 48px;
-          height: 48px;
-          border-radius: 8px;
-          object-fit: cover;
+        .ccms-ob-phone-country svg {
+          position: absolute;
+          right: 8px;
+          top: 50%;
+          transform: translateY(-50%);
+          pointer-events: none;
+          color: #8085A0;
+        }
+        .ccms-ob-phone-input {
+          flex: 1;
+          border: none;
+          padding: 0 12px;
+          font-size: 14px;
+          font-family: 'IBM Plex Sans', system-ui, sans-serif;
+          color: #1B2352;
+          background: #fff;
+          outline: none;
+          min-width: 0;
+        }
+        .ccms-ob-phone-input::placeholder {
+          color: #8085A0;
         }
 
         /* Summary */
@@ -773,19 +870,13 @@ export function OnboardingPage() {
           {/* Step content */}
           <div className={`ccms-ob-step-content ${isTransitioning ? 'fading' : ''}`}>
 
-            {/* ─── Step 1: Profile ─── */}
+            {/* Step 1: Profile */}
             {currentStep === 1 && (
               <div>
                 <h1 className="ccms-ob-heading">Set up your profile</h1>
                 <p className="ccms-ob-subtitle">
                   We pulled some details from your Google account. Fill in the rest so your team recognizes you.
                 </p>
-
-                <div className="ccms-ob-avatar">
-                  <div className="ccms-ob-avatar-circle">{initials}</div>
-                  <span className="ccms-ob-avatar-hint">Auto-filled from Google</span>
-                  <button type="button" className="ccms-ob-avatar-link">Change photo</button>
-                </div>
 
                 <div className="ccms-ob-row">
                   <div className="ccms-ob-field">
@@ -817,12 +908,42 @@ export function OnboardingPage() {
 
                 <div className="ccms-ob-field">
                   <label className="ccms-ob-label">Phone number</label>
-                  <input
-                    className="ccms-ob-input"
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    placeholder="+233 XX XXX XXXX"
-                  />
+                  <div className="ccms-ob-phone-group">
+                    <div className="ccms-ob-phone-country">
+                      <select
+                        value={phoneCountryCode}
+                        onChange={e => {
+                          setPhoneCountryCode(e.target.value)
+                          const newCountry = getPhoneCountry(e.target.value)
+                          setPhoneDigits(prev => prev.slice(0, newCountry.maxDigits))
+                        }}
+                      >
+                        <optgroup label="Common">
+                          {TOP_PHONE_COUNTRIES.map(c => (
+                            <option key={c.code} value={c.code}>
+                              {c.flag} {c.dial}
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Other">
+                          {OTHER_PHONE_COUNTRIES.map(c => (
+                            <option key={c.code} value={c.code}>
+                              {c.flag} {c.dial}
+                            </option>
+                          ))}
+                        </optgroup>
+                      </select>
+                      <ChevronDown size={14} />
+                    </div>
+                    <input
+                      className="ccms-ob-phone-input"
+                      value={phoneInputFormatted}
+                      onChange={e => handlePhoneInput(e.target.value)}
+                      onPaste={handlePhonePaste}
+                      placeholder={phoneCountry.code === 'GH' ? '24 348 5678' : phoneCountry.code === 'US' || phoneCountry.code === 'CA' ? '(555) 123-4567' : 'Phone number'}
+                      inputMode="tel"
+                    />
+                  </div>
                 </div>
 
                 <div className="ccms-ob-field">
@@ -848,7 +969,7 @@ export function OnboardingPage() {
               </div>
             )}
 
-            {/* ─── Step 2: Church ─── */}
+            {/* Step 2: Church */}
             {currentStep === 2 && (
               <div>
                 <h1 className="ccms-ob-heading">Tell us about your church</h1>
@@ -897,47 +1018,6 @@ export function OnboardingPage() {
                   </div>
                 </div>
 
-                <div className="ccms-ob-field">
-                  <label className="ccms-ob-label">
-                    Logo <span className="ccms-ob-optional">optional</span>
-                  </label>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={e => {
-                      const f = e.target.files?.[0]
-                      if (f) handleLogoUpload(f)
-                    }}
-                  />
-                  <div
-                    className="ccms-ob-upload"
-                    onClick={() => fileInputRef.current?.click()}
-                    onDragOver={e => e.preventDefault()}
-                    onDrop={e => {
-                      e.preventDefault()
-                      const f = e.dataTransfer.files?.[0]
-                      if (f) handleLogoUpload(f)
-                    }}
-                  >
-                    {logoUrl ? (
-                      <img src={logoUrl} alt="Logo" className="ccms-ob-upload-preview" />
-                    ) : logoUploading ? (
-                      <div style={{
-                        width: 24, height: 24, borderRadius: '50%',
-                        border: '2px solid #DFE2EE', borderTopColor: '#4F6BED',
-                        animation: 'ccms-ob-spin 0.8s linear infinite',
-                      }} />
-                    ) : (
-                      <Upload size={20} color="#8085A0" />
-                    )}
-                    <div className="ccms-ob-upload-text">
-                      <span>Upload</span> or drag and drop
-                    </div>
-                  </div>
-                </div>
-
                 <div className="ccms-ob-btn-row">
                   <button className="ccms-ob-btn-back" type="button" onClick={handleBack}>
                     Back
@@ -949,7 +1029,7 @@ export function OnboardingPage() {
               </div>
             )}
 
-            {/* ─── Step 3: Location ─── */}
+            {/* Step 3: Location */}
             {currentStep === 3 && (
               <div>
                 <h1 className="ccms-ob-heading">Where are you located?</h1>
@@ -1017,7 +1097,7 @@ export function OnboardingPage() {
               </div>
             )}
 
-            {/* ─── Step 4: Summary ─── */}
+            {/* Step 4: Summary */}
             {currentStep === 4 && (
               <div>
                 <h1 className="ccms-ob-heading">You're ready to go</h1>
@@ -1028,7 +1108,7 @@ export function OnboardingPage() {
                 <div className="ccms-ob-summary">
                   <SummaryRow label="Name" value={`${firstName} ${lastName}`} />
                   <SummaryRow label="Email" value={email} />
-                  {phone && <SummaryRow label="Phone" value={phone} />}
+                  {displayPhoneNumber && <SummaryRow label="Phone" value={displayPhoneNumber} />}
                   {churchRole && <SummaryRow label="Role" value={churchRole} />}
                   <SummaryRow label="Church" value={churchName} />
                   {denomination && <SummaryRow label="Denomination" value={denomination} />}
