@@ -139,10 +139,6 @@ function formatPhoneDisplay(dialCode: string, digits: string, country: PhoneCoun
   return `${dialCode} ${formatted}`
 }
 
-function stripToDigits(value: string): string {
-  return value.replace(/\D/g, '')
-}
-
 export function OnboardingPage() {
   const { session, loading, needsOnboarding, user } = useAuth()
 
