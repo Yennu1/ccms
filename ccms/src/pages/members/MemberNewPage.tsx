@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { Camera } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { PhotoCropModal } from '../../components/PhotoCropModal'
 
 // ─── Schema ────────────────────────────────────────────────────────────────────
 
@@ -143,6 +145,45 @@ export function MemberNewPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [autoSaveText] = useState('just now')
 
+  // Photo state
+  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setPhotoError(null)
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      setPhotoError('Only JPG and PNG files are allowed')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('File is too large. Maximum size is 5 MB.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => setCropSrc(reader.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  function handleCropSave(blob: Blob) {
+    setPhotoBlob(blob)
+    if (photoPreview) URL.revokeObjectURL(photoPreview)
+    setPhotoPreview(URL.createObjectURL(blob))
+    setCropSrc(null)
+  }
+
+  function handleRemovePhoto() {
+    if (photoPreview) URL.revokeObjectURL(photoPreview)
+    setPhotoBlob(null)
+    setPhotoPreview(null)
+    setPhotoError(null)
+  }
+
   const {
     register,
     handleSubmit,
@@ -204,9 +245,27 @@ export function MemberNewPage() {
         created_by:        user.id,
       }
 
-      const { error } = await supabase.from('members').insert(insertData)
+      const { data: newMember, error } = await supabase
+        .from('members')
+        .insert(insertData)
+        .select('id')
+        .single()
 
       if (error) throw error
+
+      if (photoBlob && newMember?.id) {
+        const path = `${user.org_id}/${newMember.id}.jpg`
+        const { error: upErr } = await supabase.storage
+          .from('member-photos')
+          .upload(path, photoBlob, { upsert: true, contentType: 'image/jpeg', cacheControl: '0' })
+        if (upErr) {
+          console.error('member photo upload error:', upErr)
+          toast.error('Member saved, but photo upload failed')
+        } else {
+          const { data: { publicUrl } } = supabase.storage.from('member-photos').getPublicUrl(path)
+          await supabase.from('members').update({ photo_url: publicUrl }).eq('id', newMember.id)
+        }
+      }
 
       toast.success('Member added successfully')
       navigate('/members')
@@ -293,6 +352,89 @@ export function MemberNewPage() {
             title="Personal Information"
             subtitle="Basic personal details for this member"
           />
+
+          {/* Photo upload */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 16,
+            paddingBottom: 20, marginBottom: 20,
+            borderBottom: '0.5px solid var(--dm-border-subtle)',
+          }}>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              aria-label={photoPreview ? 'Change member photo' : 'Upload member photo'}
+              style={{
+                width: 72, height: 72, borderRadius: '50%',
+                border: photoPreview ? '0.5px solid var(--dm-border)' : '1.5px dashed var(--dm-border)',
+                background: photoPreview ? 'transparent' : 'var(--dm-bg-muted)',
+                padding: 0, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden', flexShrink: 0,
+              }}
+            >
+              {photoPreview ? (
+                <img src={photoPreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <Camera size={24} color="var(--dm-text-muted)" />
+              )}
+            </button>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)',
+                marginBottom: 2,
+              }}>
+                Member photo
+              </div>
+              <div style={{
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontSize: 12, color: 'var(--dm-text-muted)',
+                marginBottom: 6, lineHeight: 1.4,
+              }}>
+                {photoError
+                  ? <span style={{ color: '#EF4444' }}>{photoError}</span>
+                  : photoPreview
+                    ? 'Photo ready to upload'
+                    : 'Upload a photo for this member. JPG or PNG, max 5 MB.'}
+              </div>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    background: 'none', border: 'none', padding: 0,
+                    fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                    fontWeight: 600, fontSize: 13, color: '#4F6BED',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {photoPreview ? 'Change photo' : 'Upload photo'}
+                </button>
+                {photoPreview && (
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    style={{
+                      background: 'none', border: 'none', padding: 0,
+                      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                      fontWeight: 500, fontSize: 13, color: 'var(--dm-text-muted)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png"
+              onChange={onPickPhoto}
+              style={{ display: 'none' }}
+            />
+          </div>
+
           <div
             className="form-grid"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}
@@ -589,6 +731,14 @@ export function MemberNewPage() {
           </div>
         </div>
       </form>
+
+      {cropSrc && (
+        <PhotoCropModal
+          src={cropSrc}
+          onCancel={() => setCropSrc(null)}
+          onSave={handleCropSave}
+        />
+      )}
     </>
   )
 }
