@@ -123,6 +123,7 @@ export function EditTransactionPage() {
         supabase.from('transaction_categories')
           .select('id, name')
           .eq('org_id', user.org_id)
+          .eq('type', 'income')
           .order('name'),
         supabase.from('branches')
           .select('id, name')
@@ -442,32 +443,24 @@ export function EditTransactionPage() {
               <div style={sectionLabel}>Giving Details</div>
 
               <label style={fieldLabel}>Category</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: errors.category_id ? 4 : 20 }}>
-                {categories.map(c => {
-                  const style = getCatStyle(c.name)
-                  const isSelected = selectedCategoryId === c.id
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      className="cat-pill"
-                      onClick={() => setValue('category_id', c.id)}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        padding: '6px 12px', borderRadius: 999, cursor: 'pointer',
-                        border: isSelected ? `1.5px solid ${style.dot}` : '1.5px solid transparent',
-                        background: isSelected ? style.bg : '#F4F5F7',
-                        color: isSelected ? style.color : '#6B7280',
-                        fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-                        fontWeight: 600, fontSize: 12.5, transition: 'all 0.12s',
-                      }}
-                    >
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: isSelected ? style.dot : '#D1D5DB' }} />
-                      {c.name}
-                    </button>
-                  )
-                })}
-              </div>
+              {categories.length === 0 ? (
+                <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: '#9CA3AF', padding: '10px 0', marginBottom: 16 }}>
+                  No income categories exist yet. An admin can add them in Settings → Categories.
+                </div>
+              ) : (
+                <div style={{ marginBottom: errors.category_id ? 4 : 20 }}>
+                  <select
+                    value={selectedCategoryId ?? ''}
+                    onChange={e => setValue('category_id', e.target.value, { shouldValidate: true })}
+                    style={{ ...inputBase, padding: '0 12px', cursor: 'pointer' } as React.CSSProperties}
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               {errors.category_id && <div style={{ ...errorStyle, marginBottom: 16 }}>{errors.category_id.message}</div>}
 
               <label style={fieldLabel}>Amount</label>

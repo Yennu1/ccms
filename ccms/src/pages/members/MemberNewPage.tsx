@@ -216,25 +216,7 @@ export function MemberNewPage() {
     setSubmitError(null)
 
     try {
-      // Find the next member_number by looking at the current max, not the
-      // count: deletions leave gaps in the sequence, and reusing a number
-      // that was issued earlier would collide with UNIQUE (org_id, member_number).
-      const { data: latest } = await supabase
-        .from('members')
-        .select('member_number')
-        .eq('org_id', user.org_id)
-        .like('member_number', 'GH-%')
-        .order('member_number', { ascending: false })
-        .limit(1)
-
-      let nextNumber = 1
-      const latestRaw = latest?.[0]?.member_number as string | undefined
-      if (latestRaw) {
-        const parsed = parseInt(latestRaw.replace(/^GH-/, ''), 10)
-        if (Number.isFinite(parsed)) nextNumber = parsed + 1
-      }
-
-      const baseInsertData = {
+      const insertData = {
         org_id:            user.org_id,
         branch_id:         data.branch_id,
         first_name:        data.first_name,
@@ -255,30 +237,13 @@ export function MemberNewPage() {
         created_by:        user.id,
       }
 
-      // Retry on unique-violation (another admin may have inserted
-      // concurrently, or an older row happens to use this number).
-      let newMember: { id: string } | null = null
-      let lastError: unknown = null
-      for (let attempt = 0; attempt < 10; attempt++) {
-        const memberNumber = `GH-${String(nextNumber).padStart(5, '0')}`
-        const { data: inserted, error } = await supabase
-          .from('members')
-          .insert({ ...baseInsertData, member_number: memberNumber })
-          .select('id')
-          .single()
-        if (!error) {
-          newMember = inserted
-          break
-        }
-        // Postgres unique_violation
-        if ((error as { code?: string }).code === '23505') {
-          nextNumber++
-          lastError = error
-          continue
-        }
-        throw error
-      }
-      if (!newMember) throw lastError ?? new Error('Failed to assign a member number')
+      // The database trigger assigns member_number automatically.
+      const { data: newMember, error } = await supabase
+        .from('members')
+        .insert(insertData)
+        .select('id')
+        .single()
+      if (error) throw error
 
       if (photoBlob && newMember?.id) {
         const path = `${user.org_id}/${newMember.id}.jpg`
