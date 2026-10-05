@@ -134,7 +134,6 @@ function KpiCard({ label, value, sub, delta: d, accent }: {
         )}
         {sub && <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: 'var(--dm-text-muted)' }}>{sub}</span>}
       </div>
-      <div style={{ position: 'absolute', top: 16, right: 16, width: 8, height: 8, borderRadius: '50%', background: accent }} />
     </div>
   )
 }
