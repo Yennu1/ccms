@@ -8,7 +8,7 @@ import { MemberAvatar as SharedMemberAvatar } from '../../components/MemberAvata
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type DetailTab = 'attendance' | 'donations' | 'qr'
+type DetailTab = 'attendance' | 'donations'
 
 interface EventRow {
   id: string
@@ -577,56 +577,6 @@ function DonationsTab({ eventId }: { eventId: string }) {
   )
 }
 
-// ─── QR Tab ───────────────────────────────────────────────────────────────────
-
-function QRTab({ eventId }: { eventId: string }) {
-  const checkInUrl = `${window.location.origin}/checkin/${eventId}`
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 0', gap: 20 }}>
-      <div style={{ width: 180, height: 180, borderRadius: 12, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-surface)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, position: 'relative' }}>
-        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" opacity="0.2">
-          <rect x="4" y="4" width="30" height="30" rx="3" stroke="#6B7280" strokeWidth="3" />
-          <rect x="10" y="10" width="18" height="18" rx="1" fill="#6B7280" />
-          <rect x="46" y="4" width="30" height="30" rx="3" stroke="#6B7280" strokeWidth="3" />
-          <rect x="52" y="10" width="18" height="18" rx="1" fill="#6B7280" />
-          <rect x="4" y="46" width="30" height="30" rx="3" stroke="#6B7280" strokeWidth="3" />
-          <rect x="10" y="52" width="18" height="18" rx="1" fill="#6B7280" />
-          <rect x="46" y="46" width="8" height="8" rx="1" fill="#6B7280" opacity="0.5" />
-          <rect x="58" y="46" width="8" height="8" rx="1" fill="#6B7280" opacity="0.5" />
-          <rect x="46" y="58" width="8" height="8" rx="1" fill="#6B7280" opacity="0.5" />
-          <rect x="58" y="58" width="8" height="8" rx="1" fill="#6B7280" opacity="0.5" />
-        </svg>
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-            <rect width="36" height="36" rx="18" fill="var(--dm-bg-muted)" />
-            <path d="M18 10v8M14 14l4-4 4 4M12 24h12" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-      </div>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 6 }}>
-          QR Check-in
-        </div>
-        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)', marginBottom: 4 }}>
-          QR check-in coming in Sprint 7
-        </div>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#D1D5DB' }}>
-          {checkInUrl}
-        </div>
-      </div>
-      <button
-        onClick={() => { navigator.clipboard.writeText(checkInUrl); toast.success('Check-in link copied!') }}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, cursor: 'pointer' }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
-      >
-        Copy Check-in Link
-      </button>
-    </div>
-  )
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function EventDetailPage() {
@@ -691,7 +641,6 @@ export function EventDetailPage() {
   const tabs: { key: DetailTab; label: string }[] = [
     { key: 'attendance', label: 'Attendance' },
     { key: 'donations', label: 'Donations' },
-    { key: 'qr', label: 'QR Check-in' },
   ]
 
   // Print sheet stats (computed from database-fetched data, not AttendanceTab state)
@@ -864,7 +813,6 @@ export function EventDetailPage() {
         {/* Tab content */}
         {activeTab === 'attendance' && user && <AttendanceTab event={event} orgId={user.org_id} />}
         {activeTab === 'donations' && <DonationsTab eventId={event.id} />}
-        {activeTab === 'qr' && <QRTab eventId={event.id} />}
       </div>
     </>
   )
