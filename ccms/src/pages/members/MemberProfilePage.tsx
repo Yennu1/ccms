@@ -1087,7 +1087,6 @@ function AssignToGroupModal({
 interface AttRecord {
   id: string
   event_id: string
-  present: boolean
   events: { id: string; name: string; event_type: string | null; starts_at: string } | null
 }
 
@@ -1132,7 +1131,7 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
   useEffect(() => {
     supabase
       .from('attendance')
-      .select('id, event_id, present, events(id, name, event_type, starts_at)')
+      .select('id, event_id, events(id, name, event_type, starts_at)')
       .eq('member_id', memberId)
       .order('created_at', { ascending: false })
       .then(({ data }) => {
@@ -1147,15 +1146,15 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
 
   const last3MonthsRecords = records.filter(r => r.events && new Date(r.events.starts_at) >= threeMonthsAgo)
-  const last3MonthsPresent = last3MonthsRecords.filter(r => r.present).length
+  const last3MonthsPresent = last3MonthsRecords.length
   const attendanceRate = last3MonthsRecords.length > 0
     ? Math.round((last3MonthsPresent / last3MonthsRecords.length) * 100)
     : 0
 
-  const ytdTotal = records.filter(r => r.present && r.events && new Date(r.events.starts_at).getFullYear() === currentYear).length
+  const ytdTotal = records.filter(r => r.events && new Date(r.events.starts_at).getFullYear() === currentYear).length
 
   // Weekly streak: consecutive weeks going back from this week with ≥1 present record
-  const presentRecords = records.filter(r => r.present && r.events)
+  const presentRecords = records.filter(r => r.events)
   const presentWeeks = new Set(
     presentRecords.map(r => {
       const d = new Date(r.events!.starts_at)
@@ -1176,7 +1175,7 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
   const weeksInYear = 52
   const countByWeek: Record<number, number> = {}
   for (const r of records) {
-    if (!r.present || !r.events) continue
+    if (!r.events) continue
     const d = new Date(r.events.starts_at)
     if (d.getFullYear() !== currentYear) continue
     const wk = getWeekNumber(d)
@@ -1301,8 +1300,8 @@ function MemberAttendanceTab({ memberId }: { memberId: string }) {
                     </span>
                   </td>
                   <td style={{ padding: '0 18px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 9px', borderRadius: 999, background: r.present ? '#DCFCE7' : '#F3F4F6', color: r.present ? '#166534' : '#6B7280', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11.5 }}>
-                      {r.present ? 'Present' : 'Absent'}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 9px', borderRadius: 999, background: '#DCFCE7', color: '#166534', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 11.5 }}>
+                      Present
                     </span>
                   </td>
                   <td style={{ padding: '0 12px' }}>
