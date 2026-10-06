@@ -42,7 +42,6 @@ interface RosterMember {
 interface AttendanceRecord {
   id: string
   member_id: string
-  present: boolean
 }
 
 interface TxRow {
@@ -186,7 +185,7 @@ function StatCard({ label, value, accent }: { label: string; value: string | num
 
 // ─── Attendance Tab ───────────────────────────────────────────────────────────
 
-function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
+function AttendanceTab({ event, orgId, userId }: { event: EventRow; orgId: string; userId: string }) {
   const [members, setMembers] = useState<RosterMember[]>([])
   const [presentIds, setPresentIds] = useState<Set<string>>(new Set())
   const [initialPresentIds, setInitialPresentIds] = useState<Set<string>>(new Set())
@@ -209,15 +208,13 @@ function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
         branchId
           ? supabase.from('members').select('id, first_name, last_name, member_number, photo_url').eq('org_id', orgId).eq('branch_id', branchId).eq('membership_status', 'active').order('first_name')
           : supabase.from('members').select('id, first_name, last_name, member_number, photo_url').eq('org_id', orgId).eq('membership_status', 'active').order('first_name'),
-        supabase.from('attendance').select('id, member_id, present').eq('event_id', event.id),
+        supabase.from('attendance').select('id, member_id').eq('event_id', event.id),
       ])
 
       setMembers((membersRes.data ?? []) as RosterMember[])
 
       const existingPresent = new Set(
-        ((attRes.data ?? []) as AttendanceRecord[])
-          .filter(r => r.present)
-          .map(r => r.member_id)
+        ((attRes.data ?? []) as AttendanceRecord[]).map(r => r.member_id)
       )
       setPresentIds(existingPresent)
       setInitialPresentIds(existingPresent)
@@ -240,22 +237,40 @@ function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
 
   const handleSave = async () => {
     setSaving(true)
-    const records = members.map(m => ({
-      event_id: event.id,
-      member_id: m.id,
-      org_id: orgId,
-      present: presentIds.has(m.id),
-    }))
-    const { error } = await supabase
-      .from('attendance')
-      .upsert(records, { onConflict: 'event_id,member_id' })
-    if (error) {
-      toast.error('Failed to save attendance')
-    } else {
-      setLastSaved(new Date())
-      setInitialPresentIds(new Set(presentIds))
-      toast.success('Attendance saved')
+    // A row in `attendance` means present, so only touch members whose state changed
+    const removed = [...initialPresentIds].filter(id => !presentIds.has(id))
+    const added = [...presentIds].filter(id => !initialPresentIds.has(id))
+
+    if (removed.length > 0) {
+      const { error } = await supabase
+        .from('attendance')
+        .delete()
+        .eq('event_id', event.id)
+        .in('member_id', removed)
+      if (error) {
+        toast.error('Failed to save attendance: ' + error.message)
+        setSaving(false)
+        return
+      }
     }
+
+    if (added.length > 0) {
+      const checkedInAt = new Date().toISOString()
+      const { error } = await supabase.from('attendance').insert(
+        added.map(memberId => ({ event_id: event.id, member_id: memberId, org_id: orgId, checked_in_at: checkedInAt, checked_in_by: userId }))
+      )
+      if (error) {
+        // Deletions above already went through, so the saved baseline is the initial set minus those
+        setInitialPresentIds(new Set([...initialPresentIds].filter(id => presentIds.has(id))))
+        toast.error('Failed to save attendance: ' + error.message)
+        setSaving(false)
+        return
+      }
+    }
+
+    setLastSaved(new Date())
+    setInitialPresentIds(new Set(presentIds))
+    toast.success('Attendance saved')
     setSaving(false)
   }
 
@@ -620,10 +635,10 @@ export function EventDetailPage() {
     const mq = event.branch_id
       ? supabase.from('members').select('id, first_name, last_name, member_number, photo_url').eq('org_id', user.org_id).eq('branch_id', event.branch_id).eq('membership_status', 'active').order('first_name')
       : supabase.from('members').select('id, first_name, last_name, member_number, photo_url').eq('org_id', user.org_id).eq('membership_status', 'active').order('first_name')
-    Promise.all([mq, supabase.from('attendance').select('id, member_id, present').eq('event_id', event.id)])
+    Promise.all([mq, supabase.from('attendance').select('id, member_id').eq('event_id', event.id)])
       .then(([mr, ar]) => {
         setPrintMembers((mr.data ?? []) as RosterMember[])
-        setPrintPresentIds(new Set(((ar.data ?? []) as AttendanceRecord[]).filter(r => r.present).map(r => r.member_id)))
+        setPrintPresentIds(new Set(((ar.data ?? []) as AttendanceRecord[]).map(r => r.member_id)))
       })
   }, [event?.id, user?.org_id])
 
@@ -811,7 +826,7 @@ export function EventDetailPage() {
         </div>
 
         {/* Tab content */}
-        {activeTab === 'attendance' && user && <AttendanceTab event={event} orgId={user.org_id} />}
+        {activeTab === 'attendance' && user && <AttendanceTab event={event} orgId={user.org_id} userId={user.id} />}
         {activeTab === 'donations' && <DonationsTab eventId={event.id} />}
       </div>
     </>
