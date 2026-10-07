@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useSettings } from '../contexts/SettingsContext'
 import { useSidebar } from '../contexts/SidebarContext'
 import { supabase } from '../lib/supabase'
 import { ThemeToggle } from '../components/ThemeToggle'
@@ -154,6 +155,7 @@ function getInitials(name: string) {
 export function TopBar() {
   const { pathname } = useLocation()
   const { user, signOut } = useAuth()
+  const { openSettings, setActiveTab } = useSettings()
   const navigate = useNavigate()
   const { toggleMobile, isMobile } = useSidebar()
   const [orgName, setOrgName] = useState('Centry CMS')
@@ -830,7 +832,7 @@ export function TopBar() {
                   {/* Manage organization */}
                   <button
                     className="org-dropdown-item"
-                    onClick={() => { setOrgDropdownOpen(false); navigate('/settings') }}
+                    onClick={() => { setOrgDropdownOpen(false); setActiveTab('general'); openSettings() }}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                       padding: '9px 16px', background: 'none', border: 'none',
@@ -920,7 +922,7 @@ export function TopBar() {
                   {/* Account settings */}
                   <button
                     className="org-dropdown-item"
-                    onClick={() => { setOrgDropdownOpen(false); navigate('/settings') }}
+                    onClick={() => { setOrgDropdownOpen(false); setActiveTab('profile'); openSettings() }}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                       padding: '9px 16px', background: 'none', border: 'none',
