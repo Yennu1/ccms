@@ -170,6 +170,22 @@ export function DashboardPage() {
   // Branch
   const [branches, setBranches] = useState<Branch[]>([])
   const [selectedBranch, setSelectedBranch] = useState<string>(() => localStorage.getItem('dash_branch') ?? '')
+  useEffect(() => {
+  const handler = (e: Event) => {
+    const branchId = (e as CustomEvent).detail as string
+    setSelectedBranch(branchId)
+  }
+  window.addEventListener('branch-switched', handler)
+  return () => window.removeEventListener('branch-switched', handler)
+}, [])
+  useEffect(() => {
+  const handler = (e: Event) => {
+    const branchId = (e as CustomEvent).detail as string
+    setSelectedBranch(branchId)
+  }
+  window.addEventListener('branch-switched', handler)
+  return () => window.removeEventListener('branch-switched', handler)
+}, [])
 
   // KPI
   const [totalMembers, setTotalMembers] = useState(0)
