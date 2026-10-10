@@ -315,7 +315,6 @@ export function EventsListPage() {
           .from('attendance')
           .select('event_id')
           .in('event_id', completedIds)
-          .eq('present', true)
 
         if (attData) {
           const countByEvent = attData.reduce((acc: Record<string, number>, r: { event_id: string }) => {

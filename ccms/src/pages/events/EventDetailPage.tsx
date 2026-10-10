@@ -8,7 +8,7 @@ import { MemberAvatar as SharedMemberAvatar } from '../../components/MemberAvata
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type DetailTab = 'attendance' | 'donations' | 'qr'
+type DetailTab = 'attendance' | 'donations'
 
 interface EventRow {
   id: string
@@ -42,7 +42,6 @@ interface RosterMember {
 interface AttendanceRecord {
   id: string
   member_id: string
-  present: boolean
 }
 
 interface TxRow {
@@ -186,7 +185,7 @@ function StatCard({ label, value, accent }: { label: string; value: string | num
 
 // ─── Attendance Tab ───────────────────────────────────────────────────────────
 
-function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
+function AttendanceTab({ event, orgId, userId }: { event: EventRow; orgId: string; userId: string }) {
   const [members, setMembers] = useState<RosterMember[]>([])
   const [presentIds, setPresentIds] = useState<Set<string>>(new Set())
   const [initialPresentIds, setInitialPresentIds] = useState<Set<string>>(new Set())
@@ -209,15 +208,13 @@ function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
         branchId
           ? supabase.from('members').select('id, first_name, last_name, member_number, photo_url').eq('org_id', orgId).eq('branch_id', branchId).eq('membership_status', 'active').order('first_name')
           : supabase.from('members').select('id, first_name, last_name, member_number, photo_url').eq('org_id', orgId).eq('membership_status', 'active').order('first_name'),
-        supabase.from('attendance').select('id, member_id, present').eq('event_id', event.id),
+        supabase.from('attendance').select('id, member_id').eq('event_id', event.id),
       ])
 
       setMembers((membersRes.data ?? []) as RosterMember[])
 
       const existingPresent = new Set(
-        ((attRes.data ?? []) as AttendanceRecord[])
-          .filter(r => r.present)
-          .map(r => r.member_id)
+        ((attRes.data ?? []) as AttendanceRecord[]).map(r => r.member_id)
       )
       setPresentIds(existingPresent)
       setInitialPresentIds(existingPresent)
@@ -240,22 +237,40 @@ function AttendanceTab({ event, orgId }: { event: EventRow; orgId: string }) {
 
   const handleSave = async () => {
     setSaving(true)
-    const records = members.map(m => ({
-      event_id: event.id,
-      member_id: m.id,
-      org_id: orgId,
-      present: presentIds.has(m.id),
-    }))
-    const { error } = await supabase
-      .from('attendance')
-      .upsert(records, { onConflict: 'event_id,member_id' })
-    if (error) {
-      toast.error('Failed to save attendance')
-    } else {
-      setLastSaved(new Date())
-      setInitialPresentIds(new Set(presentIds))
-      toast.success('Attendance saved')
+    // A row in `attendance` means present, so only touch members whose state changed
+    const removed = [...initialPresentIds].filter(id => !presentIds.has(id))
+    const added = [...presentIds].filter(id => !initialPresentIds.has(id))
+
+    if (removed.length > 0) {
+      const { error } = await supabase
+        .from('attendance')
+        .delete()
+        .eq('event_id', event.id)
+        .in('member_id', removed)
+      if (error) {
+        toast.error('Failed to save attendance: ' + error.message)
+        setSaving(false)
+        return
+      }
     }
+
+    if (added.length > 0) {
+      const checkedInAt = new Date().toISOString()
+      const { error } = await supabase.from('attendance').insert(
+        added.map(memberId => ({ event_id: event.id, member_id: memberId, org_id: orgId, checked_in_at: checkedInAt, checked_in_by: userId }))
+      )
+      if (error) {
+        // Deletions above already went through, so the saved baseline is the initial set minus those
+        setInitialPresentIds(new Set([...initialPresentIds].filter(id => presentIds.has(id))))
+        toast.error('Failed to save attendance: ' + error.message)
+        setSaving(false)
+        return
+      }
+    }
+
+    setLastSaved(new Date())
+    setInitialPresentIds(new Set(presentIds))
+    toast.success('Attendance saved')
     setSaving(false)
   }
 
@@ -577,56 +592,6 @@ function DonationsTab({ eventId }: { eventId: string }) {
   )
 }
 
-// ─── QR Tab ───────────────────────────────────────────────────────────────────
-
-function QRTab({ eventId }: { eventId: string }) {
-  const checkInUrl = `${window.location.origin}/checkin/${eventId}`
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 0', gap: 20 }}>
-      <div style={{ width: 180, height: 180, borderRadius: 12, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-surface)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, position: 'relative' }}>
-        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" opacity="0.2">
-          <rect x="4" y="4" width="30" height="30" rx="3" stroke="#6B7280" strokeWidth="3" />
-          <rect x="10" y="10" width="18" height="18" rx="1" fill="#6B7280" />
-          <rect x="46" y="4" width="30" height="30" rx="3" stroke="#6B7280" strokeWidth="3" />
-          <rect x="52" y="10" width="18" height="18" rx="1" fill="#6B7280" />
-          <rect x="4" y="46" width="30" height="30" rx="3" stroke="#6B7280" strokeWidth="3" />
-          <rect x="10" y="52" width="18" height="18" rx="1" fill="#6B7280" />
-          <rect x="46" y="46" width="8" height="8" rx="1" fill="#6B7280" opacity="0.5" />
-          <rect x="58" y="46" width="8" height="8" rx="1" fill="#6B7280" opacity="0.5" />
-          <rect x="46" y="58" width="8" height="8" rx="1" fill="#6B7280" opacity="0.5" />
-          <rect x="58" y="58" width="8" height="8" rx="1" fill="#6B7280" opacity="0.5" />
-        </svg>
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-            <rect width="36" height="36" rx="18" fill="var(--dm-bg-muted)" />
-            <path d="M18 10v8M14 14l4-4 4 4M12 24h12" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-      </div>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 6 }}>
-          QR Check-in
-        </div>
-        <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-muted)', marginBottom: 4 }}>
-          QR check-in coming in Sprint 7
-        </div>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#D1D5DB' }}>
-          {checkInUrl}
-        </div>
-      </div>
-      <button
-        onClick={() => { navigator.clipboard.writeText(checkInUrl); toast.success('Check-in link copied!') }}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px', borderRadius: 8, border: '0.5px solid var(--dm-border-soft)', background: 'var(--dm-bg-card)', color: 'var(--dm-text-body)', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 500, fontSize: 13, cursor: 'pointer' }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'var(--dm-bg-surface)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'var(--dm-bg-card)')}
-      >
-        Copy Check-in Link
-      </button>
-    </div>
-  )
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function EventDetailPage() {
@@ -670,10 +635,10 @@ export function EventDetailPage() {
     const mq = event.branch_id
       ? supabase.from('members').select('id, first_name, last_name, member_number, photo_url').eq('org_id', user.org_id).eq('branch_id', event.branch_id).eq('membership_status', 'active').order('first_name')
       : supabase.from('members').select('id, first_name, last_name, member_number, photo_url').eq('org_id', user.org_id).eq('membership_status', 'active').order('first_name')
-    Promise.all([mq, supabase.from('attendance').select('id, member_id, present').eq('event_id', event.id)])
+    Promise.all([mq, supabase.from('attendance').select('id, member_id').eq('event_id', event.id)])
       .then(([mr, ar]) => {
         setPrintMembers((mr.data ?? []) as RosterMember[])
-        setPrintPresentIds(new Set(((ar.data ?? []) as AttendanceRecord[]).filter(r => r.present).map(r => r.member_id)))
+        setPrintPresentIds(new Set(((ar.data ?? []) as AttendanceRecord[]).map(r => r.member_id)))
       })
   }, [event?.id, user?.org_id])
 
@@ -691,7 +656,6 @@ export function EventDetailPage() {
   const tabs: { key: DetailTab; label: string }[] = [
     { key: 'attendance', label: 'Attendance' },
     { key: 'donations', label: 'Donations' },
-    { key: 'qr', label: 'QR Check-in' },
   ]
 
   // Print sheet stats (computed from database-fetched data, not AttendanceTab state)
@@ -862,9 +826,8 @@ export function EventDetailPage() {
         </div>
 
         {/* Tab content */}
-        {activeTab === 'attendance' && user && <AttendanceTab event={event} orgId={user.org_id} />}
+        {activeTab === 'attendance' && user && <AttendanceTab event={event} orgId={user.org_id} userId={user.id} />}
         {activeTab === 'donations' && <DonationsTab eventId={event.id} />}
-        {activeTab === 'qr' && <QRTab eventId={event.id} />}
       </div>
     </>
   )

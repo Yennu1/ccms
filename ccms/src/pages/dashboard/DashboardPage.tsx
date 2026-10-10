@@ -524,7 +524,8 @@ const givingPeriodLabel = givingPeriod === 'CUSTOM'
             <KpiCard label="Active Members" value={`${activePct}%`} sub={`${activeMembers.toLocaleString()} active`} delta={activeDelta} />
             <KpiCard label="Giving This Month" value={fGHS(givingThisMonth)} sub={`Last month: ${fGHS(givingLastMonth)}`} delta={givingDelta} />
             <KpiCard label="Avg Attendance Rate" value={avgAttRate !== null ? `${avgAttRate}%` : '—'} sub="Last 4 Sundays" delta={null} />
-            <KpiCard label="Events This Month" value={eventsThisMonth.toLocaleString()} sub="Scheduled &amp; completed" delta={null} />
+            <KpiCard label="Events This Month" value={eventsThisMonth.toLocaleString()} sub="Scheduled &amp; completed" delta={null}/>
+
             <KpiCard label="Groups &amp; Ministries" value={`${totalGroups} / ${totalMinistries}`} sub={`${totalGroups} groups · ${totalMinistries} ministries`} delta={null} />
           </>
         )}
