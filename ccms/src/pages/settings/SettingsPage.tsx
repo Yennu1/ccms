@@ -1312,13 +1312,25 @@ function ProfileTab() {
   )
 }
 
+
 function GeneralTab({ orgId }: { orgId: string }) {
   const [orgName, setOrgName] = useState('')
   const [saving, setSaving] = useState(false)
 
+  // Logo state
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [logoUploading, setLogoUploading] = useState(false)
+  const [logoCropSrc, setLogoCropSrc] = useState<string | null>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
-    supabase.from('organisations').select('name').eq('id', orgId).single()
-      .then(({ data }) => { if (data) setOrgName(data.name) })
+    supabase.from('organisations').select('name, logo_url').eq('id', orgId).single()
+      .then(({ data }) => {
+        if (data) {
+          setOrgName(data.name)
+          setLogoUrl(data.logo_url ?? null)
+        }
+      })
   }, [orgId])
 
   const handleSave = async () => {
@@ -1330,6 +1342,64 @@ function GeneralTab({ orgId }: { orgId: string }) {
     if (error) { toast.error('Failed to update organisation') } else { toast.success('Organisation updated'); window.dispatchEvent(new CustomEvent('org-name-updated')) }
   }
 
+  function onPickLogo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      toast.error('Only JPG and PNG files are allowed')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File is too large. Maximum size is 5 MB.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => setLogoCropSrc(reader.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  async function handleLogoCropSave(blob: Blob) {
+    setLogoUploading(true)
+    try {
+      const path = `${orgId}/logo.jpg`
+      const { error: upErr } = await supabase.storage
+        .from('org-logos')
+        .upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '0' })
+      if (upErr) throw upErr
+      const { data: { publicUrl } } = supabase.storage.from('org-logos').getPublicUrl(path)
+      const { error: dbErr } = await supabase
+        .from('organisations')
+        .update({ logo_url: publicUrl })
+        .eq('id', orgId)
+      if (dbErr) throw dbErr
+      setLogoUrl(publicUrl + '?t=' + Date.now())
+      setLogoCropSrc(null)
+      toast.success('Logo updated')
+      window.dispatchEvent(new CustomEvent('org-name-updated'))
+    } catch (err) {
+      console.error('logo upload failed:', err)
+      toast.error('Failed to upload logo')
+    } finally {
+      setLogoUploading(false)
+    }
+  }
+
+  async function handleRemoveLogo() {
+    setLogoUploading(true)
+    try {
+      await supabase.storage.from('org-logos').remove([`${orgId}/logo.jpg`])
+      await supabase.from('organisations').update({ logo_url: null }).eq('id', orgId)
+      setLogoUrl(null)
+      toast.success('Logo removed')
+      window.dispatchEvent(new CustomEvent('org-name-updated'))
+    } catch {
+      toast.error('Failed to remove logo')
+    } finally {
+      setLogoUploading(false)
+    }
+  }
+
   const readOnly: React.CSSProperties = { ...modalInputStyle(false), background: 'var(--dm-bg-muted)', color: 'var(--dm-text-secondary)', cursor: 'not-allowed' }
 
   return (
@@ -1337,6 +1407,90 @@ function GeneralTab({ orgId }: { orgId: string }) {
       <div style={{ marginBottom: 6 }}>
         <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--dm-text-ink)', marginBottom: 2 }}>Organisation Profile</div>
         <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 13, color: 'var(--dm-text-secondary)', marginBottom: 24 }}>Manage your church's general information</div>
+      </div>
+
+      {/* Logo upload */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 16,
+        paddingBottom: 20, marginBottom: 20,
+        borderBottom: '0.5px solid var(--dm-border-subtle)',
+      }}>
+        <div
+          onClick={() => !logoUploading && logoInputRef.current?.click()}
+          style={{
+            width: 64, height: 64, borderRadius: 8, flexShrink: 0,
+            cursor: logoUploading ? 'default' : 'pointer',
+            border: logoUrl ? '0.5px solid var(--dm-border)' : '1.5px dashed var(--dm-border)',
+            background: logoUrl ? 'transparent' : 'var(--dm-bg-muted)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden',
+          }}
+        >
+          {logoUrl ? (
+            <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--dm-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 21h18"/>
+              <path d="M5 21V7l7-4 7 4v14"/>
+              <path d="M9 21v-4h6v4"/>
+              <path d="M9 9h1"/><path d="M14 9h1"/>
+              <path d="M9 13h1"/><path d="M14 13h1"/>
+            </svg>
+          )}
+        </div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{
+            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+            fontWeight: 500, fontSize: 13, color: 'var(--dm-text-ink)',
+            marginBottom: 2,
+          }}>
+            Church logo
+          </div>
+          <div style={{
+            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+            fontSize: 12, color: 'var(--dm-text-muted)',
+            marginBottom: 6, lineHeight: 1.4,
+          }}>
+            {logoUrl ? 'Logo uploaded' : 'Upload your church logo. JPG or PNG, max 5 MB.'}
+          </div>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              disabled={logoUploading}
+              style={{
+                background: 'none', border: 'none', padding: 0,
+                fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                fontWeight: 600, fontSize: 13, color: '#4F6BED',
+                cursor: logoUploading ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {logoUploading ? 'Uploading…' : logoUrl ? 'Change logo' : 'Upload logo'}
+            </button>
+            {logoUrl && (
+              <button
+                type="button"
+                onClick={handleRemoveLogo}
+                disabled={logoUploading}
+                style={{
+                  background: 'none', border: 'none', padding: 0,
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                  fontWeight: 500, fontSize: 13, color: 'var(--dm-text-muted)',
+                  cursor: logoUploading ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+        <input
+          ref={logoInputRef}
+          type="file"
+          accept="image/jpeg,image/png"
+          onChange={onPickLogo}
+          style={{ display: 'none' }}
+        />
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -1362,9 +1516,20 @@ function GeneralTab({ orgId }: { orgId: string }) {
       <button onClick={handleSave} disabled={saving} style={{ height: 36, padding: '0 20px', borderRadius: 8, border: 'none', background: saving ? '#A5B4FC' : '#4F6BED', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 13, color: '#fff' }}>
         {saving ? 'Saving…' : 'Save Changes'}
       </button>
+
+      {/* Logo crop modal */}
+      {logoCropSrc && (
+        <PhotoCropModal
+          src={logoCropSrc}
+          busy={logoUploading}
+          onCancel={() => setLogoCropSrc(null)}
+          onSave={handleLogoCropSave}
+        />
+      )}
     </div>
   )
 }
+
 
 // ─── Branches Tab ─────────────────────────────────────────────────────────────
 

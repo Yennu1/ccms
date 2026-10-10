@@ -119,8 +119,8 @@ function Skeleton({ h = 160, r = 8 }: { h?: number; r?: number }) {
   return <div style={{ height: h, borderRadius: r, background: 'var(--dm-bg-muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
 }
 
-function KpiCard({ label, value, sub, delta: d, accent }: {
-  label: string; value: string; sub?: string; delta?: number | null; accent: string
+function KpiCard({ label, value, sub, delta: d }: {
+  label: string; value: string; sub?: string; delta?: number | null
 }) {
   return (
     <div style={{ background: 'var(--dm-bg-card)', border: '1px solid var(--dm-border-soft)', borderRadius: 16, padding: '18px 20px', boxShadow: '0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04)', position: 'relative' }}>
@@ -134,7 +134,6 @@ function KpiCard({ label, value, sub, delta: d, accent }: {
         )}
         {sub && <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11.5, color: 'var(--dm-text-muted)' }}>{sub}</span>}
       </div>
-      <div style={{ position: 'absolute', top: 16, right: 16, width: 8, height: 8, borderRadius: '50%', background: accent }} />
     </div>
   )
 }
@@ -521,12 +520,12 @@ const givingPeriodLabel = givingPeriod === 'CUSTOM'
           Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} h={100} />)
         ) : (
           <>
-            <KpiCard label="Total Members" value={totalMembers.toLocaleString()} sub={`+${newThisMonth} this month`} delta={null} accent="#4F6BED" />
-            <KpiCard label="Active Members" value={`${activePct}%`} sub={`${activeMembers.toLocaleString()} active`} delta={activeDelta} accent="#7B93F5" />
-            <KpiCard label="Giving This Month" value={fGHS(givingThisMonth)} sub={`Last month: ${fGHS(givingLastMonth)}`} delta={givingDelta} accent="#C8964A" />
-            <KpiCard label="Avg Attendance Rate" value={avgAttRate !== null ? `${avgAttRate}%` : '—'} sub="Last 4 Sundays" delta={null} accent="#22C55E" />
-            <KpiCard label="Events This Month" value={eventsThisMonth.toLocaleString()} sub="Scheduled &amp; completed" delta={null} accent="#EC4899" />
-            <KpiCard label="Groups &amp; Ministries" value={`${totalGroups} / ${totalMinistries}`} sub={`${totalGroups} groups · ${totalMinistries} ministries`} delta={null} accent="#8B5CF6" />
+            <KpiCard label="Total Members" value={totalMembers.toLocaleString()} sub={`+${newThisMonth} this month`} delta={null} />
+            <KpiCard label="Active Members" value={`${activePct}%`} sub={`${activeMembers.toLocaleString()} active`} delta={activeDelta} />
+            <KpiCard label="Giving This Month" value={fGHS(givingThisMonth)} sub={`Last month: ${fGHS(givingLastMonth)}`} delta={givingDelta} />
+            <KpiCard label="Avg Attendance Rate" value={avgAttRate !== null ? `${avgAttRate}%` : '—'} sub="Last 4 Sundays" delta={null} />
+            <KpiCard label="Events This Month" value={eventsThisMonth.toLocaleString()} sub="Scheduled &amp; completed" delta={null} />
+            <KpiCard label="Groups &amp; Ministries" value={`${totalGroups} / ${totalMinistries}`} sub={`${totalGroups} groups · ${totalMinistries} ministries`} delta={null} />
           </>
         )}
       </div>
