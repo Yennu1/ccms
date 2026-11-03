@@ -106,7 +106,7 @@ function MinistryAddMemberModal({ ministryId, ministryName, existingMemberIds, o
   const available = allMembers.filter(m => {
     if (existingMemberIds.includes(m.id)) return false
     const q = query.toLowerCase()
-    return !q || m.first_name.toLowerCase().includes(q) || m.last_name.toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
+    return !q || (m.first_name ?? '').toLowerCase().includes(q) || (m.last_name ?? '').toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
   })
 
   const selected = allMembers.find(m => m.id === selectedId)
@@ -202,7 +202,7 @@ function MinistryImportMembersModal({ ministryId, ministryName, existingMemberId
   const available = allMembers.filter(m => {
     if (existingMemberIds.includes(m.id)) return false
     const q = query.toLowerCase()
-    return !q || m.first_name.toLowerCase().includes(q) || m.last_name.toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
+    return !q || (m.first_name ?? '').toLowerCase().includes(q) || (m.last_name ?? '').toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
   })
 
   const toggle = (id: string) => {
@@ -340,7 +340,7 @@ function MinistryGroupImportModal({ ministryId, ministryName, orgId, onAdd, onCl
   const available = allMembers.filter(m => {
     if (existingInGroup.includes(m.id)) return false
     const q = query.toLowerCase()
-    return !q || m.first_name.toLowerCase().includes(q) || m.last_name.toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
+    return !q || (m.first_name ?? '').toLowerCase().includes(q) || (m.last_name ?? '').toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
   })
 
   const allVisibleSelected = available.length > 0 && available.every(m => selectedIds.has(m.id))
@@ -496,7 +496,7 @@ function SettingsTab({ ministry, branches, members, onSaved, canManage }: {
   const leaderText = selectedLeader ? `${selectedLeader.first_name} ${selectedLeader.last_name}` : ''
   const filteredMembers = members.filter(m => {
     const q = leaderQuery.toLowerCase()
-    return !q || m.first_name.toLowerCase().includes(q) || m.last_name.toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
+    return !q || (m.first_name ?? '').toLowerCase().includes(q) || (m.last_name ?? '').toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
   })
 
   const handleSave = async () => {
