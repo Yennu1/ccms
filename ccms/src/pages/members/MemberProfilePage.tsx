@@ -459,8 +459,8 @@ function AddRelationshipModal({
   const filtered = members.filter(m => {
     const q = query.toLowerCase()
     return !q ||
-      m.first_name.toLowerCase().includes(q) ||
-      m.last_name.toLowerCase().includes(q) ||
+      (m.first_name ?? '').toLowerCase().includes(q) ||
+      (m.last_name ?? '').toLowerCase().includes(q) ||
       (m.member_number ?? '').toLowerCase().includes(q)
   })
 

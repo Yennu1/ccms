@@ -142,8 +142,8 @@ export function RecordGivingPage() {
   const filteredMembers  = members.filter(m => {
     if (!memberSearch) return true
     const q = memberSearch.toLowerCase()
-    return `${m.first_name} ${m.last_name}`.toLowerCase().includes(q) ||
-      m.member_number.toLowerCase().includes(q)
+    return `${m.first_name ?? ''} ${m.last_name ?? ''}`.toLowerCase().includes(q) ||
+      (m.member_number ?? '').toLowerCase().includes(q)
   })
 
   useEffect(() => {

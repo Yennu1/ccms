@@ -107,7 +107,7 @@ function AddMemberModal({ group, existingMemberIds, orgId, onAdd, onClose }: {
   const available = allMembers.filter(m => {
     if (existingMemberIds.includes(m.id)) return false
     const q = query.toLowerCase()
-    return !q || m.first_name.toLowerCase().includes(q) || m.last_name.toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
+    return !q || (m.first_name ?? '').toLowerCase().includes(q) || (m.last_name ?? '').toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
   })
 
   const selected = allMembers.find(m => m.id === selectedId)
@@ -543,7 +543,7 @@ function GroupSettingsTab({ group, ministries, members, canManage, onSaved, init
   const leaderText = selectedLeader ? `${selectedLeader.first_name} ${selectedLeader.last_name}` : ''
   const filteredMembers = members.filter(m => {
     const q = leaderQuery.toLowerCase()
-    return !q || m.first_name.toLowerCase().includes(q) || m.last_name.toLowerCase().includes(q)
+    return !q || (m.first_name ?? '').toLowerCase().includes(q) || (m.last_name ?? '').toLowerCase().includes(q)
   })
 
   const handleSave = async () => {

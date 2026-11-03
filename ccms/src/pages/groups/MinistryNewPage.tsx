@@ -105,7 +105,7 @@ export function MinistryNewPage() {
 
   const filteredMembers = members.filter(m => {
     const q = leaderQuery.toLowerCase()
-    return !q || m.first_name.toLowerCase().includes(q) || m.last_name.toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
+    return !q || (m.first_name ?? '').toLowerCase().includes(q) || (m.last_name ?? '').toLowerCase().includes(q) || (m.member_number ?? '').toLowerCase().includes(q)
   })
 
   const validate = () => {
