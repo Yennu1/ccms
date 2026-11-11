@@ -139,7 +139,7 @@ export function LoginPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Boldonse&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
         @keyframes ccms-spin { to { transform: rotate(360deg); } }
         @keyframes ccms-fade-up {
           from { opacity: 0; transform: translateY(10px); }
@@ -156,7 +156,7 @@ export function LoginPage() {
 
         .login-hero {
           flex: 1.05;
-          background: linear-gradient(155deg, #0f1740 0%, #1a2660 20%, #2840a0 45%, #4a6de8 65%, #6b8df5 80%, #8faafb 95%);
+          background: linear-gradient(160deg, #0a1030 0%, #121a4a 22%, #1e2e78 44%, #2d47b0 64%, #3f5fd4 82%, #4F6BED 100%);
           border-radius: 16px;
           margin: 8px;
           display: flex;
@@ -198,9 +198,9 @@ export function LoginPage() {
           justify-content: center; position: relative; z-index: 1;
         }
         .hero-center h1 {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          font-weight: 700; font-size: 36px; color: #fff;
-          line-height: 1.15; margin: 0; letter-spacing: -0.025em;
+          font-family: 'Boldonse', 'Plus Jakarta Sans', sans-serif;
+          font-weight: 400; font-size: 28px; color: #fff;
+          line-height: 1.4; margin: 0; letter-spacing: -0.01em;
         }
         .hero-center p {
           font-size: 15px; color: rgba(255,255,255,0.5);
@@ -327,10 +327,10 @@ export function LoginPage() {
         <div className="login-hero">
           <div className="hero-logo">
             <div className="hero-logo-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" />
-                <path d="M9 21v-4h6v4" /><path d="M9 9h1" /><path d="M14 9h1" />
-                <path d="M9 13h1" /><path d="M14 13h1" />
+              <svg viewBox="204 269 997 1065" fill="none">
+                <g transform="translate(0.000000,1600.000000) scale(0.100000,-0.100000)" fill="#FFFFFF" stroke="none">
+                  <path d="M7110 12913 c-19 -2 -102 -10 -185 -19 -82 -8 -166 -17 -185 -19 -97 -9 -443 -74 -535 -100 -64 -18 -160 -44 -205 -55 -159 -41 -280 -83 -290 -101 -7 -12 6 -892 16 -1089 15 -320 20 -468 16 -482 -4 -17 -20 -23 -52 -18 -16 1 -43 15 -185 90 -49 26 -160 84 -245 128 -272 140 -375 196 -378 204 -2 4 -12 8 -21 8 -10 0 -29 8 -42 18 -13 10 -40 25 -59 32 -19 8 -55 26 -80 40 -25 15 -70 39 -100 54 -30 15 -77 40 -105 56 -27 16 -92 50 -144 76 -106 52 -106 52 -186 -18 -24 -21 -48 -38 -54 -38 -6 0 -11 -4 -11 -10 0 -5 -18 -27 -41 -47 -67 -62 -279 -275 -279 -280 0 -3 -11 -14 -25 -25 -25 -19 -123 -129 -195 -217 -19 -24 -43 -52 -52 -64 -10 -11 -18 -23 -18 -26 0 -3 -10 -17 -23 -31 -13 -14 -38 -47 -57 -75 -18 -27 -46 -66 -60 -85 -89 -118 -108 -147 -110 -165 -4 -36 0 -44 23 -51 12 -3 33 -15 47 -25 14 -9 59 -35 100 -57 41 -21 118 -62 170 -90 52 -28 147 -78 210 -110 63 -33 131 -69 150 -81 19 -12 53 -30 75 -42 96 -49 250 -130 303 -160 31 -18 75 -42 97 -54 22 -11 50 -26 63 -33 12 -7 32 -17 45 -24 39 -21 221 -120 267 -146 212 -118 382 -201 470 -227 47 -14 105 -32 130 -41 25 -8 64 -14 86 -14 23 0 66 -5 95 -10 129 -25 422 -6 562 35 139 41 166 51 217 73 30 13 73 33 95 45 22 11 49 25 60 30 11 6 27 14 35 18 8 5 31 17 50 28 19 11 44 28 55 38 11 10 36 30 55 43 81 57 280 252 280 275 0 3 12 18 26 34 33 37 134 207 134 226 0 8 5 17 10 20 6 3 10 15 10 26 0 10 3 19 8 19 18 0 92 214 92 266 0 17 9 57 21 90 20 57 21 70 15 479 -3 231 -10 465 -16 520 -6 55 -14 334 -19 619 -7 489 -9 520 -26 532 -18 14 -32 15 -105 7z" />
+                </g>
               </svg>
             </div>
             <span className="hero-logo-name">Centry</span>
