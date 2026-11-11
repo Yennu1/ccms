@@ -182,12 +182,10 @@ export function LoginPage() {
           display: flex; align-items: center; gap: 10px;
           position: relative; z-index: 1;
         }
-        .hero-logo-box {
-          width: 36px; height: 36px; border-radius: 8px;
-          background: rgba(255,255,255,0.12);
-          display: flex; align-items: center; justify-content: center;
+        .hero-logo-img {
+          width: 34px; height: 34px; object-fit: contain;
+          display: block;
         }
-        .hero-logo-box svg { width: 20px; height: 20px; }
         .hero-logo-name {
           font-family: 'Plus Jakarta Sans', sans-serif;
           font-weight: 600; font-size: 18px; color: #fff;
@@ -201,6 +199,12 @@ export function LoginPage() {
           font-family: 'Boldonse', 'Plus Jakarta Sans', sans-serif;
           font-weight: 400; font-size: 28px; color: #fff;
           line-height: 1.4; margin: 0; letter-spacing: -0.01em;
+        }
+        .hero-phrase-faded {
+          display: block;
+          margin-top: 10px;
+          font-style: italic;
+          color: rgba(255,255,255,0.68);
         }
         .hero-center p {
           font-size: 15px; color: rgba(255,255,255,0.5);
@@ -326,19 +330,14 @@ export function LoginPage() {
       <div className="login-root">
         <div className="login-hero">
           <div className="hero-logo">
-            <div className="hero-logo-box">
-              <svg viewBox="204 269 997 1065" fill="none">
-                <g transform="translate(0.000000,1600.000000) scale(0.100000,-0.100000)" fill="#FFFFFF" stroke="none">
-                  <path d="M7110 12913 c-19 -2 -102 -10 -185 -19 -82 -8 -166 -17 -185 -19 -97 -9 -443 -74 -535 -100 -64 -18 -160 -44 -205 -55 -159 -41 -280 -83 -290 -101 -7 -12 6 -892 16 -1089 15 -320 20 -468 16 -482 -4 -17 -20 -23 -52 -18 -16 1 -43 15 -185 90 -49 26 -160 84 -245 128 -272 140 -375 196 -378 204 -2 4 -12 8 -21 8 -10 0 -29 8 -42 18 -13 10 -40 25 -59 32 -19 8 -55 26 -80 40 -25 15 -70 39 -100 54 -30 15 -77 40 -105 56 -27 16 -92 50 -144 76 -106 52 -106 52 -186 -18 -24 -21 -48 -38 -54 -38 -6 0 -11 -4 -11 -10 0 -5 -18 -27 -41 -47 -67 -62 -279 -275 -279 -280 0 -3 -11 -14 -25 -25 -25 -19 -123 -129 -195 -217 -19 -24 -43 -52 -52 -64 -10 -11 -18 -23 -18 -26 0 -3 -10 -17 -23 -31 -13 -14 -38 -47 -57 -75 -18 -27 -46 -66 -60 -85 -89 -118 -108 -147 -110 -165 -4 -36 0 -44 23 -51 12 -3 33 -15 47 -25 14 -9 59 -35 100 -57 41 -21 118 -62 170 -90 52 -28 147 -78 210 -110 63 -33 131 -69 150 -81 19 -12 53 -30 75 -42 96 -49 250 -130 303 -160 31 -18 75 -42 97 -54 22 -11 50 -26 63 -33 12 -7 32 -17 45 -24 39 -21 221 -120 267 -146 212 -118 382 -201 470 -227 47 -14 105 -32 130 -41 25 -8 64 -14 86 -14 23 0 66 -5 95 -10 129 -25 422 -6 562 35 139 41 166 51 217 73 30 13 73 33 95 45 22 11 49 25 60 30 11 6 27 14 35 18 8 5 31 17 50 28 19 11 44 28 55 38 11 10 36 30 55 43 81 57 280 252 280 275 0 3 12 18 26 34 33 37 134 207 134 226 0 8 5 17 10 20 6 3 10 15 10 26 0 10 3 19 8 19 18 0 92 214 92 266 0 17 9 57 21 90 20 57 21 70 15 479 -3 231 -10 465 -16 520 -6 55 -14 334 -19 619 -7 489 -9 520 -26 532 -18 14 -32 15 -105 7z" />
-                </g>
-              </svg>
-            </div>
+            <img src="/centry-logo-white.png" alt="Centry" className="hero-logo-img" />
             <span className="hero-logo-name">Centry</span>
           </div>
 
           <div className="hero-center">
             <h1 className="ccms-reveal" style={{ animationDelay: '100ms' }}>
-              Manage your Church,<br />Not your spreadsheets.
+              Manage your Church,
+              <span className="hero-phrase-faded">Not your spreadsheets.</span>
             </h1>
             <p className="ccms-reveal" style={{ animationDelay: '200ms' }}>
               The all-in-one platform for modern church administration.
