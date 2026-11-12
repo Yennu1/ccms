@@ -740,17 +740,18 @@ export function DonationsPage() {
         </span>
       </div>
 
-      {/* ── Finance KPI grid: hero (total income) + 2x2 cards ── */}
+      {/* ── Finance KPI grid: big hero (total income) + compact 2x2 cards ── */}
       <div style={{
         display: isMobile ? 'flex' : 'grid',
         flexDirection: isMobile ? 'column' : undefined,
-        gridTemplateColumns: isMobile ? undefined : '1.35fr 1fr 1fr',
-        gridTemplateRows: isMobile ? undefined : '1fr 1fr',
-        gap: 12, marginBottom: 24,
+        gridTemplateColumns: isMobile ? undefined : '1.45fr 1fr 1fr',
+        gridTemplateRows: isMobile ? undefined : 'auto auto',
+        alignContent: isMobile ? undefined : 'center',
+        gap: 14, marginBottom: 24,
       }}>
 
-        {/* HERO — Total Income. The PNG sets the block height; the two rows of
-            cards on the right split that height so their edges align with it. */}
+        {/* HERO — Total Income. Big, wide, rounded; the compact cards on the
+            right sit centered against its height. */}
         <div style={{
           gridColumn: isMobile ? undefined : '1',
           gridRow: isMobile ? undefined : '1 / span 2',
@@ -808,7 +809,7 @@ export function DonationsPage() {
         <div style={{
           background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
           borderRadius: 16, padding: '15px 18px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', boxSizing: 'border-box', overflow: 'hidden',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 128, boxSizing: 'border-box',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
@@ -848,7 +849,7 @@ export function DonationsPage() {
         <div style={{
           background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
           borderRadius: 16, padding: '15px 18px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', boxSizing: 'border-box', overflow: 'hidden',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 128, boxSizing: 'border-box',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
@@ -878,7 +879,7 @@ export function DonationsPage() {
         <div style={{
           background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
           borderRadius: 16, padding: '15px 18px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', boxSizing: 'border-box', overflow: 'hidden',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 128, boxSizing: 'border-box',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
@@ -906,7 +907,7 @@ export function DonationsPage() {
         <div style={{
           background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
           borderRadius: 16, padding: '15px 18px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', boxSizing: 'border-box', overflow: 'hidden',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 128, boxSizing: 'border-box',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
