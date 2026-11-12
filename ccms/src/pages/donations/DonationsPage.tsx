@@ -745,16 +745,16 @@ export function DonationsPage() {
         display: isMobile ? 'flex' : 'grid',
         flexDirection: isMobile ? 'column' : undefined,
         gridTemplateColumns: isMobile ? undefined : '1.35fr 1fr 1fr',
-        gridTemplateRows: isMobile ? undefined : 'auto auto',
+        gridTemplateRows: isMobile ? undefined : '1fr 1fr',
         gap: 12, marginBottom: 24,
       }}>
 
-        {/* HERO — Total Income. PNG shown at natural aspect ratio; the two card
-            rows on the right auto-size to match this height. */}
+        {/* HERO — Total Income. The PNG sets the block height; the two rows of
+            cards on the right split that height so their edges align with it. */}
         <div style={{
           gridColumn: isMobile ? undefined : '1',
           gridRow: isMobile ? undefined : '1 / span 2',
-          position: 'relative', width: '100%', alignSelf: 'start',
+          position: 'relative', width: '100%',
         }}>
           <img
             src="/kpi-card-bg.png"
@@ -807,8 +807,8 @@ export function DonationsPage() {
         {/* CARD 1 — Net Cash Flow */}
         <div style={{
           background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
-          borderRadius: 16, padding: '18px 20px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142, height: '100%', boxSizing: 'border-box',
+          borderRadius: 16, padding: '15px 18px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', boxSizing: 'border-box', overflow: 'hidden',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
@@ -832,7 +832,7 @@ export function DonationsPage() {
           <div>
             <div style={{
               fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-              fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', lineHeight: 1.1,
+              fontWeight: 700, fontSize: 23, letterSpacing: '-0.02em', lineHeight: 1.1,
               fontVariantNumeric: 'tabular-nums',
               color: periodIsSurplus ? 'var(--dm-text-ink)' : '#DC2626',
             }}>
@@ -847,8 +847,8 @@ export function DonationsPage() {
         {/* CARD 2 — Offering */}
         <div style={{
           background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
-          borderRadius: 16, padding: '18px 20px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142, height: '100%', boxSizing: 'border-box',
+          borderRadius: 16, padding: '15px 18px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', boxSizing: 'border-box', overflow: 'hidden',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
@@ -863,7 +863,7 @@ export function DonationsPage() {
           <div>
             <div style={{
               fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-              fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
+              fontWeight: 700, fontSize: 23, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
               fontVariantNumeric: 'tabular-nums',
             }}>
               {loading ? '—' : formatAmount(offeringTotal)}
@@ -877,8 +877,8 @@ export function DonationsPage() {
         {/* CARD 3 — 2nd highest income category */}
         <div style={{
           background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
-          borderRadius: 16, padding: '18px 20px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142, height: '100%', boxSizing: 'border-box',
+          borderRadius: 16, padding: '15px 18px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', boxSizing: 'border-box', overflow: 'hidden',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
@@ -891,7 +891,7 @@ export function DonationsPage() {
           <div>
             <div style={{
               fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-              fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
+              fontWeight: 700, fontSize: 23, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
               fontVariantNumeric: 'tabular-nums',
             }}>
               {loading ? '—' : secondHighest ? formatAmount(secondHighest.total) : '₵0.00'}
@@ -905,8 +905,8 @@ export function DonationsPage() {
         {/* CARD 4 — 3rd highest income category */}
         <div style={{
           background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
-          borderRadius: 16, padding: '18px 20px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142, height: '100%', boxSizing: 'border-box',
+          borderRadius: 16, padding: '15px 18px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', boxSizing: 'border-box', overflow: 'hidden',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
@@ -920,7 +920,7 @@ export function DonationsPage() {
           <div>
             <div style={{
               fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-              fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
+              fontWeight: 700, fontSize: 23, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
               fontVariantNumeric: 'tabular-nums',
             }}>
               {loading ? '—' : thirdHighest ? formatAmount(thirdHighest.total) : '₵0.00'}
