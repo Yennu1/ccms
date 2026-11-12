@@ -140,22 +140,6 @@ function DotsIcon() {
   )
 }
 
-function UpIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-      <path d="M4 10l4-4 4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function DownIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-      <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 function ChevronIcon({ dir }: { dir: 'left' | 'right' }) {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -295,6 +279,16 @@ export function DonationsPage() {
   const [exportOpen, setExportOpen] = useState(false)
   const exportRef = useRef<HTMLDivElement>(null)
 
+  const [incomeHidden, setIncomeHidden] = useState<boolean>(() => localStorage.getItem('fin_income_hidden') === '1')
+
+  const toggleIncomeHidden = () => {
+    setIncomeHidden(v => {
+      const next = !v
+      localStorage.setItem('fin_income_hidden', next ? '1' : '0')
+      return next
+    })
+  }
+
   const [search, setSearch] = useState('')
   const [dateRange, setDateRange] = useState<DateRange>('this-month')
   const [combinedFilter, setCombinedFilter] = useState<CombinedFilter>('all')
@@ -353,34 +347,14 @@ export function DonationsPage() {
 
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0]
-  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0]
 
   const thisMonthTx = useMemo(() =>
     transactions.filter(t => t.transaction_date >= startOfMonth),
     [transactions, startOfMonth]
   )
-  const lastMonthTx = useMemo(() =>
-    transactions.filter(t => t.transaction_date >= startOfLastMonth && t.transaction_date <= endOfLastMonth),
-    [transactions, startOfLastMonth, endOfLastMonth]
-  )
 
-  // Fixed calendar-month totals — used only for the trend % indicator
+  // Calendar-month total — used in the page header summary line
   const totalThisMonth = thisMonthTx.reduce((s, t) => s + t.amount, 0)
-  const totalLastMonth = lastMonthTx.reduce((s, t) => s + t.amount, 0)
-  const trendPct = totalLastMonth > 0
-    ? ((totalThisMonth - totalLastMonth) / totalLastMonth) * 100
-    : null
-
-  const thisMonthExpenses = useMemo(() =>
-    expenses.filter(e => e.expense_date >= startOfMonth),
-    [expenses, startOfMonth]
-  )
-
-  const expensesThisMonth = thisMonthExpenses.reduce((s, e) => s + Number(e.amount), 0)
-
-  const netCashFlow = totalThisMonth - expensesThisMonth
-  const isSurplus = netCashFlow >= 0
 
   // ─── Filtered + paginated ────────────────────────────────────────────────────
 
@@ -444,18 +418,9 @@ export function DonationsPage() {
 
   // Card totals reflect whatever period the dateRange filter is set to
   const periodTotal = filtered.reduce((s, t) => s + t.amount, 0)
-  const tithesInPeriod = filtered
-    .filter(t => getCategoryKey(t.transaction_categories?.name ?? '') === 'tithe')
-    .reduce((s, t) => s + t.amount, 0)
   const offeringsInPeriod = filtered
     .filter(t => getCategoryKey(t.transaction_categories?.name ?? '') === 'offering')
     .reduce((s, t) => s + t.amount, 0)
-  const buildingFundInPeriod = filtered
-    .filter(t => getCategoryKey(t.transaction_categories?.name ?? '') === 'building')
-    .reduce((s, t) => s + t.amount, 0)
-  const tithesPct = periodTotal > 0
-    ? Math.round((tithesInPeriod / periodTotal) * 100)
-    : 0
 
   // Human-readable label for the current period, used in card headers
   const periodLabel =
@@ -464,6 +429,53 @@ export function DonationsPage() {
     dateRange === 'last-3-months' ? 'Last 3 Months' :
     dateRange === 'this-year' ? 'This Year' :
     'Selected Period'
+
+  // ─── New KPI logic ────────────────────────────────────────────────────────────
+  // Hero card = total income for the period (all transactions, all categories)
+  const totalIncome = periodTotal
+
+  // Net cash flow for the period = income − expenses within the same period.
+  // (Period-aware expenses so the card tracks the selected date range.)
+  const periodExpenses = useMemo(() => {
+    let fromDate: string | null = null
+    let toDate: string | null = null
+    if (dateRange === 'this-month') {
+      fromDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+    } else if (dateRange === 'last-month') {
+      fromDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0]
+      toDate = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0]
+    } else if (dateRange === 'last-3-months') {
+      fromDate = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString().split('T')[0]
+    } else if (dateRange === 'this-year') {
+      fromDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]
+    }
+    return expenses
+      .filter(e => (!fromDate || e.expense_date >= fromDate) && (!toDate || e.expense_date <= toDate))
+      .reduce((s, e) => s + Number(e.amount), 0)
+  }, [expenses, dateRange])
+
+  const periodNetFlow = totalIncome - periodExpenses
+  const periodIsSurplus = periodNetFlow >= 0
+
+  // Offering (always its own card) — individual + collective combined
+  const offeringTotal = offeringsInPeriod
+
+  // Rank every income category by total for the period, so we can pick the
+  // 2nd- and 3rd-highest EXCLUDING offering (offering has its own card).
+  const rankedCategories = useMemo(() => {
+    const totals = new Map<string, number>()
+    for (const t of filtered) {
+      const name = t.transaction_categories?.name ?? 'Uncategorised'
+      totals.set(name, (totals.get(name) ?? 0) + t.amount)
+    }
+    return Array.from(totals.entries())
+      .filter(([name]) => getCategoryKey(name) !== 'offering')
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => b.total - a.total)
+  }, [filtered])
+
+  const secondHighest = rankedCategories[0] ?? null
+  const thirdHighest  = rankedCategories[1] ?? null
 
   useEffect(() => {
     if (!exportOpen) return
@@ -709,160 +721,205 @@ export function DonationsPage() {
         </div>
       </div>
 
-      {/* Net Cash Flow */}
+      {/* ── Currency pill ── */}
       <div style={{
-        background: isSurplus ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
-        border: `1px solid ${isSurplus ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
-        borderRadius: 14,
-        padding: '20px 24px',
-        marginBottom: 16,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: isMobile ? 'wrap' : 'nowrap',
-        gap: 12,
+        display: 'inline-flex', alignItems: 'center', gap: 10,
+        height: 44, padding: '0 20px 0 6px',
+        background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
+        borderRadius: 999, marginBottom: 16,
       }}>
-        <div>
-          <div style={{
-            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase',
-            color: isSurplus ? '#15803D' : '#B91C1C', fontWeight: 600, marginBottom: 6,
-          }}>
-            Net Cash Flow · {periodLabel}
-          </div>
-          <div style={{
-            fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            fontWeight: 700, fontSize: 34, letterSpacing: '-0.02em',
-            color: isSurplus ? '#15803D' : '#B91C1C',
-            fontVariantNumeric: 'tabular-nums',
-          }}>
-            {isSurplus ? '+' : '−'}{formatAmount(Math.abs(netCashFlow))}
-          </div>
-          <div style={{
-            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontSize: 12.5, color: isSurplus ? '#15803D' : '#B91C1C', marginTop: 4, opacity: 0.85,
-          }}>
-            {formatAmount(totalThisMonth)} income − {formatAmount(expensesThisMonth)} expenses
-          </div>
-        </div>
-        <div style={{
-          width: 52, height: 52, borderRadius: '50%',
-          background: isSurplus ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-          display: 'grid', placeItems: 'center', flexShrink: 0,
-        }}>
-          {isSurplus ? (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M12 19V5M5 12l7-7 7 7" stroke="#15803D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5v14M5 12l7 7 7-7" stroke="#B91C1C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          )}
-        </div>
+        <span style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+          <span style={{ flex: 1, background: '#CE1126' }} />
+          <span style={{ flex: 1, background: '#FCD116', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ color: '#000', fontSize: 11, lineHeight: 1 }}>★</span>
+          </span>
+          <span style={{ flex: 1, background: '#006B3F' }} />
+        </span>
+        <span style={{ fontFamily: "'Boldonse', 'Plus Jakarta Sans', system-ui, sans-serif", fontSize: 17, color: 'var(--dm-text-ink)', letterSpacing: '0.01em' }}>
+          GHS
+        </span>
       </div>
 
-      {/* Stat Cards 2×2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
+      {/* ── Finance KPI grid: hero (total income) + 2x2 cards ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : '1.05fr 0.65fr 0.65fr',
+        gridTemplateRows: isMobile ? undefined : '1fr 1fr',
+        gap: 16, marginBottom: 24,
+      }}>
 
-        {/* Total This Month */}
-        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)' }}>Total {periodLabel}</span>
-            <span style={{ width: 30, height: 30, borderRadius: 8, background: '#EEF1FE', color: '#4F6BED', display: 'grid', placeItems: 'center' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5" /><path stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" d="M9.8 6.2A2.2 2.2 0 0 0 8 5.3c-1.2 0-2 .6-2 1.4 0 .9.8 1.2 2 1.5s2 .6 2 1.5-.8 1.4-2 1.4a2.2 2.2 0 0 1-1.8-.9M8 4.3v1M8 11.7v1" /></svg>
+        {/* HERO — Total Income (with eye toggle) */}
+        <div style={{
+          gridColumn: isMobile ? undefined : '1',
+          gridRow: isMobile ? undefined : '1 / span 2',
+          position: 'relative', borderRadius: 20, overflow: 'hidden',
+          minHeight: isMobile ? 200 : 300, color: '#fff',
+          backgroundImage: "url('/kpi-card-bg.png')",
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          padding: '28px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start',
+        }}>
+          <div style={{
+            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+            fontSize: 15, color: 'rgba(255,255,255,0.78)', marginBottom: 16,
+          }}>
+            Total income · {periodLabel}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <span style={{
+              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+              fontWeight: 700, fontSize: 44, letterSpacing: '-0.025em', lineHeight: 1,
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              {loading ? '—' : incomeHidden ? '₵ • • • • •' : formatAmount(totalIncome)}
+            </span>
+            <button
+              onClick={toggleIncomeHidden}
+              aria-label={incomeHidden ? 'Show income' : 'Hide income'}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+                color: '#fff', opacity: 0.8, display: 'flex', alignItems: 'center', flexShrink: 0,
+              }}
+            >
+              {incomeHidden ? (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17.94 17.94A10 10 0 0 1 12 20C5 20 1 12 1 12a18.06 18.06 0 0 1 5.06-5.94M9.9 4.24A9 9 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              ) : (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* CARD 1 — Net Cash Flow */}
+        <div style={{
+          background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
+          borderRadius: 16, padding: '18px 20px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
+              Net Cash Flow
+            </span>
+            <span style={{
+              width: 34, height: 34, borderRadius: '50%', display: 'grid', placeItems: 'center', flexShrink: 0,
+              background: periodIsSurplus ? 'rgba(34,197,94,0.14)' : 'rgba(239,68,68,0.14)',
+            }}>
+              {periodIsSurplus ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 19V5M5 12l7-7 7 7" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14M5 12l7 7 7-7" />
+                </svg>
+              )}
             </span>
           </div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
-            {loading ? '—' : formatAmount(periodTotal)}
-          </div>
-          {trendPct !== null ? (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: trendPct >= 0 ? '#22C55E' : '#EF4444', background: trendPct >= 0 ? 'rgba(34,197,94,.10)' : 'rgba(239,68,68,.10)', padding: '2px 8px', borderRadius: 999, marginTop: 8 }}>
-              {trendPct >= 0 ? <UpIcon /> : <DownIcon />}
-              {trendPct >= 0 ? '+' : ''}{trendPct.toFixed(1)}% this month vs last
+          <div>
+            <div style={{
+              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+              fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', lineHeight: 1.1,
+              fontVariantNumeric: 'tabular-nums',
+              color: periodIsSurplus ? 'var(--dm-text-ink)' : '#DC2626',
+            }}>
+              {loading ? '—' : `${periodIsSurplus ? '' : '−'}${formatAmount(Math.abs(periodNetFlow))}`}
             </div>
-          ) : (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#9CA3AF', padding: '2px 8px', borderRadius: 999, marginTop: 8 }}>
-              No prior month data
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)', marginTop: 5 }}>
+              Income − expenses
             </div>
-          )}
-          <svg style={{ marginTop: 12, height: 36, width: '100%', display: 'block' }} viewBox="0 0 200 36" preserveAspectRatio="none">
-            <path d="M0,28 L20,24 L40,26 L60,20 L80,22 L100,16 L120,18 L140,12 L160,14 L180,8 L200,6" fill="none" stroke="#4F6BED" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M0,28 L20,24 L40,26 L60,20 L80,22 L100,16 L120,18 L140,12 L160,14 L180,8 L200,6 L200,36 L0,36 Z" fill="#4F6BED" opacity="0.08" />
-          </svg>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280', padding: '8px 0 16px' }}>
-            Last month · {loading ? '—' : formatAmount(totalLastMonth)}
           </div>
         </div>
 
-        {/* Tithes */}
-        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)' }}>Tithes</span>
-            <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(200,150,74,.12)', color: '#C8964A', display: 'grid', placeItems: 'center' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 13.5S2.5 10.2 2.5 6.4A2.9 2.9 0 0 1 8 5a2.9 2.9 0 0 1 5.5 1.4C13.5 10.2 8 13.5 8 13.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+        {/* CARD 2 — Offering */}
+        <div style={{
+          background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
+          borderRadius: 16, padding: '18px 20px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
+              Offering
             </span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="4" y="9" width="16" height="12" rx="1.5" />
+              <path d="M4 13h16" />
+              <path d="M12 9V5m0 0a2 2 0 1 0-2-2c0 1.5 2 2 2 2zm0 0a2 2 0 1 1 2-2c0 1.5-2 2-2 2z" />
+            </svg>
           </div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
-            {loading ? '—' : formatAmount(tithesInPeriod)}
+          <div>
+            <div style={{
+              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+              fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              {loading ? '—' : formatAmount(offeringTotal)}
+            </div>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)', marginTop: 5 }}>
+              Individual + collective
+            </div>
           </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#22C55E', background: 'rgba(34,197,94,.10)', padding: '2px 8px', borderRadius: 999, marginTop: 8 }}>
-            <UpIcon /> {tithesPct}% of total
-          </div>
-          <svg style={{ marginTop: 12, height: 36, width: '100%', display: 'block' }} viewBox="0 0 200 36" preserveAspectRatio="none">
-            <path d="M0,26 L20,24 L40,22 L60,18 L80,20 L100,14 L120,16 L140,10 L160,12 L180,8 L200,6" fill="none" stroke="#C8964A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M0,26 L20,24 L40,22 L60,18 L80,20 L100,14 L120,16 L140,10 L160,12 L180,8 L200,6 L200,36 L0,36 Z" fill="#C8964A" opacity="0.10" />
-          </svg>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280', padding: '8px 0 16px' }}>{tithesPct}% of total contributions</div>
         </div>
 
-        {/* Offerings */}
-        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)' }}>Offerings</span>
-            <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(34,197,94,.10)', color: '#22C55E', display: 'grid', placeItems: 'center' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 2h9v12l-1.5-1-1.5 1-1.5-1-1.5 1-1.5-1-1.5 1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /><path d="M6 5h4M6 8h4M6 11h2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+        {/* CARD 3 — 2nd highest income category */}
+        <div style={{
+          background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
+          borderRadius: 16, padding: '18px 20px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
+              {secondHighest ? secondHighest.name : '2nd Highest'}
             </span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+            </svg>
           </div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
-            {loading ? '—' : formatAmount(offeringsInPeriod)}
+          <div>
+            <div style={{
+              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+              fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              {loading ? '—' : secondHighest ? formatAmount(secondHighest.total) : '₵0.00'}
+            </div>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)', marginTop: 5 }}>
+              2nd highest income
+            </div>
           </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#22C55E', background: 'rgba(34,197,94,.10)', padding: '2px 8px', borderRadius: 999, marginTop: 8 }}>
-            <UpIcon /> {periodLabel}
-          </div>
-          <svg style={{ marginTop: 12, height: 36, width: '100%', display: 'block' }} viewBox="0 0 200 36" preserveAspectRatio="none">
-            <path d="M0,12 L20,16 L40,14 L60,20 L80,18 L100,22 L120,20 L140,24 L160,22 L180,26 L200,24" fill="none" stroke="#22C55E" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M0,12 L20,16 L40,14 L60,20 L80,18 L100,22 L120,20 L140,24 L160,22 L180,26 L200,24 L200,36 L0,36 Z" fill="#22C55E" opacity="0.10" />
-          </svg>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280', padding: '8px 0 16px' }}>Sunday &amp; midweek combined</div>
         </div>
 
-        {/* Building Fund */}
-        <div style={{ background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)', borderRadius: 12, padding: '18px 18px 0', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)' }}>Building Fund</span>
-            <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(123,147,245,.14)', color: '#7B93F5', display: 'grid', placeItems: 'center' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 14c-2.5 0-4-1.5-4-3.5 0-2 1.5-3 1.5-4.5 0 1.5 1 2 1 2S6 4 8 2c0 3 3 4 3 7C11 11.5 10 14 8 14z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+        {/* CARD 4 — 3rd highest income category */}
+        <div style={{
+          background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
+          borderRadius: 16, padding: '18px 20px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
+              {thirdHighest ? thirdHighest.name : '3rd Highest'}
             </span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 2" />
+            </svg>
           </div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', marginTop: 8, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
-            {loading ? '—' : formatAmount(buildingFundInPeriod)}
+          <div>
+            <div style={{
+              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+              fontWeight: 700, fontSize: 26, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              {loading ? '—' : thirdHighest ? formatAmount(thirdHighest.total) : '₵0.00'}
+            </div>
+            <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: 'var(--dm-text-muted)', marginTop: 5 }}>
+              3rd highest income
+            </div>
           </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#22C55E', background: 'rgba(34,197,94,.10)', padding: '2px 8px', borderRadius: 999, marginTop: 8 }}>
-            <UpIcon /> {periodLabel}
-          </div>
-          <svg style={{ marginTop: 12, height: 36, width: '100%', display: 'block' }} viewBox="0 0 200 36" preserveAspectRatio="none">
-            <g fill="#7B93F5" opacity="0.85">
-              <rect x="6" y="22" width="14" height="12" rx="2" />
-              <rect x="32" y="14" width="14" height="20" rx="2" />
-              <rect x="58" y="20" width="14" height="14" rx="2" />
-              <rect x="84" y="10" width="14" height="24" rx="2" />
-              <rect x="110" y="18" width="14" height="16" rx="2" />
-              <rect x="136" y="6" width="14" height="28" rx="2" />
-              <rect x="162" y="12" width="14" height="22" rx="2" />
-            </g>
-          </svg>
-          <div style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 12, color: '#6B7280', padding: '8px 0 16px' }}>Building fund contributions</div>
         </div>
       </div>
 
