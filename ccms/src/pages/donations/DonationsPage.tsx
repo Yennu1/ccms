@@ -742,56 +742,65 @@ export function DonationsPage() {
 
       {/* ── Finance KPI grid: hero (total income) + 2x2 cards ── */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1.05fr 0.65fr 0.65fr',
-        gridTemplateRows: isMobile ? undefined : '1fr 1fr',
-        gap: 16, marginBottom: 24,
+        display: isMobile ? 'flex' : 'grid',
+        flexDirection: isMobile ? 'column' : undefined,
+        gridTemplateColumns: isMobile ? undefined : '1.35fr 1fr 1fr',
+        gridTemplateRows: isMobile ? undefined : 'auto auto',
+        gap: 12, marginBottom: 24,
       }}>
 
-        {/* HERO — Total Income (with eye toggle) */}
+        {/* HERO — Total Income. PNG shown at natural aspect ratio; the two card
+            rows on the right auto-size to match this height. */}
         <div style={{
           gridColumn: isMobile ? undefined : '1',
           gridRow: isMobile ? undefined : '1 / span 2',
-          position: 'relative', borderRadius: 20, overflow: 'hidden',
-          minHeight: isMobile ? 200 : 300, color: '#fff',
-          backgroundImage: "url('/kpi-card-bg.png')",
-          backgroundSize: 'cover', backgroundPosition: 'center',
-          padding: '28px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start',
+          position: 'relative', width: '100%', alignSelf: 'start',
         }}>
+          <img
+            src="/kpi-card-bg.png"
+            alt=""
+            style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 16 }}
+          />
+          {/* Overlay text */}
           <div style={{
-            fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
-            fontSize: 15, color: 'rgba(255,255,255,0.78)', marginBottom: 16,
+            position: 'absolute', inset: 0, color: '#fff',
+            padding: '7% 8%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start',
           }}>
-            Total income · {periodLabel}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span style={{
-              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-              fontWeight: 700, fontSize: 44, letterSpacing: '-0.025em', lineHeight: 1,
-              fontVariantNumeric: 'tabular-nums',
+            <div style={{
+              fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+              fontSize: 15, color: 'rgba(255,255,255,0.78)', marginBottom: 14,
             }}>
-              {loading ? '—' : incomeHidden ? '₵ • • • • •' : formatAmount(totalIncome)}
-            </span>
-            <button
-              onClick={toggleIncomeHidden}
-              aria-label={incomeHidden ? 'Show income' : 'Hide income'}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer', padding: 4,
-                color: '#fff', opacity: 0.8, display: 'flex', alignItems: 'center', flexShrink: 0,
-              }}
-            >
-              {incomeHidden ? (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17.94 17.94A10 10 0 0 1 12 20C5 20 1 12 1 12a18.06 18.06 0 0 1 5.06-5.94M9.9 4.24A9 9 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                </svg>
-              ) : (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              )}
-            </button>
+              Total income · {periodLabel}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <span style={{
+                fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+                fontWeight: 700, fontSize: 'clamp(28px, 3.4vw, 44px)', letterSpacing: '-0.025em', lineHeight: 1,
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {loading ? '—' : incomeHidden ? '₵ • • • • •' : formatAmount(totalIncome)}
+              </span>
+              <button
+                onClick={toggleIncomeHidden}
+                aria-label={incomeHidden ? 'Show income' : 'Hide income'}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+                  color: '#fff', opacity: 0.8, display: 'flex', alignItems: 'center', flexShrink: 0,
+                }}
+              >
+                {incomeHidden ? (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10 10 0 0 1 12 20C5 20 1 12 1 12a18.06 18.06 0 0 1 5.06-5.94M9.9 4.24A9 9 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ) : (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -799,7 +808,7 @@ export function DonationsPage() {
         <div style={{
           background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
           borderRadius: 16, padding: '18px 20px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142,
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142, height: '100%', boxSizing: 'border-box',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
@@ -839,7 +848,7 @@ export function DonationsPage() {
         <div style={{
           background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
           borderRadius: 16, padding: '18px 20px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142,
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142, height: '100%', boxSizing: 'border-box',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
@@ -869,7 +878,7 @@ export function DonationsPage() {
         <div style={{
           background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
           borderRadius: 16, padding: '18px 20px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142,
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142, height: '100%', boxSizing: 'border-box',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
@@ -897,7 +906,7 @@ export function DonationsPage() {
         <div style={{
           background: 'var(--dm-bg-card)', border: '0.5px solid var(--dm-border)',
           borderRadius: 16, padding: '18px 20px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142,
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 142, height: '100%', boxSizing: 'border-box',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--dm-text-secondary)', fontWeight: 500 }}>
