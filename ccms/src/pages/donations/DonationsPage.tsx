@@ -775,8 +775,8 @@ export function DonationsPage() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <span style={{
-                fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-                fontWeight: 700, fontSize: 'clamp(28px, 3.4vw, 44px)', letterSpacing: '-0.025em', lineHeight: 1,
+                fontFamily: "'Clash Display', 'Plus Jakarta Sans', system-ui, sans-serif",
+                fontWeight: 500, fontSize: 'clamp(28px, 3.4vw, 44px)', letterSpacing: '-0.025em', lineHeight: 1,
                 fontVariantNumeric: 'tabular-nums',
               }}>
                 {loading ? '—' : incomeHidden ? '₵ • • • • •' : formatAmount(totalIncome)}
@@ -832,8 +832,8 @@ export function DonationsPage() {
           </div>
           <div>
             <div style={{
-              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-              fontWeight: 700, fontSize: 20, letterSpacing: '-0.02em', lineHeight: 1.1,
+              fontFamily: "'Clash Display', 'Plus Jakarta Sans', system-ui, sans-serif",
+              fontWeight: 500, fontSize: 20, letterSpacing: '-0.02em', lineHeight: 1.1,
               fontVariantNumeric: 'tabular-nums',
               color: periodIsSurplus ? 'var(--dm-text-ink)' : '#DC2626',
             }}>
@@ -863,8 +863,8 @@ export function DonationsPage() {
           </div>
           <div>
             <div style={{
-              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-              fontWeight: 700, fontSize: 20, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
+              fontFamily: "'Clash Display', 'Plus Jakarta Sans', system-ui, sans-serif",
+              fontWeight: 500, fontSize: 20, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
               fontVariantNumeric: 'tabular-nums',
             }}>
               {loading ? '—' : formatAmount(offeringTotal)}
@@ -891,8 +891,8 @@ export function DonationsPage() {
           </div>
           <div>
             <div style={{
-              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-              fontWeight: 700, fontSize: 20, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
+              fontFamily: "'Clash Display', 'Plus Jakarta Sans', system-ui, sans-serif",
+              fontWeight: 500, fontSize: 20, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
               fontVariantNumeric: 'tabular-nums',
             }}>
               {loading ? '—' : secondHighest ? formatAmount(secondHighest.total) : '₵0.00'}
@@ -920,8 +920,8 @@ export function DonationsPage() {
           </div>
           <div>
             <div style={{
-              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-              fontWeight: 700, fontSize: 20, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
+              fontFamily: "'Clash Display', 'Plus Jakarta Sans', system-ui, sans-serif",
+              fontWeight: 500, fontSize: 20, letterSpacing: '-0.02em', color: 'var(--dm-text-ink)', lineHeight: 1.1,
               fontVariantNumeric: 'tabular-nums',
             }}>
               {loading ? '—' : thirdHighest ? formatAmount(thirdHighest.total) : '₵0.00'}
